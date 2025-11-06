@@ -9,8 +9,8 @@ import { Spinner } from './ui/Spinner';
 import { DebouncedTextarea } from './ui/DebouncedTextarea';
 import { DebouncedInput } from './ui/DebouncedInput';
 import { projectActions } from '../features/project/projectSlice';
-import { useManuscriptViewLogic } from '../hooks/useDashboard';
-import { ManuscriptViewContext, useManuscriptViewContext } from '../contexts/DashboardContext';
+import { useManuscriptView } from '../hooks/useManuscriptView';
+import { ManuscriptViewContext, useManuscriptViewContext } from '../contexts/ManuscriptViewContext';
 import { Textarea } from './ui/Textarea';
 import { useAppSelector } from '../app/hooks';
 
@@ -307,8 +307,8 @@ const ManuscriptViewUI: FC = () => {
 };
 
 export const ManuscriptView: React.FC = () => {
-    // FIX: The useManuscriptViewLogic hook requires an onNavigate prop. Since this view does not navigate, passing an empty function.
-    const contextValue = useManuscriptViewLogic({ onNavigate: () => {} });
+    // The useManuscriptView hook requires an onNavigate prop. Since this view does not navigate, passing an empty function.
+    const contextValue = useManuscriptView({ onNavigate: () => {} });
     return (
         <ManuscriptViewContext.Provider value={contextValue}>
             <ManuscriptViewUI />

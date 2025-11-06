@@ -6,6 +6,7 @@ import { Spinner } from './ui/Spinner';
 import { ICONS } from '../constants';
 import { useExportView } from '../hooks/useExportView';
 import { ExportViewContext, useExportViewContext } from '../contexts/ExportViewContext';
+import { useAppSelector } from '../app/hooks';
 
 // --- SUB-COMPONENTS ---
 
@@ -92,11 +93,27 @@ const ExportControls: FC = () => {
 
 const ExportPreview: FC = () => {
     const { t, formattedOutput } = useExportViewContext();
+    const settings = useAppSelector((state) => state.settings);
+
+    const fontMap = {
+        'serif': 'serif',
+        'sans-serif': 'sans-serif',
+        'monospace': 'monospace'
+    };
+
+    const editorStyles: React.CSSProperties = {
+        fontFamily: fontMap[settings.editorFont],
+        fontSize: `${settings.fontSize}px`,
+        lineHeight: settings.lineSpacing,
+    };
     return (
         <Card>
             <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('export.preview.title')}</h2></CardHeader>
             <CardContent>
-                <pre className="bg-[var(--background-secondary)] p-4 rounded-md text-sm text-[var(--foreground-secondary)] h-[75vh] overflow-y-auto whitespace-pre-wrap font-sans">
+                <pre 
+                    className="bg-[var(--background-secondary)] p-4 rounded-md text-[var(--foreground-secondary)] h-[75vh] overflow-y-auto whitespace-pre-wrap"
+                    style={editorStyles}
+                >
                     {formattedOutput || <span className="text-[var(--foreground-muted)]">{t('export.preview.noContent')}</span>}
                 </pre>
             </CardContent>

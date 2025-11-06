@@ -10,6 +10,7 @@ import { DebouncedTextarea } from './ui/DebouncedTextarea';
 import { useWriterView } from '../hooks/useWriterView';
 import { WriterViewContext, useWriterViewContext } from '../contexts/WriterViewContext';
 import { Textarea } from './ui/Textarea';
+import { useAppSelector } from '../app/hooks';
 
 // --- SUB-COMPONENTS ---
 
@@ -19,6 +20,18 @@ const ContextPanel: FC = () => {
     const { selection, activeTool } = writerState;
     const selectedSection = project.manuscript.find(s => s.id === selectedSectionId);
     const selectedSectionIndex = project.manuscript.findIndex(s => s.id === selectedSectionId);
+    
+    const settings = useAppSelector((state) => state.settings);
+    const fontMap = {
+        'serif': 'serif',
+        'sans-serif': 'sans-serif',
+        'monospace': 'monospace'
+    };
+    const editorStyles: React.CSSProperties = {
+        fontFamily: fontMap[settings.editorFont],
+        fontSize: `${settings.fontSize}px`,
+        lineHeight: settings.lineSpacing,
+    };
 
     const handleMouseAndKeyUp = (e: React.MouseEvent<HTMLTextAreaElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
         const target = e.currentTarget;
@@ -41,9 +54,12 @@ const ContextPanel: FC = () => {
                             value={selectedSection?.content || ''}
                             onDebouncedChange={(content) => selectedSectionIndex > -1 && handleContentChange(selectedSectionIndex, content)}
                             onSelect={handleMouseAndKeyUp as any} onMouseUp={handleMouseAndKeyUp} onKeyUp={handleMouseAndKeyUp}
-                            className="min-h-[400px] font-serif text-base text-transparent bg-transparent caret-[var(--foreground-primary)]"
+                            className="min-h-[400px] text-transparent bg-transparent caret-[var(--foreground-primary)]"
                             placeholder={t('writer.studio.context.contentPlaceholder')} />
-                        <div className="absolute inset-0 p-3 top-2.5 font-serif text-base leading-relaxed pointer-events-none overflow-auto min-h-[400px] whitespace-pre-wrap">
+                        <div 
+                            className="absolute inset-0 p-3 top-2.5 leading-relaxed pointer-events-none overflow-auto min-h-[400px] whitespace-pre-wrap"
+                            style={editorStyles}
+                        >
                             {selectedSection?.content && (
                                 <>
                                     <span>{selectedSection.content.substring(0, selection.start)}</span>
@@ -162,7 +178,7 @@ const AiScratchpad: FC = () => {
                     <Textarea 
                         value={currentResult}
                         onChange={(e) => handleUpdateScratchpad(e.target.value)}
-                        className="prose dark:prose-invert prose-base min-h-[400px] flex-grow font-serif whitespace-pre-wrap bg-[var(--background-secondary)]/50 border-[var(--border-primary)]"
+                        className="min-h-[400px] flex-grow whitespace-pre-wrap bg-[var(--background-secondary)]/50 border-[var(--border-primary)]"
                         placeholder={isLoading ? '' : t('writer.studio.result.placeholder')}
                         disabled={isLoading}
                     />

@@ -6,7 +6,7 @@ import { useTranslation } from './useTranslation';
 import { Character, StorySection, View, World } from '../types';
 import { useToast } from '../components/ui/Toast';
 
-export const useManuscriptViewLogic = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
+export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const { t, language } = useTranslation();
   const dispatch = useAppDispatch();
   const project = useAppSelector(selectProjectData);
@@ -157,4 +157,4 @@ export const useManuscriptViewLogic = ({ onNavigate }: { onNavigate: (view: View
   };
 };
 
-export type UseManuscriptViewLogicReturnType = ReturnType<typeof useManuscriptViewLogic>;
+export type UseManuscriptViewReturnType = ReturnType<typeof useManuscriptView>;

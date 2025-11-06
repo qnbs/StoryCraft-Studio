@@ -21,6 +21,7 @@ import { Spinner } from './components/ui/Spinner';
 import { selectProjectData } from './features/project/projectSelectors';
 import { projectActions } from './features/project/projectSlice';
 import { ToastProvider } from './components/ui/Toast';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 interface AppProps {
     isNewUser: boolean;
@@ -86,7 +87,9 @@ const App: FC<AppProps> = ({ isNewUser }) => {
                 <div className="flex-1 flex flex-col h-screen overflow-hidden pt-16">
                     <Header currentView={currentView} setIsSidebarOpen={appState.setIsSidebarOpen} isSidebarOpen={appState.isSidebarOpen} />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 md:ml-64">
-                        {renderView()}
+                        <ErrorBoundary>
+                            {renderView()}
+                        </ErrorBoundary>
                     </main>
                 </div>
             </div>

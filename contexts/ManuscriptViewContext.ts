@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
-import { UseManuscriptViewLogicReturnType } from '../hooks/useDashboard';
+import { UseManuscriptViewReturnType } from '../hooks/useManuscriptView';
 
-export const ManuscriptViewContext = createContext<UseManuscriptViewLogicReturnType | null>(null);
+export const ManuscriptViewContext = createContext<UseManuscriptViewReturnType | null>(null);
 
 export const useManuscriptViewContext = () => {
     const context = useContext(ManuscriptViewContext);
