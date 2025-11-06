@@ -1,0 +1,12 @@
+{
+    "sidebar.dashboard": "Dashboard",
+    "sidebar.manuscript": "Manuskript",
+    "sidebar.writer": "KI-Schreibstudio",
+    "sidebar.templates": "Vorlagen",
+    "sidebar.outline": "Gliederungsgenerator",
+    "sidebar.characters": "Charaktere",
+    "sidebar.world": "Weltenbau",
+    "sidebar.export": "Exportieren",
+    "sidebar.settings": "Einstellungen",
+    "sidebar.help": "Hilfe"
+}

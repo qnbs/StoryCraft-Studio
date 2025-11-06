@@ -1,0 +1,12 @@
+{
+    "sidebar.dashboard": "Dashboard",
+    "sidebar.manuscript": "Manuscript",
+    "sidebar.writer": "AI Writing Studio",
+    "sidebar.templates": "Templates",
+    "sidebar.outline": "Outline Generator",
+    "sidebar.characters": "Characters",
+    "sidebar.world": "World Building",
+    "sidebar.export": "Export",
+    "sidebar.settings": "Settings",
+    "sidebar.help": "Help"
+}

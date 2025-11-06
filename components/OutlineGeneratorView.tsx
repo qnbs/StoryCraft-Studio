@@ -1,137 +1,151 @@
-import React, { useState } from 'react';
-import { OutlineSection, StoryProject, StorySection, View } from '../types';
-import { generateStoryOutline } from '../services/geminiService';
+import React, { FC } from 'react';
+import { View } from '../types';
 import { Button } from './ui/Button';
 import { Textarea } from './ui/Textarea';
 import { Input } from './ui/Input';
 import { Card, CardContent, CardHeader } from './ui/Card';
 import { Spinner } from './ui/Spinner';
 import { ICONS } from '../constants';
-import { useTranslation } from '../hooks/useTranslation';
+import { Select } from './ui/Select';
+import { Skeleton } from './ui/Skeleton';
+import { Modal } from './ui/Modal';
+import { useOutlineGenerator } from '../hooks/useOutlineGenerator';
+import { OutlineGeneratorContext, useOutlineGeneratorContext } from '../contexts/OutlineGeneratorContext';
 
-interface OutlineGeneratorViewProps {
-  setProject: React.Dispatch<React.SetStateAction<StoryProject>>;
-  onNavigate: (view: View) => void;
-}
+// --- SUB-COMPONENTS ---
 
-export const OutlineGeneratorView: React.FC<OutlineGeneratorViewProps> = ({ setProject, onNavigate }) => {
-  const { t } = useTranslation();
-  const [genre, setGenre] = useState('');
-  const [idea, setIdea] = useState('');
-  const [outline, setOutline] = useState<OutlineSection[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleGenerate = async () => {
-    if (!idea || !genre) return;
-    setIsLoading(true);
-    setError(null);
-    setOutline(null);
-    const generatedOutline = await generateStoryOutline(genre, idea);
-    if (generatedOutline) {
-      setOutline(generatedOutline);
-    } else {
-      setError(t('outline.error.generationFailed'));
-    }
-    setIsLoading(false);
-  };
-
-  const handleApplyOutline = () => {
-    if (!outline) return;
-    const newManuscript: StorySection[] = outline.map((section, index) => ({
-      id: `outline-${Date.now()}-${index}`,
-      title: section.title,
-      content: section.description,
-    }));
-    setProject(p => ({ ...p, manuscript: newManuscript }));
-    onNavigate('dashboard');
-  };
-
-  return (
-    <div>
-      <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('outline.title')}</h1>
-      <p className="text-md md:text-lg text-gray-400 mb-8">
-        {t('outline.description')}
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+const IdeaForm: FC = () => {
+    const { t, genre, setGenre, idea, setIdea, showAdvanced, setShowAdvanced, characters, setCharacters, setting, setSetting, pacing, setPacing, numChapters, setNumChapters, includeTwist, setIncludeTwist, isLoading, handleGenerate } = useOutlineGeneratorContext();
+    return (
         <Card>
-          <CardHeader>
-            <h2 className="text-2xl font-semibold text-white">{t('outline.idea.title')}</h2>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label htmlFor="genre" className="block text-sm font-medium text-gray-300 mb-2">
-                {t('outline.idea.genreLabel')}
-              </label>
-              <Input
-                id="genre"
-                placeholder={t('outline.idea.genrePlaceholder')}
-                value={genre}
-                onChange={e => setGenre(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="idea" className="block text-sm font-medium text-gray-300 mb-2">
-                {t('outline.idea.promptLabel')}
-              </label>
-              <Textarea
-                id="idea"
-                placeholder={t('outline.idea.promptPlaceholder')}
-                value={idea}
-                onChange={e => setIdea(e.target.value)}
-                className="min-h-[200px]"
-              />
-            </div>
-            <Button onClick={handleGenerate} disabled={isLoading || !idea || !genre} className="w-full">
-              {isLoading ? <Spinner /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">{ICONS.SPARKLES}</svg>}
-              {t('outline.idea.generateButton')}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <h2 className="text-2xl font-semibold text-white">{t('outline.result.title')}</h2>
-          </CardHeader>
-          <CardContent>
-            {isLoading && (
-              <div className="flex justify-center items-center h-full min-h-[300px]">
-                <div className="text-center">
-                    <Spinner className="h-10 w-10 mx-auto" />
-                    <p className="mt-4 text-gray-400">{t('outline.result.loading')}</p>
+            <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.idea.title')}</h2></CardHeader>
+            <CardContent className="space-y-6">
+                <div>
+                    <label htmlFor="genre" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.idea.genreLabel')}</label>
+                    <Input id="genre" placeholder={t('outline.idea.genrePlaceholder')} value={genre} onChange={e => setGenre(e.target.value)} />
                 </div>
-              </div>
-            )}
-            {error && !isLoading && (
-                <div className="flex justify-center items-center h-full min-h-[300px] text-red-400">
-                    <p>{error}</p>
+                <div>
+                    <label htmlFor="idea" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.idea.promptLabel')}</label>
+                    <Textarea id="idea" placeholder={t('outline.idea.promptPlaceholder')} value={idea} onChange={e => setIdea(e.target.value)} className="min-h-[150px]" />
                 </div>
-            )}
-            {!isLoading && !error && outline && (
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                {outline.map((section, index) => (
-                  <Card key={index} className="bg-gray-900/50">
-                    <CardHeader><h3 className="text-lg font-semibold text-indigo-300">{section.title}</h3></CardHeader>
-                    <CardContent><p className="text-gray-300 font-serif">{section.description}</p></CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-             {!isLoading && !error && !outline && (
-                <div className="flex justify-center items-center h-full min-h-[300px]">
-                    <p className="text-gray-500 text-center">{t('outline.result.placeholder')}</p>
+                <div className="border-t border-[var(--border-primary)] pt-4">
+                    <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-indigo-500 dark:text-indigo-400 font-semibold w-full text-left" aria-expanded={showAdvanced}>
+                        {t('outline.advanced.title')} {showAdvanced ? '(-)' : '(+)'}
+                    </button>
+                    {showAdvanced && (
+                        <div className="mt-4 space-y-4">
+                            <div>
+                                <label htmlFor="characters" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.advanced.charactersLabel')}</label>
+                                <Input id="characters" placeholder={t('outline.advanced.charactersPlaceholder')} value={characters} onChange={e => setCharacters(e.target.value)} />
+                            </div>
+                            <div>
+                                <label htmlFor="setting" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.advanced.settingLabel')}</label>
+                                <Input id="setting" placeholder={t('outline.advanced.settingPlaceholder')} value={setting} onChange={e => setSetting(e.target.value)} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="pacing" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.advanced.pacingLabel')}</label>
+                                    <Select id="pacing" value={pacing} onChange={e => setPacing(e.target.value)}><option value="">{t('outline.advanced.pacingDefault')}</option><option value="Slow Burn">{t('outline.advanced.pacingSlow')}</option><option value="Medium Paced">{t('outline.advanced.pacingMedium')}</option><option value="Fast-Paced Thriller">{t('outline.advanced.pacingFast')}</option></Select>
+                                </div>
+                                <div>
+                                    <label htmlFor="numChapters" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('outline.advanced.chaptersLabel')}</label>
+                                    <Input id="numChapters" type="number" value={numChapters} onChange={e => setNumChapters(Number(e.target.value) || 1)} min="1" max="50"/>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <input type="checkbox" id="includeTwist" checked={includeTwist} onChange={e => setIncludeTwist(e.target.checked)} className="h-4 w-4 rounded border-gray-300 dark:border-gray-500 bg-gray-200 dark:bg-gray-800 text-indigo-600 focus:ring-indigo-500" />
+                                <label htmlFor="includeTwist" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('outline.advanced.twistLabel')}</label>
+                            </div>
+                        </div>
+                    )}
                 </div>
-             )}
-
-            {outline && !isLoading && (
-                <Button className="mt-6 w-full" onClick={handleApplyOutline}>
-                    {t('outline.result.applyButton')}
+                <Button onClick={handleGenerate} disabled={isLoading || !idea || !genre} className="w-full">
+                    {isLoading ? <Spinner /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2" aria-hidden="true">{ICONS.SPARKLES}</svg>}
+                    {t('outline.idea.generateButton')}
                 </Button>
-            )}
-          </CardContent>
+            </CardContent>
         </Card>
-      </div>
-    </div>
-  );
+    );
+};
+
+const OutlineResult: FC = () => {
+    const { t, outline, isLoading, error, isRegenerating, draggedItem, dragOverItem, handleDragSort, handleMove, updateSection, handleRegenerate, addSection, deleteSection, handleApplyOutline, draggingIndex, setDraggingIndex } = useOutlineGeneratorContext();
+
+    if (isLoading) return <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.result.title')}</h2></CardHeader><CardContent><Skeleton className="h-6 w-3/4 mb-4" /><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /></div></CardContent></Card>;
+    if (error) return <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.result.title')}</h2></CardHeader><CardContent><div className="flex justify-center items-center h-full min-h-[300px] text-red-400"><p>{error}</p></div></CardContent></Card>;
+
+    return (
+        <Card>
+            <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.result.title')}</h2></CardHeader>
+            <CardContent>
+                {outline.length > 0 ? (
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                        {outline.map((section, index) => (
+                            <div key={section.id} draggable onDragStart={() => { draggedItem.current = index; setDraggingIndex(index); }} onDragEnter={() => dragOverItem.current = index} onDragEnd={() => { handleDragSort(); setDraggingIndex(null); }} onDragOver={(e) => e.preventDefault()}>
+                                <Card className={`transition-all duration-300 ${section.isTwist ? 'bg-[var(--accent-1-background)] border-[var(--accent-1-border)]' : 'bg-[var(--background-tertiary)]'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
+                                    <CardHeader className="flex justify-between items-start gap-2">
+                                        <div className="flex-grow flex items-center gap-2">
+                                            <button className="cursor-move text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)]" title={t('outline.result.dragHandleTooltip')} aria-label={t('outline.result.dragHandleTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.GRIP_VERTICAL}</svg></button>
+                                            {section.isTwist && <span title={t('outline.result.twistTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 text-[var(--accent-1-text)]`}>{ICONS.LIGHTNING_BOLT}</svg></span>}
+                                            <Input value={section.title} onChange={(e) => updateSection(section.id, { title: e.target.value })} className="bg-transparent border-0 p-0 text-lg font-semibold text-indigo-500 dark:text-indigo-300 h-auto focus:ring-0 focus:bg-[var(--background-tertiary)]/50 rounded-md px-2"/>
+                                        </div>
+                                        <div className="flex items-center space-x-1 flex-shrink-0">
+                                            <button onClick={() => handleMove(index, 'up')} disabled={index === 0} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveUp')} aria-label={t('common.moveUp')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg></button>
+                                            <button onClick={() => handleMove(index, 'down')} disabled={index === outline.length - 1} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveDown')} aria-label={t('common.moveDown')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleRegenerate(index)} title={t('outline.result.regenerateTooltip')} aria-label={t('outline.result.regenerateTooltip')} disabled={!!isRegenerating}>{isRegenerating === section.id ? <Spinner/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.RECYCLE}</svg>}</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => addSection(index)} title={t('outline.result.addTooltip')} aria-label={t('outline.result.addTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.ADD}</svg></Button>
+                                            <Button variant="ghost" size="sm" onClick={() => deleteSection(section.id)} title={t('outline.result.deleteTooltip')} aria-label={t('outline.result.deleteTooltip')} className="text-red-500 hover:bg-red-500/10 dark:hover:bg-red-900/50"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent><Textarea value={section.description} onChange={(e) => updateSection(section.id, { description: e.target.value })} className="bg-transparent border-[var(--border-primary)] p-2 min-h-[100px]"/></CardContent>
+                                </Card>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex justify-center items-center h-full min-h-[300px]"><p className="text-[var(--foreground-muted)] text-center">{t('outline.result.placeholder')}</p></div>
+                )}
+                {outline.length > 0 && <Button className="mt-6 w-full" onClick={handleApplyOutline}>{t('outline.result.applyButton')}</Button>}
+            </CardContent>
+        </Card>
+    );
+};
+
+const ConfirmationModal: FC = () => {
+    const { t, confirmModal, setConfirmModal } = useOutlineGeneratorContext();
+    if (!confirmModal) return null;
+
+    return (
+        <Modal isOpen={true} onClose={() => setConfirmModal(null)} title={confirmModal.title}>
+            <div className="space-y-4">
+                <p className="text-[var(--foreground-secondary)]">{confirmModal.description}</p>
+                <div className="flex justify-end gap-3">
+                    <Button variant="secondary" onClick={() => setConfirmModal(null)}>{t('common.cancel')}</Button>
+                    <Button variant={confirmModal.type === 'delete' ? 'danger' : 'primary'} onClick={confirmModal.onConfirm}>{confirmModal.confirmText}</Button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
+const OutlineGeneratorUI: FC = () => {
+    const { t } = useOutlineGeneratorContext();
+    return (
+        <div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <IdeaForm />
+                <OutlineResult />
+            </div>
+            <ConfirmationModal />
+        </div>
+    );
+};
+
+export const OutlineGeneratorView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => {
+    const contextValue = useOutlineGenerator({ onNavigate });
+    return (
+        <OutlineGeneratorContext.Provider value={contextValue}>
+            <OutlineGeneratorUI />
+        </OutlineGeneratorContext.Provider>
+    );
 };

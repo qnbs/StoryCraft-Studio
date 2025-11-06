@@ -1,0 +1,8 @@
+{
+    "manuscript.navigator.title": "Navigator",
+    "manuscript.inspector.title": "Inspektor",
+    "manuscript.select": "Wählen Sie einen Abschnitt aus dem Navigator, um mit dem Schreiben zu beginnen.",
+    "manuscript.contentPlaceholder": "Schreiben Sie Inhalt für {{title}}...",
+    "manuscript.mention.characters": "Charaktere",
+    "manuscript.mention.worlds": "Welten"
+}

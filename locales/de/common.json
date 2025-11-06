@@ -1,0 +1,18 @@
+{
+    "common.cancel": "Abbrechen",
+    "common.saveCharacter": "Charakter speichern",
+    "common.saveWorld": "Welt speichern",
+    "common.generate": "Generieren",
+    "common.copyToClipboard": "In die Zwischenablage kopieren",
+    "common.moveUp": "Nach oben verschieben",
+    "common.moveDown": "Nach unten verschieben",
+    "common.close": "Schließen",
+    "common.undo": "Rückgängig",
+    "common.redo": "Wiederholen",
+    "common.saving": "Speichern...",
+    "common.saved": "Alle Änderungen gespeichert",
+    "error.apiErrorTitle": "Fehler des KI-Assistenten",
+    "error.apiErrorDescription": "Die KI konnte keine Antwort generieren. Bitte überprüfen Sie Ihre Verbindung und Ihren API-Schlüssel und versuchen Sie es erneut. Wenn das Problem weiterhin besteht, ist der Dienst möglicherweise vorübergehend nicht verfügbar.",
+    "error.fileImportError": "Fehler beim Dateiimport",
+    "error.snapshotError": "Fehler beim Schnappschuss"
+}

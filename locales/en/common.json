@@ -1,0 +1,18 @@
+{
+    "common.cancel": "Cancel",
+    "common.saveCharacter": "Save Character",
+    "common.saveWorld": "Save World",
+    "common.generate": "Generate",
+    "common.copyToClipboard": "Copy to Clipboard",
+    "common.moveUp": "Move up",
+    "common.moveDown": "Move down",
+    "common.close": "Close",
+    "common.undo": "Undo",
+    "common.redo": "Redo",
+    "common.saving": "Saving...",
+    "common.saved": "All changes saved",
+    "error.apiErrorTitle": "AI Assistant Error",
+    "error.apiErrorDescription": "The AI failed to generate a response. Please check your connection and API key, then try again. If the problem persists, the service may be temporarily unavailable.",
+    "error.fileImportError": "File Import Error",
+    "error.snapshotError": "Snapshot Error"
+}

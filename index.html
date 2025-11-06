@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,8 +7,219 @@
     <title>StoryCraft Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      :root {
+        --background-primary: #111827; /* gray-900 */
+        --background-secondary: #1f2937; /* gray-800 */
+        --background-tertiary: #374151; /* gray-700 */
+        --background-interactive: #4f46e5; /* indigo-600 */
+        --background-interactive-hover: #4338ca; /* indigo-700 */
+        
+        --foreground-primary: #f9fafb; /* gray-50 */
+        --foreground-secondary: #d1d5db; /* gray-300 */
+        --foreground-muted: #9ca3af; /* gray-400 */
+        --foreground-interactive: #ffffff;
+
+        --border-primary: #374151; /* gray-700 */
+        --border-secondary: #4b5563; /* gray-600 */
+        --border-interactive: #4f46e5; /* indigo-600 */
+
+        --ring-focus: #6366f1; /* indigo-500 */
+
+        /* Unified Navigation Styles */
+        --nav-background-hover: rgba(255, 255, 255, 0.05);
+        --nav-background-active: var(--background-interactive);
+        --nav-text-active: var(--foreground-interactive);
+
+        /* Unified Accent Colors */
+        --accent-1-background: rgba(251, 191, 36, 0.1); /* amber-400/10 */
+        --accent-1-border: rgba(251, 191, 36, 0.4);
+        --accent-1-text: #fcd34d; /* amber-300 */
+        
+        --accent-2-background: rgba(16, 185, 129, 0.1); /* emerald-500/10 */
+        --accent-2-border: rgba(16, 185, 129, 0.4);
+        --accent-2-text: #6ee7b7; /* emerald-300 */
+        
+        --accent-3-background: rgba(168, 85, 247, 0.1); /* purple-500/10 */
+        --accent-3-border: rgba(168, 85, 247, 0.4);
+        --accent-3-text: #c084fc; /* purple-300 */
+
+        /* Advanced Shadows & Glows */
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        --shadow-glow: 0 0 15px 0 rgb(79 70 229 / 0.5), 0 0 5px 0 rgb(79 70 229 / 0.4);
+
+        /* Special Gradients */
+        --background-gradient-overlay-start: rgb(0 0 0 / 0.7);
+      }
+
+      .light-theme {
+        --background-primary: #ffffff;
+        --background-secondary: #f3f4f6; /* gray-100 */
+        --background-tertiary: #e5e7eb; /* gray-200 */
+        --background-interactive: #4f46e5; /* indigo-600 */
+        --background-interactive-hover: #4338ca; /* indigo-700 */
+        
+        --foreground-primary: #111827; /* gray-900 */
+        --foreground-secondary: #4b5563; /* gray-600 */
+        --foreground-muted: #6b7280; /* gray-500 */
+        --foreground-interactive: #ffffff;
+
+        --border-primary: #d1d5db; /* gray-300 */
+        --border-secondary: #e5e7eb; /* gray-200 */
+        --border-interactive: #4f46e5; /* indigo-600 */
+        
+        --ring-focus: #6366f1; /* indigo-500 */
+        
+        --shadow-glow: 0 0 15px 0 rgb(79 70 229 / 0.25), 0 0 5px 0 rgb(79 70 229 / 0.2);
+
+        --background-gradient-overlay-start: rgb(0 0 0 / 0.6);
+
+        /* Unified Navigation Styles */
+        --nav-background-hover: rgba(0, 0, 0, 0.05);
+
+        /* Unified Accent Colors */
+        --accent-1-background: rgba(251, 191, 36, 0.1);
+        --accent-1-border: rgba(251, 191, 36, 0.5);
+        --accent-1-text: #d97706; /* amber-600 */
+        
+        --accent-2-background: rgba(16, 185, 129, 0.1);
+        --accent-2-border: rgba(16, 185, 129, 0.5);
+        --accent-2-text: #059669; /* emerald-600 */
+        
+        --accent-3-background: rgba(168, 85, 247, 0.1);
+        --accent-3-border: rgba(168, 85, 247, 0.5);
+        --accent-3-text: #9333ea; /* purple-600 */
+      }
+
       body {
-        background-color: #111827; /* bg-gray-900 */
+        background-color: var(--background-primary);
+        color: var(--foreground-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      #root {
+        background-color: transparent;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+      }
+
+      /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--background-secondary);
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--background-tertiary);
+        border-radius: 6px;
+        border: 3px solid var(--background-secondary);
+        transition: background-color 0.2s ease-in-out;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+          background-color: var(--border-primary);
+      }
+
+      /* Animated Gradient Background */
+      @keyframes move-aurora {
+        0% { transform: translate(-50%, -50%) rotate(0deg) scale(1.4); }
+        50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.7); }
+        100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.4); }
+      }
+      .aurora-background {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 150vw;
+        height: 150vh;
+        background-image: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.15) 0%, rgba(17, 24, 39, 0) 50%);
+        animation: move-aurora 45s infinite linear;
+        z-index: -10;
+        opacity: 0.7;
+        will-change: transform;
+      }
+      .light-theme .aurora-background {
+        background-image: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+      }
+
+      /* Keyframe Animations */
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes fade-in-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+      .animate-in {
+        animation-name: fade-in-up;
+        animation-duration: 0.5s;
+        animation-fill-mode: both;
+        animation-timing-function: cubic-bezier(0.21, 1.02, 0.73, 1);
+        animation-delay: calc(var(--index, 0) * 50ms);
+      }
+
+      /* Custom Range Slider Styles */
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 8px;
+        background: var(--background-tertiary);
+        border-radius: 5px;
+        outline: none;
+        transition: background 0.3s;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--foreground-primary);
+        border: 2px solid var(--background-interactive);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover,
+      input[type="range"]:focus::-webkit-slider-thumb {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--background-interactive) 30%, transparent);
+      }
+
+      /* Mention System Styles */
+      .mention-pill {
+        display: inline;
+        padding: 0.1em 0.3em;
+        border-radius: 0.3em;
+        font-weight: 500;
+        line-height: 1;
+      }
+      .mention-pill-character {
+        background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+        color: #93c5fd; /* blue-300 */
+      }
+      .mention-pill-world {
+        background-color: rgba(16, 185, 129, 0.2); /* emerald-500/20 */
+        color: #6ee7b7; /* emerald-300 */
+      }
+
+      .light-theme .mention-pill-character {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+      }
+      .light-theme .mention-pill-world {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
       }
     </style>
   <script type="importmap">
@@ -18,12 +228,18 @@
     "react/": "https://esm.sh/react@^19.1.0/",
     "react": "https://esm.sh/react@^19.1.0",
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.10.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.10.0",
+    "jspdf": "https://esm.sh/jspdf@^2.5.1",
+    "@reduxjs/toolkit": "https://esm.sh/@reduxjs/toolkit@^2.2.6",
+    "react-redux": "https://esm.sh/react-redux@^9.1.2",
+    "redux-undo": "https://esm.sh/redux-undo@^1.1.0",
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0"
   }
 }
 </script>
 </head>
   <body>
+    <div class="aurora-background"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

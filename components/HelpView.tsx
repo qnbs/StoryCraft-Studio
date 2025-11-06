@@ -1,44 +1,206 @@
-import React from 'react';
-import { useTranslation } from '../hooks/useTranslation';
+import React, { FC, Fragment, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from './ui/Card';
+import { Input } from './ui/Input';
+import { ICONS } from '../constants';
+import { HelpArticle, HelpCategory } from '../types';
+import { useHelpView } from '../hooks/useHelpView';
+import { HelpViewContext, useHelpViewContext } from '../contexts/HelpViewContext';
+import { Button } from './ui/Button';
+import { Spinner } from './ui/Spinner';
+import { useAppSelector } from '../app/hooks';
 
-const HelpSection: React.FC<{ titleKey: string; contentKey: string }> = ({ titleKey, contentKey }) => {
-  const { t } = useTranslation();
-  return (
-    <Card className="bg-gray-800/50">
-      <CardHeader>
-        <h2 className="text-2xl font-semibold text-white">{t(titleKey)}</h2>
-      </CardHeader>
-      <CardContent>
-        <p className="text-gray-300 leading-relaxed">{t(contentKey)}</p>
-      </CardContent>
-    </Card>
-  );
+// --- SUB-COMPONENTS ---
+
+const iconMap: { [key: string]: React.ReactNode } = {
+  DASHBOARD: ICONS.DASHBOARD,
+  DOCUMENT_TEXT: ICONS.DOCUMENT_TEXT,
+  SPARKLES: ICONS.SPARKLES,
+  SETTINGS: ICONS.SETTINGS,
+  HELP: ICONS.HELP,
+  WORLD: ICONS.WORLD,
+  LIGHTNING_BOLT: ICONS.LIGHTNING_BOLT,
 };
 
-export const HelpView: React.FC = () => {
-  const { t } = useTranslation();
+const NavButton: FC<{ icon: React.ReactNode; label: string; isActive: boolean; onClick: () => void; }> = React.memo(({ icon, label, isActive, onClick }) => (
+    <button onClick={onClick} className={`flex items-center w-full px-3 py-2 text-left rounded-md transition-colors ${isActive ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3">{icon}</svg>
+        <span>{label}</span>
+    </button>
+));
 
-  const sections = [
-    { title: 'help.dashboard.title', content: 'help.dashboard.content' },
-    { title: 'help.templates.title', content: 'help.templates.content' },
-    { title: 'help.outline.title', content: 'help.outline.content' },
-    { title: 'help.characters.title', content: 'help.characters.content' },
-    { title: 'help.world.title', content: 'help.world.content' },
-    { title: 'help.writer.title', content: 'help.writer.content' },
-    { title: 'help.export.title', content: 'help.export.content' },
-  ];
+const ArticleViewer: FC = () => {
+    const { t, selectedArticle, handleBackToList } = useHelpViewContext();
+    const theme = useAppSelector(state => state.settings.theme);
 
-  return (
-    <div>
-      <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('help.title')}</h1>
-      <p className="text-md md:text-lg text-gray-400 mb-8">{t('help.description')}</p>
+    if (!selectedArticle) return null;
 
-      <div className="space-y-6">
-        {sections.map(section => (
-          <HelpSection key={section.title} titleKey={section.title} contentKey={section.content} />
-        ))}
-      </div>
-    </div>
-  );
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center">
+                    <Button variant="ghost" size="sm" onClick={handleBackToList} className="mr-2 -ml-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                    </Button>
+                    <h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t(selectedArticle.title)}</h2>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div 
+                    className={`prose max-w-none prose-h2:text-2xl prose-h2:font-bold prose-h3:font-semibold prose-p:text-[var(--foreground-secondary)] prose-strong:text-[var(--foreground-primary)] prose-a:text-indigo-400 prose-ul:list-disc prose-li:text-[var(--foreground-secondary)] prose-ol:text-[var(--foreground-secondary)] ${theme === 'dark' ? 'prose-invert' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: t(selectedArticle.content) }} 
+                />
+            </CardContent>
+        </Card>
+    );
+};
+
+const ArticleList: FC<{ category: HelpCategory }> = ({ category }) => {
+    const { t, handleSelectArticle } = useHelpViewContext();
+    return (
+        <Card>
+            <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t(category.title)}</h2></CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    {category.articles.map(article => (
+                        <button key={article.title} onClick={() => handleSelectArticle(article)} className="w-full text-left p-3 rounded-md text-base transition-colors text-[var(--foreground-secondary)] hover:bg-[var(--background-tertiary)] hover:text-[var(--foreground-primary)] font-medium">
+                            {t(article.title)}
+                        </button>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+const ChatMessage: FC<{ role: 'user' | 'model'; text: string }> = React.memo(({ role, text }) => {
+    const isUser = role === 'user';
+    const theme = useAppSelector(state => state.settings.theme);
+    
+    const parsedText = text.split(/```([\s\S]*?)```/g).map((part, index) => {
+        if (index % 2 === 1) { // It's a code block
+            return <pre key={index} className="bg-[var(--background-primary)] p-3 rounded-md text-sm whitespace-pre-wrap"><code>{part}</code></pre>;
+        }
+        const bolded = part.split(/(\*\*[\s\S]*?\*\*)/g).map((subPart, subIndex) => {
+             if (subIndex % 2 === 1) return <strong key={subIndex}>{subPart.slice(2, -2)}</strong>;
+             return subPart;
+        });
+        return <Fragment key={index}>{bolded}</Fragment>;
+    });
+
+    return (
+        <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}>
+            {!isUser && (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-indigo-400">{ICONS.SPARKLES}</svg>
+                </div>
+            )}
+            <div className={`max-w-xl p-3 rounded-lg prose ${theme === 'dark' ? 'prose-invert' : ''} prose-p:my-0 ${isUser ? 'bg-blue-600 text-white' : 'bg-[var(--background-tertiary)]'}`}>
+                {parsedText}
+            </div>
+        </div>
+    );
+});
+
+const AiAssistant: FC = () => {
+    const { t, chatHistory, userInput, setUserInput, isAiReplying, handleAskAi } = useHelpViewContext();
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        chatContainerRef.current?.scrollTo(0, chatContainerRef.current.scrollHeight);
+    }, [chatHistory, isAiReplying]);
+
+    const handleSuggestionClick = (suggestion: string) => {
+        setUserInput(suggestion);
+        // Trigger form submission after state update
+        setTimeout(() => {
+            const form = chatContainerRef.current?.closest('div')?.querySelector('form');
+            form?.requestSubmit();
+        }, 0);
+    };
+
+    return (
+        <Card className="h-full flex flex-col">
+            <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('help.ai.title')}</h2></CardHeader>
+            <CardContent className="p-0 flex flex-col flex-grow min-h-0">
+                <div ref={chatContainerRef} className="flex-grow p-4 space-y-4 overflow-y-auto">
+                    {chatHistory.map((msg, index) => (
+                         <ChatMessage key={index} {...msg} />
+                    ))}
+                     {isAiReplying && chatHistory.length > 0 && chatHistory[chatHistory.length - 1]?.text === '' && (
+                        <div className="flex items-start gap-3">
+                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-indigo-400">{ICONS.SPARKLES}</svg>
+                            </div>
+                            <div className={`max-w-xl p-3 rounded-lg bg-[var(--background-tertiary)] flex space-x-2 items-center`}>
+                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="p-4 border-t border-[var(--border-primary)] space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Button variant="ghost" size="sm" onClick={() => handleSuggestionClick(t('help.ai.suggestion1'))}>{t('help.ai.suggestion1')}</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleSuggestionClick(t('help.ai.suggestion2'))}>{t('help.ai.suggestion2')}</Button>
+                         <Button variant="ghost" size="sm" onClick={() => handleSuggestionClick(t('help.ai.suggestion3'))}>{t('help.ai.suggestion3')}</Button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); handleAskAi(); }} className="flex items-center gap-2">
+                        <Input type="text" placeholder={t('help.ai.placeholder')} value={userInput} onChange={(e) => setUserInput(e.target.value)} disabled={isAiReplying} className="flex-grow" />
+                        <Button type="submit" disabled={isAiReplying || !userInput} aria-label={t('help.tabs.askAi')}>
+                            {isAiReplying ? <Spinner/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>}
+                        </Button>
+                    </form>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const HelpViewUI: FC = () => {
+    const { t, helpContent, activeCategory, selectedArticle, handleSelectCategory } = useHelpViewContext();
+
+    const renderContent = () => {
+        if (selectedArticle) {
+            return <ArticleViewer />;
+        }
+
+        if (activeCategory === 'ai') {
+            return <AiAssistant />;
+        }
+        
+        const category = helpContent.find(cat => cat.id === activeCategory);
+        if (category) {
+            return <ArticleList category={category} />;
+        }
+        
+        return null;
+    }
+
+    return (
+        <div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="md:col-span-1">
+                    <div className="space-y-2 sticky top-20">
+                        {helpContent.map(cat => (
+                            <NavButton key={cat.id} icon={iconMap[cat.icon]} label={t(cat.title)} isActive={activeCategory === cat.id} onClick={() => handleSelectCategory(cat.id)} />
+                        ))}
+                         <NavButton key="ai" icon={ICONS.SPARKLES} label={t('help.ai.title')} isActive={activeCategory === 'ai'} onClick={() => handleSelectCategory('ai')} />
+                    </div>
+                </div>
+                <div className="md:col-span-3 min-h-[80vh]">
+                    {renderContent()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const HelpView: FC = () => {
+    const contextValue = useHelpView();
+    return (
+        <HelpViewContext.Provider value={contextValue}>
+            <HelpViewUI />
+        </HelpViewContext.Provider>
+    );
 };
