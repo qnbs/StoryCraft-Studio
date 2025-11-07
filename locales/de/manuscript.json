@@ -4,5 +4,9 @@
     "manuscript.select": "Wählen Sie einen Abschnitt aus dem Navigator, um mit dem Schreiben zu beginnen.",
     "manuscript.contentPlaceholder": "Schreiben Sie Inhalt für {{title}}...",
     "manuscript.mention.characters": "Charaktere",
-    "manuscript.mention.worlds": "Welten"
+    "manuscript.mention.worlds": "Welten",
+    "manuscript.inspector.statsTitle": "Abschnittsstatistiken",
+    "manuscript.inspector.charCount": "Zeichenzahl",
+    "manuscript.inspector.readTime": "Gesch. Lesezeit",
+    "manuscript.inspector.readTimeValue": "~{{time}} Min."
 }

@@ -181,41 +181,25 @@ const CharacterViewUI: FC = () => {
     return (
         <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {characters.length === 0 ? (
-                    <>
-                        <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
-                            <AddNewCard 
-                                title={t('characters.addNewManually')}
-                                description={t('characters.addNewManuallyHint')}
-                                onClick={handleAddNewManually}
-                                icon={ICONS.ADD}
-                                variant="default"
-                            />
-                        </div>
-                        <div className="animate-in" style={{ '--index': 1 } as React.CSSProperties}>
-                            <AddNewCard 
-                                title={t('characters.addNewWithAI')}
-                                description={t('characters.addNewWithAIHint')}
-                                onClick={handleAddNewWithAI}
-                                icon={ICONS.SPARKLES}
-                                variant="primary"
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
-                             <AddNewCard 
-                                title={t('characters.addNewManually')}
-                                description={t('characters.addNewManuallyHint')}
-                                onClick={handleAddNewManually}
-                                icon={ICONS.ADD}
-                                variant="default"
-                            />
-                        </div>
-                        {characters.map((char, index) => <CharacterCard key={char.id} character={char} animationIndex={index + 1} />)}
-                    </>
-                )}
+                <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
+                    <AddNewCard 
+                        title={t('characters.addNewManually')}
+                        description={t('characters.addNewManuallyHint')}
+                        onClick={handleAddNewManually}
+                        icon={ICONS.ADD}
+                        variant="default"
+                    />
+                </div>
+                <div className="animate-in" style={{ '--index': 1 } as React.CSSProperties}>
+                    <AddNewCard 
+                        title={t('characters.addNewWithAI')}
+                        description={t('characters.addNewWithAIHint')}
+                        onClick={handleAddNewWithAI}
+                        icon={ICONS.SPARKLES}
+                        variant="primary"
+                    />
+                </div>
+                {characters.map((char, index) => <CharacterCard key={char.id} character={char} animationIndex={index + 2} />)}
             </div>
             {isDossierOpen && <CharacterDossier />}
             <AIProfileModal />

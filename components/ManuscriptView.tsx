@@ -80,7 +80,7 @@ const Resizer: FC<{ onMouseDown: (e: React.MouseEvent) => void }> = ({ onMouseDo
 // --- SUB-COMPONENTS ---
 
 const StoryNavigator: FC<{onSectionSelect?: () => void}> = React.memo(({ onSectionSelect }) => {
-    const { t, manuscript, activeSectionId, setActiveSectionId, draggedItem, dragOverItem, handleDragSort, draggingIndex, setDraggingIndex } = useManuscriptViewContext();
+    const { t, manuscript, activeSectionId, setActiveSectionId, draggedItem, dragOverItem, handleDragSort, handleMoveSection, draggingIndex, setDraggingIndex } = useManuscriptViewContext();
     
     const handleSelect = (id: string) => {
         setActiveSectionId(id);
@@ -90,13 +90,17 @@ const StoryNavigator: FC<{onSectionSelect?: () => void}> = React.memo(({ onSecti
     return (
         <div className="space-y-1 h-full overflow-y-auto p-2">
             {(Array.isArray(manuscript) ? manuscript : []).map((section, index) => (
-                <div key={section.id} draggable onDragStart={() => { draggedItem.current = index; setDraggingIndex(index); }} onDragEnter={() => dragOverItem.current = index} onDragEnd={handleDragSort} onDragOver={(e) => e.preventDefault()}>
-                    <button onClick={() => handleSelect(section.id)} className={`group rounded-md cursor-pointer p-2 flex items-center justify-between text-left transition-all duration-200 w-full ${activeSectionId === section.id ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
+                <div key={section.id} draggable onDragStart={() => { draggedItem.current = index; setDraggingIndex(index); }} onDragEnter={() => dragOverItem.current = index} onDragEnd={() => { handleDragSort(); setDraggingIndex(null); }} onDragOver={(e) => e.preventDefault()}>
+                    <div onClick={() => handleSelect(section.id)} className={`group rounded-md cursor-pointer p-2 flex items-center justify-between text-left transition-all duration-200 w-full ${activeSectionId === section.id ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
                         <span className="font-medium text-sm flex-grow truncate">{section.title}</span>
-                        <div title={t('outline.result.dragHandleTooltip')} aria-label={t('outline.result.dragHandleTooltip')} className={`cursor-move flex-shrink-0 ${activeSectionId === section.id ? 'text-indigo-200 group-hover:text-white' : 'text-[var(--foreground-muted)] group-hover:text-[var(--foreground-primary)]'}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 "><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.25h16.5" /></svg>
+                         <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); handleMoveSection(index, 'up'); }} disabled={index === 0} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveUp')} aria-label={t('common.moveUp')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleMoveSection(index, 'down'); }} disabled={index === manuscript.length - 1} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveDown')} aria-label={t('common.moveDown')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
+                            <div title={t('outline.result.dragHandleTooltip')} aria-label={t('outline.result.dragHandleTooltip')} className={`cursor-move p-1 ${activeSectionId === section.id ? 'text-indigo-200 group-hover:text-white' : 'text-[var(--foreground-muted)] group-hover:text-[var(--foreground-primary)]'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 "><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.25h16.5" /></svg>
+                            </div>
                         </div>
-                    </button>
+                    </div>
                 </div>
             ))}
         </div>
@@ -106,7 +110,7 @@ StoryNavigator.displayName = 'StoryNavigator';
 
 
 const ManuscriptEditor: FC = React.memo(() => {
-    const { t, activeSection, handleContentChange, mentions, handleMentionSelect, mentionPosition, setCursorPosition, editorRef, activeSectionWordCount, characters, worlds } = useManuscriptViewContext();
+    const { t, activeSection, handleContentChange, mentions, handleMentionSelect, mentionPosition, editorRef, activeSectionStats, characters, worlds } = useManuscriptViewContext();
     const settings = useAppSelector((state) => state.settings);
 
     const editorStyles: React.CSSProperties = {
@@ -170,9 +174,9 @@ const ManuscriptEditor: FC = React.memo(() => {
                 ref={editorRef}
                 value={activeSection.content}
                 onChange={(e) => handleContentChange(activeSection.id, e.target.value)}
-                onSelect={(e: any) => setCursorPosition(e.target.selectionStart)}
-                onKeyUp={(e: any) => setCursorPosition(e.target.selectionStart)}
-                onClick={(e: any) => setCursorPosition(e.target.selectionStart)}
+                onSelect={(e: any) => handleContentChange(activeSection.id, e.target.value)} // Trigger mention check on select
+                onKeyUp={(e: any) => handleContentChange(activeSection.id, e.target.value)} // and keyup
+                onClick={(e: any) => handleContentChange(activeSection.id, e.target.value)} // and click
                 className="h-full w-full text-lg leading-relaxed resize-none p-4 sm:p-6 bg-transparent border-0 focus:ring-0 flex-grow caret-[var(--foreground-primary)] text-transparent"
                 placeholder={activeSection.prompt || t('manuscript.contentPlaceholder', { title: activeSection.title })}
             />
@@ -184,13 +188,13 @@ const ManuscriptEditor: FC = React.memo(() => {
                 {parseAndRenderContent(activeSection.content)}
             </div>
              <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/80 px-2 py-1 rounded-full pointer-events-none">
-                {activeSectionWordCount} {t('dashboard.stats.totalWordCount')}
+                {activeSectionStats.wordCount} {t('dashboard.stats.totalWordCount')}
             </div>
             {mentions.length > 0 && mentionPosition !== null && (
                 <div className="absolute z-10 w-64 bg-[var(--background-secondary)] border border-[var(--border-primary)] rounded-md shadow-lg" style={{ top: mentionPosition.top, left: mentionPosition.left }}>
                     <ul className="max-h-48 overflow-y-auto">
                         {mentions.map(item => (
-                            <li key={item.id} onClick={() => handleMentionSelect(item)} className="px-3 py-2 text-sm text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white cursor-pointer flex items-center space-x-2">
+                            <li key={item.id} onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(item); }} className="px-3 py-2 text-sm text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white cursor-pointer flex items-center space-x-2">
                                {item.type === 'character' ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[var(--foreground-muted)]">{ICONS.CHARACTERS}</svg> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[var(--foreground-muted)]">{ICONS.WORLD}</svg>}
                                <span>{item.name}</span>
                             </li>
@@ -205,7 +209,7 @@ ManuscriptEditor.displayName = 'ManuscriptEditor';
 
 
 const InspectorPanel: FC = React.memo(() => {
-    const { t, project, dispatch, isLoglineModalOpen, setIsLoglineModalOpen, loglineSuggestions, isAiLoading, handleGenerateLoglines, selectLogline } = useManuscriptViewContext();
+    const { t, project, dispatch, activeSectionStats, isLoglineModalOpen, setIsLoglineModalOpen, loglineSuggestions, isAiLoading, handleGenerateLoglines, selectLogline } = useManuscriptViewContext();
     return (
         <>
             <div className="space-y-4 p-4">
@@ -221,6 +225,14 @@ const InspectorPanel: FC = React.memo(() => {
                         {t('dashboard.details.aiLoglineButton')}
                     </Button>
                 </div>
+                 <Card>
+                    <CardHeader><h3 className="text-base font-semibold">{t('manuscript.inspector.statsTitle')}</h3></CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                        <div className="flex justify-between"><span>{t('dashboard.stats.totalWordCount')}</span><span className="font-bold">{activeSectionStats.wordCount.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>{t('manuscript.inspector.charCount')}</span><span className="font-bold">{activeSectionStats.charCount.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span>{t('manuscript.inspector.readTime')}</span><span className="font-bold">{t('manuscript.inspector.readTimeValue', { time: String(activeSectionStats.readTime) })}</span></div>
+                    </CardContent>
+                </Card>
             </div>
              <Modal isOpen={isLoglineModalOpen} onClose={() => setIsLoglineModalOpen(false)} title={t('dashboard.loglineModal.title')}>
                 {isAiLoading && <div className="flex flex-col items-center justify-center min-h-[200px]"><Spinner className="w-8 h-8" /><p className="mt-4 text-[var(--foreground-secondary)]">{t('dashboard.loglineModal.loading')}</p></div>}

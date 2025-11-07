@@ -203,41 +203,25 @@ const WorldViewUI: FC = () => {
     return (
         <div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {worlds.length === 0 ? (
-                     <>
-                        <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
-                            <AddNewCard 
-                                title={t('worlds.addNewManually')}
-                                description={t('worlds.addNewManuallyHint')}
-                                onClick={handleAddNewManually}
-                                icon={ICONS.ADD}
-                                variant="default"
-                            />
-                        </div>
-                        <div className="animate-in" style={{ '--index': 1 } as React.CSSProperties}>
-                            <AddNewCard 
-                                title={t('worlds.addNewWithAI')}
-                                description={t('worlds.addNewWithAIHint')}
-                                onClick={handleAddNewWithAI}
-                                icon={ICONS.SPARKLES}
-                                variant="primary"
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <>
-                         <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
-                            <AddNewCard 
-                                title={t('worlds.addNewManually')}
-                                description={t('worlds.addNewManuallyHint')}
-                                onClick={handleAddNewManually}
-                                icon={ICONS.ADD}
-                                variant="default"
-                            />
-                        </div>
-                        {worlds.map((world, index) => <WorldCard key={world.id} world={world} animationIndex={index + 1} />)}
-                    </>
-                )}
+                <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
+                    <AddNewCard 
+                        title={t('worlds.addNewManually')}
+                        description={t('worlds.addNewManuallyHint')}
+                        onClick={handleAddNewManually}
+                        icon={ICONS.ADD}
+                        variant="default"
+                    />
+                </div>
+                <div className="animate-in" style={{ '--index': 1 } as React.CSSProperties}>
+                    <AddNewCard 
+                        title={t('worlds.addNewWithAI')}
+                        description={t('worlds.addNewWithAIHint')}
+                        onClick={handleAddNewWithAI}
+                        icon={ICONS.SPARKLES}
+                        variant="primary"
+                    />
+                </div>
+                {worlds.map((world, index) => <WorldCard key={world.id} world={world} animationIndex={index + 2} />)}
             </div>
             {isAtlasOpen && <WorldAtlas />}
             <AIProfileModal />

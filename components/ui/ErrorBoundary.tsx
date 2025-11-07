@@ -7,9 +7,9 @@ interface State {
   hasError: boolean;
 }
 
-// FIX: Simplify props type. React.Component's props type automatically includes `children`, so `React.PropsWithChildren` is redundant for class components and can cause type errors.
-// Fix: The original props type `{}` was causing a type error. Explicitly typing props with `React.PropsWithChildren` correctly types the component to accept children and resolves the compilation error.
-export class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
+// FIX: The props type for a class component must be explicitly defined to include `children`.
+// Using `React.PropsWithChildren` ensures the 'children' prop is correctly typed.
+export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> {
   public state: State = {
     hasError: false
   };

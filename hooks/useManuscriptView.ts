@@ -6,6 +6,47 @@ import { useTranslation } from './useTranslation';
 import { Character, StorySection, View, World } from '../types';
 import { useToast } from '../components/ui/Toast';
 
+// Helper to get cursor coords in textarea. This is a robust way to handle it.
+const getCursorXY = (input: HTMLTextAreaElement, selectionPoint: number) => {
+    const mirror = document.createElement('div');
+    const style = getComputedStyle(input);
+    
+    // Properties that affect layout and position
+    const props = [
+        'width', 'height', 'font', 'lineHeight', 'padding', 'border', 'textIndent', 'whiteSpace', 'wordWrap', 'wordBreak', 'letterSpacing', 'textAlign'
+    ];
+    props.forEach(prop => {
+        mirror.style[prop as any] = style[prop as any];
+    });
+
+    // Make it invisible and position it off-screen
+    mirror.style.position = 'absolute';
+    mirror.style.left = '-9999px';
+    mirror.style.top = '0px';
+    mirror.style.height = 'auto'; // allow it to grow
+
+    document.body.appendChild(mirror);
+    
+    mirror.textContent = input.value.substring(0, selectionPoint);
+
+    const marker = document.createElement('span');
+    marker.textContent = '|'; // Use a character to prevent collapsing
+    mirror.appendChild(marker);
+
+    const inputRect = input.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+
+    document.body.removeChild(mirror);
+
+    // Calculate position relative to the textarea, accounting for scroll
+    return {
+        top: markerRect.top - inputRect.top + input.scrollTop,
+        left: markerRect.left - inputRect.left + input.scrollLeft,
+        height: markerRect.height,
+    };
+};
+
+
 export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const { t, language } = useTranslation();
   const dispatch = useAppDispatch();
@@ -27,20 +68,22 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
 
   // Mention state
   const [mentions, setMentions] = useState<(Character & { type: 'character' })[] | (World & { type: 'world' })[]>([]);
-  const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPosition, setMentionPosition] = useState<{ top: number, left: number } | null>(null);
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
 
   const activeSection = useMemo(() => {
-      if (!activeSectionId) return manuscript?.[0];
-      return manuscript.find(s => s.id === activeSectionId) || manuscript?.[0];
+      const currentActiveId = activeSectionId || manuscript?.[0]?.id;
+      return manuscript.find(s => s.id === currentActiveId) || manuscript?.[0];
   }, [activeSectionId, manuscript]);
 
-  const activeSectionWordCount = useMemo(() => {
-    if (!activeSection) return 0;
-    return activeSection.content?.match(/\S+/g)?.length || 0;
+  const activeSectionStats = useMemo(() => {
+    if (!activeSection) return { wordCount: 0, charCount: 0, readTime: 0 };
+    const content = activeSection.content || '';
+    const wordCount = content.match(/\S+/g)?.length || 0;
+    const charCount = content.length;
+    const readTime = Math.ceil(wordCount / 225); // Average reading speed 225 wpm
+    return { wordCount, charCount, readTime };
   }, [activeSection]);
   
   const handleContentChange = useCallback((id: string, content: string) => {
@@ -50,22 +93,20 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     if (editorRef.current) {
         const cursor = editorRef.current.selectionStart;
         const textBeforeCursor = content.substring(0, cursor);
-        const mentionMatch = textBeforeCursor.match(/([@#])(\w*)$/);
+        const mentionMatch = textBeforeCursor.match(/([@#])([\w\s]*)$/);
 
         if (mentionMatch) {
             const [_, symbol, query] = mentionMatch;
-            setMentionQuery(query.toLowerCase());
+            const normalizedQuery = query.toLowerCase();
             
             const suggestions = symbol === '@'
-                ? characters.filter(c => c.name.toLowerCase().startsWith(query.toLowerCase())).map(c => ({...c, type: 'character' as const}))
-                : worlds.filter(w => w.name.toLowerCase().startsWith(query.toLowerCase())).map(w => ({...w, type: 'world' as const}));
+                ? characters.filter(c => c.name.toLowerCase().startsWith(normalizedQuery)).map(c => ({...c, type: 'character' as const}))
+                : worlds.filter(w => w.name.toLowerCase().startsWith(normalizedQuery)).map(w => ({...w, type: 'world' as const}));
 
             if(suggestions.length > 0) {
                  setMentions(suggestions as any);
-                 // This part is tricky. Calculating position would ideally need a library.
-                 // For now, a simplified approach:
-                 const rect = editorRef.current.getBoundingClientRect();
-                 setMentionPosition({ top: rect.height / 2, left: rect.width / 2 }); // Placeholder position
+                 const { top, left, height } = getCursorXY(editorRef.current, cursor);
+                 setMentionPosition({ top: top + height, left: left });
             } else {
                 setMentions([]);
             }
@@ -79,17 +120,26 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     if (!activeSection || !editorRef.current) return;
     
     const cursor = editorRef.current.selectionStart;
-    const textBeforeCursor = activeSection.content.substring(0, cursor);
-    const textAfterCursor = activeSection.content.substring(cursor);
+    const { content } = activeSection;
     
-    const mentionMatch = textBeforeCursor.match(/([@#])(\w*)$/);
+    const textBeforeCursor = content.substring(0, cursor);
+    const textAfterCursor = content.substring(cursor);
+    
+    const mentionMatch = textBeforeCursor.match(/([@#])([\w\s]*)$/);
     if (mentionMatch) {
         const startIndex = mentionMatch.index || 0;
         const newText = textBeforeCursor.substring(0, startIndex) + `${mentionMatch[1]}${item.name} ` + textAfterCursor;
         handleContentChange(activeSection.id, newText);
+        // Set cursor position after the inserted mention
+        setTimeout(() => {
+            if (editorRef.current) {
+                const newCursorPos = startIndex + 1 + item.name.length + 1;
+                editorRef.current.focus();
+                editorRef.current.setSelectionRange(newCursorPos, newCursorPos);
+            }
+        }, 0);
     }
     setMentions([]);
-    editorRef.current?.focus();
   };
 
   const handleDragSort = useCallback(() => {
@@ -101,6 +151,15 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     draggedItem.current = null;
     dragOverItem.current = null;
     setDraggingIndex(null);
+  }, [manuscript, dispatch]);
+
+  const handleMoveSection = useCallback((index: number, direction: 'up' | 'down') => {
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= manuscript.length) return;
+
+      const newManuscript = [...manuscript];
+      [newManuscript[index], newManuscript[newIndex]] = [newManuscript[newIndex], newManuscript[index]]; // swap
+      dispatch(projectActions.setManuscript(newManuscript));
   }, [manuscript, dispatch]);
 
   const handleGenerateLoglines = async () => {
@@ -133,7 +192,7 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     activeSectionId,
     setActiveSectionId,
     activeSection,
-    activeSectionWordCount,
+    activeSectionStats,
     handleContentChange,
     isLoglineModalOpen,
     setIsLoglineModalOpen,
@@ -145,14 +204,13 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     draggedItem,
     dragOverItem,
     handleDragSort,
+    handleMoveSection,
     draggingIndex,
     setDraggingIndex,
     // Mentions
     mentions,
-    mentionQuery,
     mentionPosition,
     handleMentionSelect,
-    setCursorPosition,
     editorRef,
   };
 };
