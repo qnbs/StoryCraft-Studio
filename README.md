@@ -1,7 +1,9 @@
 # ✨ StoryCraft Studio: Your AI-Powered Narrative Universe ✨
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/StoryCraft-Studio)
+
 [//]: # (Simulated Badges)
-<p align="center">
+<p align="left">
   <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19">
   <img src="https://img.shields.io/badge/Redux-Toolkit-764ABC?logo=redux" alt="Redux Toolkit">
   <img src="https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google" alt="Google Gemini">
