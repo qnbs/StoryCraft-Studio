@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import App from './App';
-import { rootReducer } from './app/store';
+import { setupStore } from './app/store';
 import { dbService } from './services/dbService';
 
 const rootElement = document.getElementById('root');
@@ -16,26 +15,38 @@ const root = ReactDOM.createRoot(rootElement);
 (async () => {
   try {
     await dbService.initDB();
-    let preloadedState: any = await dbService.loadState();
+    const loadedState = await dbService.loadState();
+    let preloadedState: any = loadedState; // Cast for manipulation before Redux
+    
     const isNewUser = !preloadedState;
     
-    // Elaborate data integrity check to ensure resilience against corruption.
-    if (preloadedState && (
-        !preloadedState.project || 
-        typeof preloadedState.project.present === 'undefined'
-    )) {
-        console.warn("Project data from IndexedDB appears to be corrupt. Starting with a fresh state.");
-        preloadedState = undefined;
+    // --- CRITICAL HYDRATION LOGIC ---
+    // The middleware saves only the 'present' state to save space/time.
+    // However, redux-undo expects { past: [], present: ..., future: [] }.
+    // We must manually reconstruct the undo envelope if we loaded flat data.
+    if (preloadedState && preloadedState.project) {
+        // Check if the loaded project is "flat" (i.e., it doesn't have a 'present' key, but HAS 'data')
+        // or if it matches the shape of ProjectData directly.
+        const projectPart = preloadedState.project as any;
+        const isFlatData = !projectPart.present && projectPart.data;
+        
+        if (isFlatData) {
+             console.debug("Hydrating flat project state into Redux-Undo envelope.");
+             preloadedState.project = {
+                 past: [],
+                 present: preloadedState.project, // The DB saved the 'present' slice directly
+                 future: [],
+                 _latestUnfiltered: preloadedState.project // Helper for redux-undo if needed
+             };
+        } else if (!projectPart.present && !projectPart.data) {
+            // Fallback: Corrupt or empty project state
+            console.warn("Project state corrupted. Resetting project.");
+            preloadedState.project = undefined; 
+        }
     }
+    // --------------------------------
 
-    const store = configureStore({
-      reducer: rootReducer,
-      preloadedState,
-    });
-
-    // The subscription logic for saving is now managed inside the dbService itself,
-    // triggered after the store is created.
-    dbService.subscribeToStore(store);
+    const store = setupStore(preloadedState);
 
     root.render(
       <React.StrictMode>

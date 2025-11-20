@@ -153,8 +153,23 @@ const SettingsViewUI: FC = () => {
 
     return (
         <div>
+             {/* Mobile Navigation */}
+             <div className="md:hidden mb-6">
+                <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">Category</label>
+                <Select 
+                    value={activeCategory} 
+                    onChange={(e) => setActiveCategory(e.target.value)}
+                    className="w-full"
+                >
+                    {navCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    ))}
+                </Select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="md:col-span-1">
+                {/* Desktop Navigation */}
+                <div className="hidden md:block md:col-span-1">
                     <div className="space-y-2 sticky top-20">
                         {navCategories.map(cat => (
                             <NavButton key={cat.id} icon={cat.icon} label={cat.label} isActive={activeCategory === cat.id} onClick={() => setActiveCategory(cat.id)} />

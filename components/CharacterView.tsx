@@ -37,13 +37,20 @@ const useStoredImage = (id: string | undefined, hasImage: boolean | undefined) =
 
 // --- SUB-COMPONENTS ---
 
-const TabButton: FC<{ active: boolean; onClick: () => void; children: React.ReactNode; controls: string; }> = ({ active, onClick, children, controls }) => (
+const TabButton: FC<{ active: boolean; onClick: () => void; children: React.ReactNode; controls: string; }> = React.memo(({ active, onClick, children, controls }) => (
     <button role="tab" aria-selected={active} aria-controls={controls} onClick={onClick} className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${active ? 'border-indigo-500 text-[var(--foreground-primary)]' : 'border-transparent text-[var(--foreground-muted)] hover:border-[var(--border-primary)] hover:text-[var(--foreground-secondary)]'}`}>
         {children}
     </button>
-);
+));
 
-const DetailField: FC<{ label: string; field: 'backstory' | 'motivation' | 'personalityTraits' | 'flaws' | 'characterArc' | 'relationships' | 'appearance'; character: Character }> = ({ label, field, character }) => {
+interface DetailFieldProps {
+    label: string;
+    field: 'backstory' | 'motivation' | 'personalityTraits' | 'flaws' | 'characterArc' | 'relationships' | 'appearance';
+    value: string;
+}
+
+// Optimized DetailField: Takes primitive 'value' instead of full 'character' object to allow React.memo to work.
+const DetailField: FC<DetailFieldProps> = React.memo(({ label, field, value }) => {
     const { t, handleFieldChange, handleRegenerateField, isRegeneratingField } = useCharacterViewContext();
     const fullLabel = `${t('characters.edit.regenerate')} ${label}`;
     return (
@@ -54,10 +61,10 @@ const DetailField: FC<{ label: string; field: 'backstory' | 'motivation' | 'pers
                     {isRegeneratingField === field ? <Spinner /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-indigo-500 dark:text-indigo-400" aria-hidden="true">{ICONS.RECYCLE}</svg>}
                 </Button>
             </div>
-            <DebouncedTextarea value={character[field]} onDebouncedChange={value => handleFieldChange(field, value)} className="min-h-[120px]" aria-label={label} />
+            <DebouncedTextarea value={value} onDebouncedChange={newValue => handleFieldChange(field, newValue)} className="min-h-[120px]" aria-label={label} />
         </div>
     );
-};
+});
 
 const CharacterDossier: FC = () => {
     const { t, selectedCharacter, handleFieldChange, isGeneratingProfile, handleGeneratePortrait, isGeneratingPortrait, handleRefinePortrait, isRefiningPortrait, refinementPrompt, setRefinementPrompt, setIsDossierOpen, handleDelete } = useCharacterViewContext();
@@ -91,11 +98,11 @@ const CharacterDossier: FC = () => {
                 </div>
                 <div className="md:col-span-2">
                     <div className="flex justify-between items-center mb-2">
-                        <DebouncedInput aria-label={t('characters.edit.name')} value={selectedCharacter.name} onDebouncedChange={value => handleFieldChange('name', value)} className="bg-transparent border-0 p-0 text-2xl font-semibold text-[var(--foreground-primary)] h-auto focus:ring-0 focus:bg-[var(--foreground-primary)]/10 rounded-md px-2"/>
+                        <DebouncedInput aria-label={t('characters.edit.name')} value={selectedCharacter.name} onDebouncedChange={value => handleFieldChange('name', value)} className="bg-transparent border-0 p-0 text-2xl font-semibold text-[var(--foreground-primary)] h-auto focus:ring-0 focus:bg-[var(--foreground-primary)]/10 rounded-md px-2 w-full mr-2"/>
                         <Button variant="danger" size="sm" onClick={() => handleDelete(selectedCharacter.id)} title={t('characters.deleteLabel', {name: selectedCharacter.name})} aria-label={t('characters.deleteLabel', {name: selectedCharacter.name})}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>
                     </div>
-                    <div className="border-b border-[var(--border-primary)]">
-                        <div role="tablist" aria-label="Character editor tabs" className="flex items-center space-x-1">
+                    <div className="border-b border-[var(--border-primary)] overflow-x-auto">
+                        <div role="tablist" aria-label="Character editor tabs" className="flex items-center space-x-1 min-w-max">
                             <TabButton active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} controls="tabpanel-profile">{t('characters.tabs.profile')}</TabButton>
                             <TabButton active={activeTab === 'arc'} onClick={() => setActiveTab('arc')} controls="tabpanel-arc">{t('characters.tabs.arc')}</TabButton>
                             <TabButton active={activeTab === 'relationships'} onClick={() => setActiveTab('relationships')} controls="tabpanel-relationships">{t('characters.tabs.relationships')}</TabButton>
@@ -105,17 +112,17 @@ const CharacterDossier: FC = () => {
                     <div className="p-0 pt-4 max-h-[55vh] overflow-y-auto">
                         {isGeneratingProfile && <div className="flex items-center justify-center space-x-2 text-[var(--foreground-secondary)] p-8"><Spinner/><p>{t('characters.loading.profile')}</p></div>}
                         <div id="tabpanel-profile" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'profile'} className="space-y-4">
-                            <DetailField label={t('characters.edit.backstory')} field="backstory" character={selectedCharacter} />
-                            <DetailField label={t('characters.edit.motivation')} field="motivation" character={selectedCharacter} />
-                            <DetailField label={t('characters.edit.appearance')} field="appearance" character={selectedCharacter} />
-                            <DetailField label={t('characters.edit.personality')} field="personalityTraits" character={selectedCharacter} />
-                            <DetailField label={t('characters.edit.flaws')} field="flaws" character={selectedCharacter} />
+                            <DetailField label={t('characters.edit.backstory')} field="backstory" value={selectedCharacter.backstory} />
+                            <DetailField label={t('characters.edit.motivation')} field="motivation" value={selectedCharacter.motivation} />
+                            <DetailField label={t('characters.edit.appearance')} field="appearance" value={selectedCharacter.appearance} />
+                            <DetailField label={t('characters.edit.personality')} field="personalityTraits" value={selectedCharacter.personalityTraits} />
+                            <DetailField label={t('characters.edit.flaws')} field="flaws" value={selectedCharacter.flaws} />
                         </div>
                          <div id="tabpanel-arc" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'arc'} className="space-y-4">
-                            <DetailField label={t('characters.edit.arc')} field="characterArc" character={selectedCharacter} />
+                            <DetailField label={t('characters.edit.arc')} field="characterArc" value={selectedCharacter.characterArc} />
                         </div>
                         <div id="tabpanel-relationships" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'relationships'} className="space-y-4">
-                            <DetailField label={t('characters.edit.relationships')} field="relationships" character={selectedCharacter} />
+                            <DetailField label={t('characters.edit.relationships')} field="relationships" value={selectedCharacter.relationships} />
                         </div>
                         <div id="tabpanel-notes" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'notes'} className="space-y-2">
                             <label className="text-sm font-medium text-[var(--foreground-secondary)]">{t('characters.edit.notes')}</label>
@@ -180,7 +187,7 @@ const CharacterViewUI: FC = () => {
     const { t, handleAddNewManually, handleAddNewWithAI, characters, isDossierOpen } = useCharacterViewContext();
     return (
         <div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
                 <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
                     <AddNewCard 
                         title={t('characters.addNewManually')}

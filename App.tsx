@@ -70,7 +70,7 @@ const App: FC<AppProps> = ({ isNewUser }) => {
 
     if (isInitialLoad) {
         return (
-            <div className="flex h-screen w-screen items-center justify-center bg-[var(--background-primary)]">
+            <div className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]">
                 <Spinner className="w-16 h-16" />
             </div>
         );
@@ -82,11 +82,11 @@ const App: FC<AppProps> = ({ isNewUser }) => {
 
     return (
         <AppContext.Provider value={appState}>
-            <div className="flex h-screen bg-[var(--background-primary)] text-[var(--foreground-primary)]">
+            <div className="flex h-[100dvh] bg-[var(--background-primary)] text-[var(--foreground-primary)] overflow-hidden touch-none md:touch-auto">
                 <Sidebar currentView={currentView} onNavigate={handleNavigate} isSidebarOpen={appState.isSidebarOpen} setIsSidebarOpen={appState.setIsSidebarOpen} />
-                <div className="flex-1 flex flex-col h-screen overflow-hidden pt-16">
+                <div className="flex-1 flex flex-col h-full overflow-hidden pt-16 transition-all duration-300 ease-in-out md:ml-64">
                     <Header currentView={currentView} setIsSidebarOpen={appState.setIsSidebarOpen} isSidebarOpen={appState.isSidebarOpen} />
-                    <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 md:ml-64">
+                    <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth overscroll-none">
                         <ErrorBoundary>
                             {renderView()}
                         </ErrorBoundary>

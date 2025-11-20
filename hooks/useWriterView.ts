@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from './useTranslation';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { selectProjectData, selectManuscript, selectAllCharacters } from '../features/project/projectSelectors';
@@ -14,6 +14,9 @@ export const useWriterView = () => {
     const writerState = useAppSelector((state) => state.writer);
 
     const { activeTool, selection, dialogueCharacters, scenario, brainstormContext, tone, style, isLoading, generationHistory, activeHistoryIndex } = writerState;
+    
+    // Ref to hold the abort controller for the current generation request
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const selectedSectionId = useMemo(() => {
         // If there's a valid selection in state, use it. Otherwise, default to the first section.
@@ -28,6 +31,16 @@ export const useWriterView = () => {
             dispatch(writerActions.setSelectedSectionId(selectedSectionId));
         }
     }, [selectedSectionId, writerState.selectedSectionId, dispatch]);
+
+    // Cleanup function to abort any pending requests when unmounting or changing view
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            dispatch(writerActions.stopLoading());
+        };
+    }, [dispatch]);
 
     const handleContentChange = useCallback((index: number, content: string) => {
         const sectionId = manuscript[index].id;
@@ -66,7 +79,19 @@ export const useWriterView = () => {
     }, [manuscript, selectedSectionId, activeTool, selection, style, tone, dialogueCharacters, scenario, brainstormContext]);
 
     const handleGenerate = useCallback(() => {
+        // If already loading, checking explicitly to act as a "Stop" toggle
+        if (isLoading) {
+             if (abortControllerRef.current) {
+                 abortControllerRef.current.abort();
+             }
+             dispatch(writerActions.stopLoading());
+             return;
+        }
+
         if (isGenerateDisabled()) return;
+        
+        // Create new controller
+        abortControllerRef.current = new AbortController();
         
         const prompt = getPromptForTool();
         if (!prompt) return;
@@ -80,10 +105,28 @@ export const useWriterView = () => {
         };
         
         dispatch(writerActions.addHistory("")); // Add empty item to start
-        dispatch(streamGenerationThunk({ prompt, lang: language, onChunk })).finally(() => {
+        
+        dispatch(streamGenerationThunk({ 
+            prompt, 
+            lang: language, 
+            onChunk, 
+            signal: abortControllerRef.current.signal 
+        }))
+        .unwrap() // Unwrap to handle errors locally if needed
+        .catch((err) => {
+            if (err.name !== 'AbortError') {
+                console.error("Generation failed", err);
+                dispatch(writerActions.updateCurrentHistoryItem("Error generating content. Please try again later or check your API key."));
+            } else {
+                // User cancelled
+                dispatch(writerActions.updateCurrentHistoryItem(fullStream + " [Cancelled]"));
+            }
+        })
+        .finally(() => {
             dispatch(writerActions.stopLoading());
+            abortControllerRef.current = null;
         });
-    }, [dispatch, isGenerateDisabled, getPromptForTool, language]);
+    }, [dispatch, isLoading, isGenerateDisabled, getPromptForTool, language]);
     
     const handleNavigateHistory = useCallback((direction: 'prev' | 'next') => {
         dispatch(writerActions.navigateHistory(direction));
@@ -130,5 +173,4 @@ export const useWriterView = () => {
     };
 };
 
-// FIX: Export the return type of the hook for use in context.
 export type UseWriterViewReturnType = ReturnType<typeof useWriterView>;

@@ -24,6 +24,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     if (isOpen) {
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
       window.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
 
       // Focus trapping logic
       const modalElement = modalRef.current;
@@ -57,6 +58,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         modalElement.addEventListener('keydown', handleTabKey);
 
         return () => {
+          document.body.style.overflow = '';
           window.removeEventListener('keydown', handleEsc);
           modalElement.removeEventListener('keydown', handleTabKey);
           previouslyFocusedElement.current?.focus();
@@ -65,6 +67,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     }
     
     return () => {
+      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleEsc);
     };
   }, [isOpen, onClose]);
@@ -79,7 +82,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
   return (
     <div
-      className="fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center sm:items-center justify-center z-50 p-0 sm:p-4"
       style={{ animation: 'fade-in 0.2s ease-out' }}
       aria-labelledby="modal-title"
       role="dialog"
@@ -88,14 +91,14 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true"></div>
       <div 
         ref={modalRef} 
-        className={`relative bg-[var(--background-primary)] rounded-lg shadow-[var(--shadow-xl)] border border-[var(--border-primary)] w-full ${sizeClasses[size]} m-4 flex flex-col max-h-[90vh]`}
+        className={`relative bg-[var(--background-primary)] sm:rounded-lg shadow-[var(--shadow-xl)] border-0 sm:border border-[var(--border-primary)] w-full ${sizeClasses[size]} h-full sm:h-auto sm:max-h-[90vh] flex flex-col`}
         style={{ animation: 'scale-in 0.2s ease-out' }}
       >
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-primary)] flex-shrink-0">
           <h2 id="modal-title" className="text-xl font-semibold text-[var(--foreground-primary)]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] transition-colors"
+            className="p-2 -mr-2 text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] transition-colors"
             aria-label={t('common.close')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -103,7 +106,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             </svg>
           </button>
         </div>
-        <div className="p-6 overflow-y-auto">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
           {children}
         </div>
       </div>

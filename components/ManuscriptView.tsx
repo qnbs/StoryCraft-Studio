@@ -1,4 +1,4 @@
-import React, { FC, useState, useRef, useCallback, useEffect, ReactNode } from 'react';
+import React, { FC, useState, useRef, useCallback, ReactNode, useMemo } from 'react';
 import { Character, World } from '../types';
 import { Card, CardContent, CardHeader } from './ui/Card';
 import { ICONS } from '../constants';
@@ -67,41 +67,134 @@ const useResizablePanels = (initialLeft = 25, initialRight = 25) => {
 };
 
 // --- Resizer Component ---
-const Resizer: FC<{ onMouseDown: (e: React.MouseEvent) => void }> = ({ onMouseDown }) => (
+const Resizer: FC<{ onMouseDown: (e: React.MouseEvent) => void }> = React.memo(({ onMouseDown }) => (
     <div 
         onMouseDown={onMouseDown}
-        className="w-1.5 h-full cursor-col-resize flex items-center justify-center group"
+        className="w-2 h-full cursor-col-resize flex items-center justify-center group -ml-1 z-10 hover:scale-x-110 transition-transform"
     >
-        <div className="w-px h-full bg-[var(--border-primary)] group-hover:bg-[var(--border-interactive)] transition-colors duration-200"></div>
+        <div className="w-0.5 h-8 bg-[var(--border-primary)] group-hover:bg-indigo-400 group-hover:h-full transition-all duration-300 rounded-full"></div>
     </div>
-);
+));
 
 
 // --- SUB-COMPONENTS ---
 
+// Memoized Item Component for Performance
+interface NavigatorItemProps {
+    section: { id: string; title: string; };
+    index: number;
+    isActive: boolean;
+    isDragging: boolean;
+    isFirst: boolean;
+    isLast: boolean;
+    onSelect: (id: string) => void;
+    onDragStart: (index: number) => void;
+    onDragEnter: (index: number) => void;
+    onDragEnd: () => void;
+    onMoveUp: (index: number) => void;
+    onMoveDown: (index: number) => void;
+    t: (key: string, params?: any) => string;
+}
+
+const NavigatorItem: FC<NavigatorItemProps> = React.memo(({ 
+    section, index, isActive, isDragging, isFirst, isLast, 
+    onSelect, onDragStart, onDragEnter, onDragEnd, onMoveUp, onMoveDown, t 
+}) => {
+    return (
+        <div 
+            draggable 
+            onDragStart={() => onDragStart(index)} 
+            onDragEnter={() => onDragEnter(index)} 
+            onDragEnd={onDragEnd} 
+            onDragOver={(e) => e.preventDefault()}
+        >
+            <div 
+                onClick={() => onSelect(section.id)} 
+                className={`group rounded-md cursor-pointer p-2 flex items-center justify-between text-left transition-all duration-200 w-full ${isActive ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'} ${isDragging ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}
+            >
+                <span className="font-medium text-sm flex-grow truncate">{section.title}</span>
+                 <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onMoveUp(index); }} 
+                        disabled={isFirst} 
+                        className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20 focus:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-500" 
+                        title={t('common.moveUp')} 
+                        aria-label={t('outline.moveUp', { title: section.title })}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onMoveDown(index); }} 
+                        disabled={isLast} 
+                        className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20 focus:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-500" 
+                        title={t('common.moveDown')} 
+                        aria-label={t('outline.moveDown', { title: section.title })}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                    </button>
+                    <div 
+                        title={t('outline.result.dragHandleTooltip')} 
+                        aria-label={t('outline.result.dragHandleTooltip')} 
+                        className={`cursor-move p-1 ${isActive ? 'text-indigo-200 group-hover:text-white' : 'text-[var(--foreground-muted)] group-hover:text-[var(--foreground-primary)]'}`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 "><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.25h16.5" /></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+NavigatorItem.displayName = 'NavigatorItem';
+
 const StoryNavigator: FC<{onSectionSelect?: () => void}> = React.memo(({ onSectionSelect }) => {
     const { t, manuscript, activeSectionId, setActiveSectionId, draggedItem, dragOverItem, handleDragSort, handleMoveSection, draggingIndex, setDraggingIndex } = useManuscriptViewContext();
     
-    const handleSelect = (id: string) => {
+    const handleSelect = useCallback((id: string) => {
         setActiveSectionId(id);
         onSectionSelect?.();
-    }
+    }, [setActiveSectionId, onSectionSelect]);
+
+    const handleDragStart = useCallback((index: number) => {
+        draggedItem.current = index;
+        setDraggingIndex(index);
+    }, [setDraggingIndex, draggedItem]);
+
+    const handleDragEnter = useCallback((index: number) => {
+        dragOverItem.current = index;
+    }, [dragOverItem]);
+
+    const handleDragEnd = useCallback(() => {
+        handleDragSort();
+        setDraggingIndex(null);
+    }, [handleDragSort, setDraggingIndex]);
+
+    const handleMoveUp = useCallback((index: number) => {
+        handleMoveSection(index, 'up');
+    }, [handleMoveSection]);
+
+    const handleMoveDown = useCallback((index: number) => {
+        handleMoveSection(index, 'down');
+    }, [handleMoveSection]);
 
     return (
-        <div className="space-y-1 h-full overflow-y-auto p-2">
+        <div className="space-y-1 h-full overflow-y-auto p-2 no-scrollbar">
             {(Array.isArray(manuscript) ? manuscript : []).map((section, index) => (
-                <div key={section.id} draggable onDragStart={() => { draggedItem.current = index; setDraggingIndex(index); }} onDragEnter={() => dragOverItem.current = index} onDragEnd={() => { handleDragSort(); setDraggingIndex(null); }} onDragOver={(e) => e.preventDefault()}>
-                    <div onClick={() => handleSelect(section.id)} className={`group rounded-md cursor-pointer p-2 flex items-center justify-between text-left transition-all duration-200 w-full ${activeSectionId === section.id ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
-                        <span className="font-medium text-sm flex-grow truncate">{section.title}</span>
-                         <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                            <button onClick={(e) => { e.stopPropagation(); handleMoveSection(index, 'up'); }} disabled={index === 0} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveUp')} aria-label={t('common.moveUp')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg></button>
-                            <button onClick={(e) => { e.stopPropagation(); handleMoveSection(index, 'down'); }} disabled={index === manuscript.length - 1} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveDown')} aria-label={t('common.moveDown')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
-                            <div title={t('outline.result.dragHandleTooltip')} aria-label={t('outline.result.dragHandleTooltip')} className={`cursor-move p-1 ${activeSectionId === section.id ? 'text-indigo-200 group-hover:text-white' : 'text-[var(--foreground-muted)] group-hover:text-[var(--foreground-primary)]'}`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 "><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.25h16.5" /></svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <NavigatorItem
+                    key={section.id}
+                    section={section}
+                    index={index}
+                    isActive={activeSectionId === section.id}
+                    isDragging={draggingIndex === index}
+                    isFirst={index === 0}
+                    isLast={index === manuscript.length - 1}
+                    onSelect={handleSelect}
+                    onDragStart={handleDragStart}
+                    onDragEnter={handleDragEnter}
+                    onDragEnd={handleDragEnd}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    t={t}
+                />
             ))}
         </div>
     );
@@ -121,7 +214,12 @@ const ManuscriptEditor: FC = React.memo(() => {
         wordWrap: 'break-word',
     };
 
-    const parseAndRenderContent = useCallback((text: string): ReactNode => {
+    // Memoize the parsed content to prevent recalculation on every render/keystroke
+    // This significantly improves performance for large documents.
+    const renderedContent = useMemo(() => {
+        if(!activeSection?.content) return '';
+
+        const text = activeSection.content;
         const regex = /([@#][\w\s]+?)(?=[.,:;!?\s]|$)/g;
         const characterMap = new Map(characters.map(c => [c.name.toLowerCase(), c]));
         const worldMap = new Map(worlds.map(w => [w.name.toLowerCase(), w]));
@@ -129,8 +227,6 @@ const ManuscriptEditor: FC = React.memo(() => {
         let lastIndex = 0;
         const parts: ReactNode[] = [];
         
-        if(!text) return '';
-
         text.replace(regex, (match, p1, offset) => {
             const symbol = p1[0];
             const name = p1.substring(1).toLowerCase();
@@ -162,11 +258,21 @@ const ManuscriptEditor: FC = React.memo(() => {
         }
 
         return <>{parts}</>;
-    }, [characters, worlds]);
+    }, [activeSection?.content, characters, worlds]);
 
     if (!activeSection) {
         return <div className="flex h-full w-full items-center justify-center text-center text-[var(--foreground-muted)] p-4"><p>{t('manuscript.select')}</p></div>;
     }
+
+    // Handle mobile specific logic for mentions (docking to bottom as sheet)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const mentionStyle: React.CSSProperties = isMobile 
+        ? { bottom: '0', left: '0', right: '0', width: '100%', maxHeight: '50vh', borderTop: '1px solid var(--border-primary)', borderRadius: '16px 16px 0 0' } 
+        : { top: mentionPosition?.top, left: mentionPosition?.left };
+
+    const handleSelectionEvents = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        handleContentChange(activeSection.id, e.currentTarget.value);
+    };
 
     return (
         <div className="relative h-full flex flex-col">
@@ -174,32 +280,41 @@ const ManuscriptEditor: FC = React.memo(() => {
                 ref={editorRef}
                 value={activeSection.content}
                 onChange={(e) => handleContentChange(activeSection.id, e.target.value)}
-                onSelect={(e: any) => handleContentChange(activeSection.id, e.target.value)} // Trigger mention check on select
-                onKeyUp={(e: any) => handleContentChange(activeSection.id, e.target.value)} // and keyup
-                onClick={(e: any) => handleContentChange(activeSection.id, e.target.value)} // and click
-                className="h-full w-full text-lg leading-relaxed resize-none p-4 sm:p-6 bg-transparent border-0 focus:ring-0 flex-grow caret-[var(--foreground-primary)] text-transparent"
+                onSelect={handleSelectionEvents} // Trigger mention check on select
+                onKeyUp={handleSelectionEvents} // and keyup
+                onClick={handleSelectionEvents} // and click
+                className="h-full w-full leading-relaxed resize-none p-4 sm:p-6 md:p-12 bg-transparent border-0 focus:ring-0 flex-grow caret-[var(--foreground-primary)] text-transparent max-w-3xl mx-auto selection:bg-indigo-500/30"
                 placeholder={activeSection.prompt || t('manuscript.contentPlaceholder', { title: activeSection.title })}
+                style={{
+                     fontSize: `${settings.fontSize}px`,
+                     fontFamily: settings.editorFont,
+                     lineHeight: settings.lineSpacing
+                }}
             />
             <div 
-                className="absolute inset-0 p-4 sm:p-6 text-lg leading-relaxed pointer-events-none overflow-auto" 
+                className="absolute inset-0 p-4 sm:p-6 md:p-12 leading-relaxed pointer-events-none overflow-auto max-w-3xl mx-auto" 
                 style={editorStyles}
                 aria-hidden="true"
             >
-                {parseAndRenderContent(activeSection.content)}
+                {renderedContent}
             </div>
-             <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/80 px-2 py-1 rounded-full pointer-events-none">
-                {activeSectionStats.wordCount} {t('dashboard.stats.totalWordCount')}
+             <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/90 border border-[var(--border-primary)] px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm shadow-sm">
+                {activeSectionStats.wordCount} words
             </div>
-            {mentions.length > 0 && mentionPosition !== null && (
-                <div className="absolute z-10 w-64 bg-[var(--background-secondary)] border border-[var(--border-primary)] rounded-md shadow-lg" style={{ top: mentionPosition.top, left: mentionPosition.left }}>
-                    <ul className="max-h-48 overflow-y-auto">
-                        {mentions.map(item => (
-                            <li key={item.id} onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(item); }} className="px-3 py-2 text-sm text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white cursor-pointer flex items-center space-x-2">
-                               {item.type === 'character' ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[var(--foreground-muted)]">{ICONS.CHARACTERS}</svg> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[var(--foreground-muted)]">{ICONS.WORLD}</svg>}
-                               <span>{item.name}</span>
-                            </li>
-                        ))}
-                    </ul>
+            {mentions.length > 0 && (mentionPosition !== null || isMobile) && (
+                <div className={`absolute z-20 bg-[var(--background-secondary)] border border-[var(--border-primary)] shadow-2xl overflow-hidden flex flex-col ${!isMobile ? 'rounded-md w-64' : ''}`} style={mentionStyle}>
+                    {isMobile && <div className="flex justify-center p-3 bg-[var(--background-secondary)] cursor-grab active:cursor-grabbing"><div className="w-12 h-1.5 bg-[var(--border-primary)] rounded-full"></div></div>}
+                    <div className="max-h-64 overflow-y-auto p-2">
+                        <p className="text-xs font-semibold text-[var(--foreground-muted)] px-2 mb-2 uppercase tracking-wider">{t('manuscript.mention.suggestions')}</p>
+                        <ul className="space-y-1">
+                            {mentions.map(item => (
+                                <li key={item.id} onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(item); }} className="px-3 py-3 rounded-md text-sm text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white cursor-pointer flex items-center space-x-3 transition-colors">
+                                {item.type === 'character' ? <div className="p-1 bg-blue-500/20 rounded flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-blue-400">{ICONS.CHARACTERS}</svg></div> : <div className="p-1 bg-emerald-500/20 rounded flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-emerald-400">{ICONS.WORLD}</svg></div>}
+                                <span className="font-medium truncate">{item.name}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
             )}
         </div>
@@ -220,16 +335,16 @@ const InspectorPanel: FC = React.memo(() => {
                 <div>
                     <label htmlFor="projectLogline" className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">{t('dashboard.details.logline')}</label>
                     <DebouncedTextarea id="projectLogline" value={project.logline} onDebouncedChange={(value) => dispatch(projectActions.updateLogline(value))} placeholder={t('dashboard.details.loglinePlaceholder')} rows={3} />
-                    <Button onClick={handleGenerateLoglines} disabled={isAiLoading} variant="ghost" className="text-indigo-500 dark:text-indigo-400 hover:bg-indigo-500/10 dark:hover:bg-indigo-900/80 mt-2 p-2 w-full">
-                        {isAiLoading ? <Spinner /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2" aria-hidden="true">{ICONS.SPARKLES}</svg>}
+                    <Button onClick={handleGenerateLoglines} disabled={isAiLoading} variant="ghost" className="text-indigo-500 dark:text-indigo-400 hover:bg-indigo-500/10 dark:hover:bg-indigo-900/80 mt-2 p-2 w-full justify-start">
+                        {isAiLoading ? <Spinner className="mr-2" /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2" aria-hidden="true">{ICONS.SPARKLES}</svg>}
                         {t('dashboard.details.aiLoglineButton')}
                     </Button>
                 </div>
                  <Card>
                     <CardHeader><h3 className="text-base font-semibold">{t('manuscript.inspector.statsTitle')}</h3></CardHeader>
-                    <CardContent className="text-sm space-y-2">
-                        <div className="flex justify-between"><span>{t('dashboard.stats.totalWordCount')}</span><span className="font-bold">{activeSectionStats.wordCount.toLocaleString()}</span></div>
-                        <div className="flex justify-between"><span>{t('manuscript.inspector.charCount')}</span><span className="font-bold">{activeSectionStats.charCount.toLocaleString()}</span></div>
+                    <CardContent className="text-sm space-y-3">
+                        <div className="flex justify-between border-b border-[var(--border-primary)]/50 pb-2"><span>{t('dashboard.stats.totalWordCount')}</span><span className="font-bold">{activeSectionStats.wordCount.toLocaleString()}</span></div>
+                        <div className="flex justify-between border-b border-[var(--border-primary)]/50 pb-2"><span>{t('manuscript.inspector.charCount')}</span><span className="font-bold">{activeSectionStats.charCount.toLocaleString()}</span></div>
                         <div className="flex justify-between"><span>{t('manuscript.inspector.readTime')}</span><span className="font-bold">{t('manuscript.inspector.readTimeValue', { time: String(activeSectionStats.readTime) })}</span></div>
                     </CardContent>
                 </Card>
@@ -266,44 +381,42 @@ const ManuscriptViewUI: FC = () => {
     return (
         <div className="h-full flex flex-col">
             {/* Mobile Header */}
-            <header className="lg:hidden flex-shrink-0 flex justify-between items-center p-2 mb-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-primary)]">
-                <Button variant="secondary" onClick={() => setIsNavDrawerOpen(true)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.OUTLINE}</svg>
-                    <span className="hidden sm:inline ml-2">{t('manuscript.navigator.title')}</span>
+            <header className="lg:hidden flex-shrink-0 flex justify-between items-center p-2 mb-2 bg-[var(--background-secondary)]/80 backdrop-blur-md border-b border-[var(--border-primary)] sticky top-0 z-20">
+                <Button variant="ghost" onClick={() => setIsNavDrawerOpen(true)} size="sm" className="-ml-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                 </Button>
-                <h1 className="text-lg font-bold truncate px-4 text-center">{activeSection?.title || project.title}</h1>
-                <Button variant="secondary" onClick={() => setIsInspectorDrawerOpen(true)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.DOCUMENT_TEXT}</svg>
-                    <span className="hidden sm:inline ml-2">{t('manuscript.inspector.title')}</span>
+                <h1 className="text-sm font-bold truncate px-2 text-center flex-grow text-[var(--foreground-primary)]">{activeSection?.title || project.title}</h1>
+                <Button variant="ghost" onClick={() => setIsInspectorDrawerOpen(true)} size="sm" className="-mr-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
                 </Button>
             </header>
 
             {/* Main Content Area */}
             <main className="flex-grow min-h-0 hidden lg:flex lg:flex-row">
                 {/* Desktop Navigator */}
-                <Card className="h-full flex flex-col" style={{ flexBasis: `${leftPanelWidth}%` }}>
-                    <CardHeader><h2 className="font-semibold text-lg">{t('manuscript.navigator.title')}</h2></CardHeader>
+                <Card className="h-full flex flex-col rounded-r-none border-r-0" style={{ flexBasis: `${leftPanelWidth}%` }}>
+                    <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.navigator.title')}</h2></CardHeader>
                     <div className="flex-grow overflow-y-auto"><StoryNavigator /></div>
                 </Card>
                 
                 <Resizer onMouseDown={startLeftResize} />
 
                 {/* Editor */}
-                <Card className="h-full flex-grow p-0">
+                <Card className="h-full flex-grow p-0 rounded-none border-x-0 shadow-none z-0 bg-[var(--background-primary)]">
                     <ManuscriptEditor />
                 </Card>
                 
                 <Resizer onMouseDown={startRightResize} />
 
                 {/* Desktop Inspector */}
-                 <Card className="h-full flex flex-col" style={{ flexBasis: `${rightPanelWidth}%` }}>
-                    <CardHeader><h2 className="font-semibold text-lg">{t('manuscript.inspector.title')}</h2></CardHeader>
+                 <Card className="h-full flex flex-col rounded-l-none border-l-0" style={{ flexBasis: `${rightPanelWidth}%` }}>
+                    <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.inspector.title')}</h2></CardHeader>
                     <div className="flex-grow overflow-y-auto"><InspectorPanel /></div>
                 </Card>
             </main>
             
             {/* Mobile Editor (takes full space) */}
-            <main className="flex-grow min-h-0 lg:hidden bg-[var(--background-secondary)] rounded-lg border border-[var(--border-primary)]">
+            <main className="flex-grow min-h-0 lg:hidden bg-[var(--background-secondary)] overflow-hidden relative">
                 <ManuscriptEditor />
             </main>
 

@@ -1,4 +1,5 @@
 import { EntityState } from '@reduxjs/toolkit';
+import { Type } from '@google/genai';
 
 export type View = 'dashboard' | 'manuscript' | 'writer' | 'templates' | 'outline' | 'characters' | 'world' | 'export' | 'settings' | 'help';
 
@@ -117,4 +118,68 @@ export interface ProjectSnapshot {
   date: string;
   name: string;
   wordCount: number;
+}
+
+// AI Types
+export interface GeminiSchema {
+    type: Type;
+    items?: GeminiSchema;
+    properties?: Record<string, GeminiSchema>;
+    required?: string[];
+    description?: string;
+}
+
+export interface OutlineGenerationParams {
+    genre: string;
+    idea: string;
+    characters?: string;
+    setting?: string;
+    pacing?: string;
+    numChapters: number;
+    includeTwist: boolean;
+    lang: string;
+}
+
+export interface CustomTemplateParams {
+    customConcept: string;
+    customElements: string;
+    numSections: number;
+    lang: string;
+}
+
+// Speech Recognition Types
+declare global {
+    interface Window {
+        SpeechRecognition: any;
+        webkitSpeechRecognition: any;
+    }
+}
+
+export interface ISpeechRecognitionEvent {
+    resultIndex: number;
+    results: {
+        [key: number]: {
+            isFinal: boolean;
+            [key: number]: {
+                transcript: string;
+            };
+        };
+        length: number;
+    };
+}
+
+export interface ISpeechRecognitionError {
+    error: string;
+    message?: string;
+}
+
+export interface ISpeechRecognition {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onresult: (event: ISpeechRecognitionEvent) => void;
+    onend: () => void;
+    onerror: (event: ISpeechRecognitionError) => void;
 }

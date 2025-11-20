@@ -19,9 +19,9 @@ const NavItem: React.FC<{
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200 active:scale-95 group ${
+      className={`relative flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200 active:scale-[0.98] group touch-manipulation ${
         isActive
-          ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]'
+          ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)] shadow-sm'
           : 'text-[var(--foreground-secondary)] hover:bg-[var(--nav-background-hover)] hover:text-[var(--foreground-primary)]'
       }`}
       aria-current={isActive ? 'page' : undefined}
@@ -33,7 +33,7 @@ const NavItem: React.FC<{
         viewBox="0 0 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className="w-6 h-6 mr-3"
+        className="w-6 h-6 mr-3 transition-transform duration-200 group-hover:scale-110"
         aria-hidden="true"
       >
         {icon}
@@ -68,34 +68,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isSid
   ];
 
   return (
-    <aside id="sidebar" className={`bg-[var(--background-secondary)]/70 backdrop-blur-lg text-[var(--foreground-primary)] w-4/5 max-w-xs md:w-64 fixed top-0 left-0 h-full p-4 border-r border-[var(--border-primary)]/50 z-30 flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:top-16 md:h-[calc(100vh-4rem)]`}>
-      <div className="flex-grow flex flex-col">
-        <div className="md:hidden h-16 flex items-center px-4">
-            <h2 className="text-xl font-bold">Menu</h2>
+    <>
+      {/* Backdrop Overlay for Mobile */}
+      <div 
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity duration-300 md:hidden ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside id="sidebar" className={`bg-[var(--background-secondary)]/95 backdrop-blur-xl text-[var(--foreground-primary)] w-[85vw] max-w-xs md:w-64 fixed top-0 left-0 h-[100dvh] p-4 border-r border-[var(--border-primary)]/50 z-40 flex flex-col justify-between transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) shadow-2xl md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:top-16 md:h-[calc(100vh-4rem)]`}>
+        <div className="flex-grow flex flex-col overflow-y-auto no-scrollbar">
+          <div className="md:hidden h-16 flex items-center px-4 mb-2 border-b border-[var(--border-primary)]/50">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">StoryCraft</h2>
+          </div>
+          <nav className="flex flex-col space-y-1 mt-2 md:mt-0" aria-label="Main navigation">
+              {navItems.map((item) => (
+              <NavItem
+                  key={item.id}
+                  icon={item.icon}
+                  label={item.label}
+                  isActive={currentView === item.id}
+                  onClick={() => handleNavigation(item.id as View)}
+              />
+              ))}
+          </nav>
         </div>
-        <nav className="flex flex-col space-y-2" aria-label="Main navigation">
-            {navItems.map((item) => (
+        <nav className="flex flex-col space-y-1 mt-4 border-t border-[var(--border-primary)]/50 pt-4" aria-label="Secondary navigation">
+          {bottomNavItems.map((item) => (
             <NavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                isActive={currentView === item.id}
-                onClick={() => handleNavigation(item.id as View)}
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              isActive={currentView === item.id}
+              onClick={() => handleNavigation(item.id as View)}
             />
-            ))}
+          ))}
         </nav>
-      </div>
-      <nav className="flex flex-col space-y-2" aria-label="Secondary navigation">
-        {bottomNavItems.map((item) => (
-          <NavItem
-            key={item.id}
-            icon={item.icon}
-            label={item.label}
-            isActive={currentView === item.id}
-            onClick={() => handleNavigation(item.id as View)}
-          />
-        ))}
-      </nav>
-    </aside>
+      </aside>
+    </>
   );
 };

@@ -40,7 +40,7 @@ export const useSettingsView = () => {
     setLanguage(e.target.value as 'en' | 'de');
   }, [setLanguage]);
 
-  const handleSettingChange = useCallback((key: keyof typeof settings, value: any) => {
+  const handleSettingChange = useCallback((key: keyof typeof settings, value: string | number | boolean) => {
     switch(key) {
         case 'theme': dispatch(settingsActions.setTheme(value as Theme)); break;
         case 'editorFont': dispatch(settingsActions.setEditorFont(value as EditorFont)); break;

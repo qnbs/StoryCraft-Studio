@@ -37,13 +37,19 @@ const useStoredImage = (id: string | undefined, hasImage: boolean | undefined) =
 
 // --- SUB-COMPONENTS ---
 
-const TabButton: FC<{ active: boolean; onClick: () => void; children: React.ReactNode; controls: string; }> = ({ active, onClick, children, controls }) => (
+const TabButton: FC<{ active: boolean; onClick: () => void; children: React.ReactNode; controls: string; }> = React.memo(({ active, onClick, children, controls }) => (
     <button role="tab" aria-selected={active} aria-controls={controls} onClick={onClick} className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${active ? 'border-indigo-500 text-[var(--foreground-primary)]' : 'border-transparent text-[var(--foreground-muted)] hover:border-[var(--border-primary)] hover:text-[var(--foreground-secondary)]'}`}>
         {children}
     </button>
-);
+));
 
-const DetailField: FC<{ label: string; field: 'geography' | 'culture' | 'magicSystem'; world: World }> = ({ label, field, world }) => {
+interface DetailFieldProps {
+    label: string;
+    field: 'geography' | 'culture' | 'magicSystem';
+    value: string;
+}
+
+const DetailField: FC<DetailFieldProps> = React.memo(({ label, field, value }) => {
     const { t, handleFieldChange, handleRegenerateField, isRegeneratingField } = useWorldViewContext();
     const fullLabel = `${t('characters.edit.regenerate')} ${label}`;
     return (
@@ -54,10 +60,10 @@ const DetailField: FC<{ label: string; field: 'geography' | 'culture' | 'magicSy
                     {isRegeneratingField === field ? <Spinner /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-indigo-500 dark:text-indigo-400" aria-hidden="true">{ICONS.RECYCLE}</svg>}
                 </Button>
             </div>
-            <DebouncedTextarea value={world[field]} onDebouncedChange={value => handleFieldChange(field, value)} className="min-h-[120px]" aria-label={label} />
+            <DebouncedTextarea value={value} onDebouncedChange={newValue => handleFieldChange(field, newValue)} className="min-h-[120px]" aria-label={label} />
         </div>
     );
-};
+});
 
 const WorldAtlas: FC = () => {
     const { t, selectedWorld, handleFieldChange, isGeneratingProfile, handleGenerateImage, isGeneratingImage, setIsAtlasOpen, handleDelete, refinementPrompt, setRefinementPrompt, handleRefineImage, isRefiningImage,
@@ -95,11 +101,11 @@ const WorldAtlas: FC = () => {
                 </div>
                 <div className="md:col-span-2">
                     <div className="flex justify-between items-center p-0 mb-2">
-                         <DebouncedInput aria-label={t('worlds.edit.name')} value={selectedWorld.name} onDebouncedChange={value => handleFieldChange('name', value)} className="bg-transparent border-0 p-0 text-2xl font-semibold text-[var(--foreground-primary)] h-auto focus:ring-0 focus:bg-[var(--foreground-primary)]/10 rounded-md px-2"/>
+                         <DebouncedInput aria-label={t('worlds.edit.name')} value={selectedWorld.name} onDebouncedChange={value => handleFieldChange('name', value)} className="bg-transparent border-0 p-0 text-2xl font-semibold text-[var(--foreground-primary)] h-auto focus:ring-0 focus:bg-[var(--foreground-primary)]/10 rounded-md px-2 w-full mr-2"/>
                          <Button variant="danger" size="sm" onClick={() => handleDelete(selectedWorld.id)} title={t('worlds.deleteLabel', {name: selectedWorld.name})} aria-label={t('worlds.deleteLabel', {name: selectedWorld.name})}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>
                     </div>
-                     <div className="border-b border-[var(--border-primary)]">
-                         <div role="tablist" aria-label="World editor tabs" className="flex items-center space-x-1">
+                     <div className="border-b border-[var(--border-primary)] overflow-x-auto">
+                         <div role="tablist" aria-label="World editor tabs" className="flex items-center space-x-1 min-w-max">
                             <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} controls="tabpanel-overview-w">{t('worlds.tabs.overview')}</TabButton>
                             <TabButton active={activeTab === 'details'} onClick={() => setActiveTab('details')} controls="tabpanel-details-w">{t('worlds.tabs.details')}</TabButton>
                             <TabButton active={activeTab === 'timeline'} onClick={() => setActiveTab('timeline')} controls="tabpanel-timeline-w">{t('worlds.tabs.timeline')}</TabButton>
@@ -114,9 +120,9 @@ const WorldAtlas: FC = () => {
                             <DebouncedTextarea value={selectedWorld.description} onDebouncedChange={value => handleFieldChange('description', value)} className="min-h-[150px]" aria-label={t('worlds.edit.description')}/>
                         </div>
                         <div id="tabpanel-details-w" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'details'} className="space-y-4">
-                            <DetailField label={t('worlds.edit.geography')} field="geography" world={selectedWorld} />
-                            <DetailField label={t('worlds.edit.culture')} field="culture" world={selectedWorld} />
-                            <DetailField label={t('worlds.edit.magicSystem')} field="magicSystem" world={selectedWorld} />
+                            <DetailField label={t('worlds.edit.geography')} field="geography" value={selectedWorld.geography} />
+                            <DetailField label={t('worlds.edit.culture')} field="culture" value={selectedWorld.culture} />
+                            <DetailField label={t('worlds.edit.magicSystem')} field="magicSystem" value={selectedWorld.magicSystem} />
                         </div>
                         <div id="tabpanel-timeline-w" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'timeline'} className="space-y-4">
                             {(selectedWorld.timeline || []).map((event, index) => (
@@ -202,7 +208,7 @@ const WorldViewUI: FC = () => {
     const { t, handleAddNewManually, handleAddNewWithAI, worlds, isAtlasOpen } = useWorldViewContext();
     return (
         <div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 <div className="animate-in" style={{ '--index': 0 } as React.CSSProperties}>
                     <AddNewCard 
                         title={t('worlds.addNewManually')}

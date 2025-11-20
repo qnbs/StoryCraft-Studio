@@ -1,7 +1,8 @@
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Character } from '../../types';
 
-type WriterTool = 'continue' | 'improve' | 'changeTone' | 'dialogue' | 'brainstorm' | 'synopsis';
+export type WriterTool = 'continue' | 'improve' | 'changeTone' | 'dialogue' | 'brainstorm' | 'synopsis';
 
 export interface WriterState {
     activeTool: WriterTool;

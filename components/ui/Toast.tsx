@@ -1,17 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode, FC, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { createContext, useContext, FC, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { statusActions, Notification, NotificationType } from '../../features/status/statusSlice';
 
-type ToastType = 'success' | 'error' | 'info';
-
-interface ToastMessage {
-  id: string;
-  type: ToastType;
-  title: string;
-  description?: string;
-}
-
+// Context remains to provide a convenient hook API for components
 interface ToastContextType {
-  addToast: (type: ToastType, title: string, description?: string) => void;
+  addToast: (type: NotificationType, title: string, description?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -19,6 +12,9 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
+    // Fallback if used outside provider, though ideally shouldn't happen
+    // We can also just use dispatch directly in components if we wanted to remove the Context entirely,
+    // but keeping the hook API is cleaner for the existing codebase.
     throw new Error('useToast must be used within a ToastProvider');
   }
   
@@ -29,7 +25,7 @@ export const useToast = () => {
   };
 };
 
-const Toast: FC<{ message: ToastMessage; onDismiss: (id: string) => void }> = ({ message, onDismiss }) => {
+const ToastItem: FC<{ message: Notification; onDismiss: (id: string) => void }> = ({ message, onDismiss }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onDismiss(message.id);
@@ -93,16 +89,16 @@ const Toast: FC<{ message: ToastMessage; onDismiss: (id: string) => void }> = ({
   );
 };
 
-export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+export const ToastProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
+  const dispatch = useAppDispatch();
+  const notifications = useAppSelector(state => state.status.notifications);
 
-  const addToast = (type: ToastType, title: string, description?: string) => {
-    const id = uuidv4();
-    setToasts((prevToasts) => [...prevToasts, { id, type, title, description }]);
+  const addToast = (type: NotificationType, title: string, description?: string) => {
+    dispatch(statusActions.addNotification({ type, title, description }));
   };
 
   const removeToast = (id: string) => {
-    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+    dispatch(statusActions.removeNotification(id));
   };
 
   return (
@@ -110,8 +106,8 @@ export const ToastProvider: FC<{ children: ReactNode }> = ({ children }) => {
       {children}
       <div className="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-end z-50">
         <div className="w-full flex flex-col items-center space-y-4 sm:items-end">
-          {toasts.map((toast) => (
-            <Toast key={toast.id} message={toast} onDismiss={removeToast} />
+          {notifications.map((toast) => (
+            <ToastItem key={toast.id} message={toast} onDismiss={removeToast} />
           ))}
         </div>
       </div>

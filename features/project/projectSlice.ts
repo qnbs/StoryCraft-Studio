@@ -1,8 +1,9 @@
+
 import { createSlice, createAsyncThunk, createEntityAdapter, PayloadAction, EntityState } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { getPrompts, generateText, generateJson, generateImage, streamText } from '../../services/geminiService';
 import { RootState } from '../../app/store';
-import { Character, World, StorySection, OutlineSection, StoryProject } from '../../types';
+import { Character, World, StorySection, OutlineSection, OutlineGenerationParams, CustomTemplateParams } from '../../types';
 import { dbService } from '../../services/dbService';
 
 // --- Entity Adapters ---
@@ -32,6 +33,18 @@ export interface ProjectData {
     }[];
 }
 
+// Helper interface for importing legacy or current formats
+interface ImportedProjectData {
+    title: string;
+    logline: string;
+    characters: Character[] | { ids: string[], entities: Record<string, Character> };
+    worlds: World[] | { ids: string[], entities: Record<string, World> };
+    outline?: OutlineSection[];
+    manuscript?: StorySection[];
+    projectGoals?: ProjectData['projectGoals'];
+    writingHistory?: ProjectData['writingHistory'];
+}
+
 const initialState: { data: ProjectData } = {
     data: {
         title: '',
@@ -57,8 +70,8 @@ export const generateLoglineSuggestionsThunk = createAsyncThunk(
         const creativity = state.settings.aiCreativity;
         
         const { prompt, schema } = getPrompts('logline', { project, lang });
-        const response = await generateJson(prompt, creativity, schema);
-        return response as string[];
+        const response = await generateJson<string[]>(prompt, creativity, schema);
+        return response;
     }
 );
 
@@ -66,7 +79,7 @@ export const importProjectThunk = createAsyncThunk(
     'project/importProject',
     async (file: File) => {
         const text = await file.text();
-        const projectData: any = JSON.parse(text); // Use any to handle old format
+        const projectData = JSON.parse(text) as ImportedProjectData;
         
         const charactersState = charactersAdapter.getInitialState();
         const worldsState = worldsAdapter.getInitialState();
@@ -74,7 +87,13 @@ export const importProjectThunk = createAsyncThunk(
         const charactersToSet: Character[] = [];
         const worldsToSet: World[] = [];
 
-        const characterArray: any[] = Array.isArray(projectData.characters) ? projectData.characters : projectData.characters.ids.map((id: string) => projectData.characters.entities[id]);
+        let characterArray: (Character & { avatarBase64?: string })[] = [];
+        if (Array.isArray(projectData.characters)) {
+            characterArray = projectData.characters;
+        } else if (projectData.characters && 'ids' in projectData.characters && 'entities' in projectData.characters) {
+            const { ids, entities } = projectData.characters;
+            characterArray = ids.map((id: string) => entities[id]);
+        }
 
         for(const char of characterArray) {
             const newChar = { ...char };
@@ -87,7 +106,13 @@ export const importProjectThunk = createAsyncThunk(
         }
         charactersAdapter.setAll(charactersState, charactersToSet);
         
-        const worldArray: any[] = Array.isArray(projectData.worlds) ? projectData.worlds : projectData.worlds.ids.map((id: string) => projectData.worlds.entities[id]);
+        let worldArray: (World & { ambianceImageBase64?: string })[] = [];
+        if (Array.isArray(projectData.worlds)) {
+            worldArray = projectData.worlds;
+        } else if (projectData.worlds && 'ids' in projectData.worlds && 'entities' in projectData.worlds) {
+            const { ids, entities } = projectData.worlds;
+            worldArray = ids.map((id: string) => entities[id]);
+        }
 
         for(const world of worldArray) {
             const newWorld = { ...world };
@@ -126,7 +151,7 @@ export const generateCharacterProfileThunk = createAsyncThunk(
     async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('characterProfile', { concept, lang });
-        return await generateJson(prompt, state.settings.aiCreativity, schema) as Omit<Character, 'id'>;
+        return await generateJson<Omit<Character, 'id'>>(prompt, state.settings.aiCreativity, schema);
     }
 );
 
@@ -155,7 +180,7 @@ export const generateWorldProfileThunk = createAsyncThunk(
     async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('worldProfile', { concept, lang });
-        return await generateJson(prompt, state.settings.aiCreativity, schema) as Omit<World, 'id'>;
+        return await generateJson<Omit<World, 'id'>>(prompt, state.settings.aiCreativity, schema);
     }
 );
 
@@ -181,10 +206,10 @@ export const generateWorldImageThunk = createAsyncThunk(
 
 export const generateOutlineThunk = createAsyncThunk(
     'project/generateOutline',
-    async (params: any, { getState }) => {
+    async (params: OutlineGenerationParams, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('outline', params);
-        return await generateJson(prompt, state.settings.aiCreativity, schema) as OutlineSection[];
+        return await generateJson<OutlineSection[]>(prompt, state.settings.aiCreativity, schema);
     }
 );
 
@@ -193,8 +218,8 @@ export const regenerateOutlineSectionThunk = createAsyncThunk(
     async ({ allSections, sectionToIndex, lang }: { allSections: OutlineSection[], sectionToIndex: number, lang: string }, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('regenerateOutlineSection', { allSections, sectionToIndex, lang });
-        const response = await generateJson(prompt, state.settings.aiCreativity, schema);
-        return { index: sectionToIndex, newSection: response as OutlineSection };
+        const response = await generateJson<OutlineSection>(prompt, state.settings.aiCreativity, schema);
+        return { index: sectionToIndex, newSection: response };
     }
 );
 
@@ -203,25 +228,25 @@ export const personalizeTemplateThunk = createAsyncThunk(
     async ({ sections, concept, lang }: { sections: {title: string}[], concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('personalizeTemplate', { sections, concept, lang });
-        return await generateJson(prompt, state.settings.aiCreativity, schema) as { title: string; prompt: string }[];
+        return await generateJson<{ title: string; prompt: string }[]>(prompt, state.settings.aiCreativity, schema);
     }
 );
 
 export const generateCustomTemplateThunk = createAsyncThunk(
     'project/generateCustomTemplate',
-    async (params: any, { getState }) => {
+    async (params: CustomTemplateParams, { getState }) => {
         const state = getState() as RootState;
         const { prompt, schema } = getPrompts('customTemplate', params);
-        return await generateJson(prompt, state.settings.aiCreativity, schema) as { title: string }[];
+        return await generateJson<{ title: string }[]>(prompt, state.settings.aiCreativity, schema);
     }
 );
 
 export const streamGenerationThunk = createAsyncThunk(
     'project/streamGeneration',
-    async ({ prompt, lang, onChunk }: { prompt: string, lang: string, onChunk: (chunk: string) => void }, { getState }) => {
+    async ({ prompt, lang, onChunk, signal }: { prompt: string, lang: string, onChunk: (chunk: string) => void, signal?: AbortSignal }, { getState }) => {
         const state = getState() as RootState;
         const fullPrompt = `${prompt}\n\nRespond in ${lang === 'de' ? 'German' : 'English'}.`;
-        await streamText(fullPrompt, state.settings.aiCreativity, onChunk);
+        await streamText(fullPrompt, state.settings.aiCreativity, onChunk, signal);
     }
 );
 
@@ -249,9 +274,10 @@ const projectSlice = createSlice({
         updateLogline: (state, action: PayloadAction<string>) => {
             state.data.logline = action.payload;
         },
-        updateProjectGoal: (state, action: PayloadAction<{ key: 'totalWordCount' | 'targetDate'; value: any }>) => {
+        updateProjectGoal: (state, action: PayloadAction<{ key: 'totalWordCount' | 'targetDate'; value: number | string | null }>) => {
             if (state.data.projectGoals) {
-                state.data.projectGoals[action.payload.key] = action.payload.value;
+                // TS requires assertion or more specific union type logic, casting generally safe here
+                (state.data.projectGoals as any)[action.payload.key] = action.payload.value;
             }
         },
         resetProject: (state, action: PayloadAction<{title: string, logline: string}>) => {

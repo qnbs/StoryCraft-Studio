@@ -1,16 +1,24 @@
-import { Store } from '@reduxjs/toolkit';
-import { RootState } from '../app/store';
-import { debounce } from '../app/utils';
-import { statusActions } from '../features/status/statusSlice';
 import { ProjectSnapshot } from '../types';
 import { ProjectData } from '../features/project/projectSlice';
-
+import { Settings } from '../types';
 
 const DB_NAME = 'storycraft-db';
-const DB_VERSION = 3; // Incremented version for schema change
+const DB_VERSION = 3; 
 const APP_DATA_STORE = 'app-data-store';
 const SNAPSHOTS_STORE = 'snapshots-store';
 const IMAGES_STORE = 'images-store';
+
+// Define structure of state stored in DB
+interface PersistedProjectState {
+    // Redux-undo shape for present state, or full undoable envelope
+    data?: ProjectData; // Flattened structure often saved
+    present?: { data: ProjectData }; // Structure if full slice saved
+}
+
+interface PersistedState {
+    project?: PersistedProjectState;
+    settings?: Settings;
+}
 
 class IndexedDBService {
   private db: IDBDatabase | null = null;
@@ -61,7 +69,7 @@ class IndexedDBService {
     return transaction.objectStore(storeName);
   }
   
-  private async saveSlice(sliceName: 'project' | 'settings', data: any): Promise<void> {
+  async saveSlice(sliceName: 'project' | 'settings', data: PersistedProjectState | Settings): Promise<void> {
     return new Promise(async (resolve, reject) => {
         const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
         const request = store.put(data, sliceName);
@@ -70,23 +78,64 @@ class IndexedDBService {
     });
   }
 
-  async loadState(): Promise<Partial<RootState> | undefined> {
+  // Helper methods for explicit saving
+  async saveProject(data: PersistedProjectState): Promise<void> {
+      // Check auto-snapshot condition during save
+      if (Date.now() - this.lastAutoSnapshotTime > this.AUTO_SNAPSHOT_INTERVAL) {
+          // We need to extract just the data part if it's the full redux state
+          const projectData = data.present ? data.present.data : data.data;
+          if(projectData && projectData.manuscript) {
+             this.lastAutoSnapshotTime = Date.now();
+             // Fire and forget snapshot to not block UI
+             this.createSnapshot(projectData).then(() => this.pruneAutoSnapshots());
+          }
+      }
+      return this.saveSlice('project', data);
+  }
+
+  async saveSettings(data: Settings): Promise<void> {
+      return this.saveSlice('settings', data);
+  }
+
+  // Helper to validate state structure and fix common issues
+  private validateAndFixState(project: unknown, settings: unknown): PersistedState | undefined {
+      // If project is missing but we have settings, return partial to allow new user flow
+      if (!project && !settings) return undefined;
+
+      const validProject = project ? (project as PersistedProjectState) : undefined;
+      
+      // Ensure settings has defaults if missing keys
+      let validSettings = settings as Settings;
+      if (settings) {
+          validSettings = {
+              theme: 'dark',
+              editorFont: 'serif',
+              fontSize: 16,
+              lineSpacing: 1.6,
+              aiCreativity: 'Balanced',
+              paragraphSpacing: 1,
+              indentFirstLine: false,
+              ...(settings as Partial<Settings>)
+          };
+      }
+
+      return { project: validProject, settings: validSettings };
+  }
+
+  async loadState(): Promise<PersistedState | undefined> {
     return new Promise(async (resolve, reject) => {
         const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
         const projectRequest = store.get('project');
         const settingsRequest = store.get('settings');
 
-        let project: any;
-        let settings: any;
+        let project: unknown;
+        let settings: unknown;
         let completed = 0;
 
         const onComplete = () => {
             if (++completed === 2) {
-                if (project === undefined && settings === undefined) {
-                    resolve(undefined); // Truly a new user
-                } else {
-                    resolve({ project, settings });
-                }
+                const validated = this.validateAndFixState(project, settings);
+                resolve(validated);
             }
         }
         
@@ -201,57 +250,6 @@ class IndexedDBService {
             await this.deleteSnapshot(snapshot.id);
         }
     }
-  }
-
-
-  subscribeToStore(store: Store<RootState>) {
-    let previousProjectState = store.getState().project;
-    let previousSettingsState = store.getState().settings;
-
-    store.subscribe(debounce(async () => {
-      const currentState = store.getState();
-      const currentProjectState = currentState.project;
-      const currentSettingsState = currentState.settings;
-
-      const projectHasChanged = currentProjectState !== previousProjectState;
-      const settingsHaveChanged = currentSettingsState !== previousSettingsState;
-
-      if (projectHasChanged || settingsHaveChanged) {
-        
-        previousProjectState = currentProjectState;
-        previousSettingsState = currentSettingsState;
-
-        store.dispatch(statusActions.setSavingStatus('saving'));
-        
-        try {
-            const savePromises: Promise<void>[] = [];
-            if (projectHasChanged) {
-                savePromises.push(this.saveSlice('project', currentProjectState));
-
-                // Auto-snapshot logic
-                if (Date.now() - this.lastAutoSnapshotTime > this.AUTO_SNAPSHOT_INTERVAL) {
-                    this.lastAutoSnapshotTime = Date.now();
-                    await this.createSnapshot(currentProjectState.present.data);
-                    await this.pruneAutoSnapshots();
-                }
-            }
-            if (settingsHaveChanged) {
-                savePromises.push(this.saveSlice('settings', currentSettingsState));
-            }
-            await Promise.all(savePromises);
-            
-            store.dispatch(statusActions.setSavingStatus('saved'));
-            setTimeout(() => {
-                if (store.getState().status.saving === 'saved') {
-                  store.dispatch(statusActions.setSavingStatus('idle'));
-                }
-            }, 2000);
-        } catch (error) {
-            console.error("Failed to save state to IndexedDB:", error);
-            store.dispatch(statusActions.setSavingStatus('idle')); // Or an error state
-        }
-      }
-    }, 1000));
   }
 }
 

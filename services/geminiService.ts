@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
-import { AiCreativity, Character, World, StoryProject, OutlineSection } from '../types';
+import { AiCreativity, Character, World, OutlineSection, GeminiSchema, OutlineGenerationParams, CustomTemplateParams } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -10,7 +10,7 @@ const creativityToTemperature: Record<AiCreativity, number> = {
 };
 
 const getModelForText = () => 'gemini-2.5-flash';
-const getModelForImage = () => 'imagen-4.0-generate-001';
+const getModelForImage = () => 'gemini-2.5-flash-image';
 
 // --- PROMPT TYPES ---
 type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis';
@@ -24,10 +24,10 @@ type CharacterPortraitParams = BasePromptParams & { description: string };
 type WorldProfileParams = BasePromptParams & { concept: string };
 type RegenerateWorldFieldParams = BasePromptParams & { world: World; field: keyof World };
 type WorldImageParams = BasePromptParams & { description: string };
-type OutlineParams = BasePromptParams & { numChapters: number; pacing?: string; genre: string; idea: string; characters?: string; setting?: string; includeTwist?: boolean; };
+// Use interface from types.ts for OutlineParams
 type RegenerateOutlineSectionParams = BasePromptParams & { allSections: OutlineSection[]; sectionToIndex: number; };
 type PersonalizeTemplateParams = BasePromptParams & { concept: string; sections: { title: string }[]; };
-type CustomTemplateParams = BasePromptParams & { numSections: number; customConcept: string; customElements: string; };
+// Use interface from types.ts for CustomTemplateParams
 type SynopsisParams = BasePromptParams & { project: { title: string; logline: string; manuscript: { title: string; content: string }[] } };
 
 type PromptParamsMap = {
@@ -38,7 +38,7 @@ type PromptParamsMap = {
     worldProfile: WorldProfileParams;
     regenerateWorldField: RegenerateWorldFieldParams;
     worldImage: WorldImageParams;
-    outline: OutlineParams;
+    outline: OutlineGenerationParams;
     regenerateOutlineSection: RegenerateOutlineSectionParams;
     personalizeTemplate: PersonalizeTemplateParams;
     customTemplate: CustomTemplateParams;
@@ -101,7 +101,7 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
             return { prompt: `Generate a breathtaking, atmospheric, digital painting of a fantasy/sci-fi landscape that captures the essence of this description: "${p.description}". Focus on the mood, lighting, and key geographical features. Do not include any text or watermarks.${langInstruction}` };
         }
         case 'outline': {
-            const p = params as OutlineParams;
+            const p = params as OutlineGenerationParams;
             return {
                 prompt: `Generate a story outline with ${p.numChapters} sections for a ${p.pacing || ''} ${p.genre}.
                 Core Idea: ${p.idea}
@@ -170,8 +170,12 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
 
 // --- API CALLS ---
 
-export const generateText = async (prompt: string, creativity: AiCreativity): Promise<string> => {
+export const generateText = async (prompt: string, creativity: AiCreativity, signal?: AbortSignal): Promise<string> => {
     try {
+        if (signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
+
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: getModelForText(),
             contents: prompt,
@@ -179,35 +183,53 @@ export const generateText = async (prompt: string, creativity: AiCreativity): Pr
                 temperature: creativityToTemperature[creativity],
             },
         });
-        return response.text;
-    } catch (error: any) {
+        return response.text || '';
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
+             throw error;
+        }
         console.error("Error generating text:", error);
-        throw new Error(error.message || "Failed to generate text from AI.");
+        const errorMessage = error instanceof Error ? error.message : "Failed to generate text from AI.";
+        throw new Error(errorMessage);
     }
 };
 
-export const generateJson = async (prompt: string, creativity: AiCreativity, schema: any): Promise<any> => {
+export const generateJson = async <T>(prompt: string, creativity: AiCreativity, schema: GeminiSchema, signal?: AbortSignal): Promise<T> => {
     try {
+        if (signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: getModelForText(),
             contents: prompt,
             config: {
                 temperature: creativityToTemperature[creativity],
                 responseMimeType: 'application/json',
-                responseSchema: schema
+                responseSchema: schema as any // Cast to any as SDK type compatibility might vary slightly with our strict interface
             },
         });
         
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText);
-    } catch (error: any) {
+        const rawText = response.text || '';
+        // CRITICAL FIX: Strip markdown code blocks if present to ensure parsing succeeds.
+        // LLMs often return ```json { ... } ``` even when responseMimeType is set.
+        const jsonText = rawText.replace(/```json\n?|```/g, '').trim();
+        
+        return JSON.parse(jsonText) as T;
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
+             throw error;
+        }
         console.error("Error generating JSON:", error);
-        throw new Error(error.message || "Failed to generate structured data from AI.");
+        const errorMessage = error instanceof Error ? error.message : "Failed to generate structured data from AI.";
+        throw new Error(errorMessage);
     }
 }
 
-export const streamText = async (prompt: string, creativity: AiCreativity, onChunk: (chunk: string) => void): Promise<void> => {
+export const streamText = async (prompt: string, creativity: AiCreativity, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<void> => {
     try {
+        if (signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
         const responseStream = await ai.models.generateContentStream({
             model: getModelForText(),
             contents: prompt,
@@ -217,16 +239,30 @@ export const streamText = async (prompt: string, creativity: AiCreativity, onChu
         });
 
         for await (const chunk of responseStream) {
-            onChunk(chunk.text);
+            if (signal?.aborted) {
+                throw new DOMException('Aborted', 'AbortError');
+            }
+            if (chunk.text) {
+                onChunk(chunk.text);
+            }
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
+             // We can suppress abort errors in streaming if we just want to stop silently, 
+             // but re-throwing allows Redux to know it was cancelled.
+             throw error;
+        }
         console.error("Error streaming text:", error);
-        throw new Error(error.message || "Failed to stream text from AI.");
+         const errorMessage = error instanceof Error ? error.message : "Failed to stream text from AI.";
+        throw new Error(errorMessage);
     }
 };
 
-export const streamAiHelpResponse = async (question: string, onChunk: (chunk: string) => void, temperature: number): Promise<void> => {
+export const streamAiHelpResponse = async (question: string, onChunk: (chunk: string) => void, temperature: number, signal?: AbortSignal): Promise<void> => {
     try {
+         if (signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
         const prompt = `You are a helpful assistant for a creative writing app called StoryCraft Studio. Answer the user's question concisely and clearly. Format your answer using Markdown. Question: ${question}`;
         const responseStream = await ai.models.generateContentStream({
             model: getModelForText(),
@@ -237,31 +273,56 @@ export const streamAiHelpResponse = async (question: string, onChunk: (chunk: st
         });
 
         for await (const chunk of responseStream) {
-            onChunk(chunk.text);
+             if (signal?.aborted) {
+                throw new DOMException('Aborted', 'AbortError');
+            }
+             if (chunk.text) {
+                onChunk(chunk.text);
+            }
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+         if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
+             throw error;
+        }
         console.error("Error streaming AI help response:", error);
-        throw new Error(error.message || "Failed to get help from AI assistant.");
+        const errorMessage = error instanceof Error ? error.message : "Failed to get help from AI assistant.";
+        throw new Error(errorMessage);
     }
 };
 
-export const generateImage = async (prompt: string): Promise<string> => {
+export const generateImage = async (prompt: string, signal?: AbortSignal): Promise<string> => {
     try {
-        const response = await ai.models.generateImages({
+         if (signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
+        const response = await ai.models.generateContent({
             model: getModelForImage(),
-            prompt: prompt,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/png',
+            contents: {
+                parts: [
+                    { text: prompt }
+                ]
             },
+            config: {
+                // Nano Banana doesn't support responseMimeType, using text prompt to get image part
+            }
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            return response.generatedImages[0].image.imageBytes;
+        // Iterate to find the image part
+        if (response.candidates && response.candidates.length > 0 && response.candidates[0].content.parts) {
+             for (const part of response.candidates[0].content.parts) {
+                 if (part.inlineData) {
+                     return part.inlineData.data;
+                 }
+             }
         }
+        
         throw new Error("No image was generated.");
-    } catch (error: any) {
+    } catch (error: unknown) {
+         if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
+             throw error;
+        }
         console.error("Error generating image:", error);
-        throw new Error(error.message || "Failed to generate image from AI.");
+        const errorMessage = error instanceof Error ? error.message : "Failed to generate image from AI.";
+        throw new Error(errorMessage);
     }
 };

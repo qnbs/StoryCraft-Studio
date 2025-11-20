@@ -10,7 +10,7 @@ export const Card: React.FC<CardProps> = ({ children, className, as: Component =
   const isInteractive = Component === 'button';
   return (
     <Component 
-      className={`bg-[var(--background-secondary)] backdrop-blur-sm border border-[var(--border-primary)]/50 rounded-lg shadow-[var(--shadow-lg)] overflow-hidden transition-all duration-300 ${isInteractive ? "hover:shadow-[var(--shadow-glow)] hover:border-indigo-500/50" : ""} ${className}`} 
+      className={`bg-[var(--background-secondary)]/80 backdrop-blur-md border border-[var(--border-primary)] rounded-xl shadow-sm overflow-hidden transition-all duration-300 ease-out ${isInteractive ? "hover:shadow-lg hover:border-[var(--border-interactive)]/30 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer" : ""} ${className}`} 
       {...props}
     >
       {children}
@@ -33,5 +33,5 @@ interface CardHeaderProps {
 }
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, className }) => {
-    return <div className={`p-4 sm:p-6 border-b border-[var(--border-primary)]/50 ${className}`}>{children}</div>
+    return <div className={`p-4 sm:p-6 border-b border-[var(--border-primary)]/50 bg-[var(--background-tertiary)]/20 ${className}`}>{children}</div>
 }
