@@ -13,9 +13,6 @@
 
 **StoryCraft Studio is a cutting-edge, AI-enhanced application meticulously engineered for authors, screenwriters, and creators. It transforms the daunting task of writing into a seamless, inspiring journey from a fleeting idea to a polished manuscript.** By integrating the power of Google's Gemini API with an intuitive, offline-first interface, StoryCraft Studio acts as your all-in-one creative co-pilot, empowering you to build, write, and refine your narrative universe without compromise.
 
-![StoryCraft Studio Dashboard](https://storage.googleapis.com/aistudio-hosting/storycraft-assets/dashboard_preview.png)
-_[Image: A placeholder showing the sleek, modern dashboard of StoryCraft Studio]_
-
 ---
 
 ## 📖 Table of Contents
