@@ -26,7 +26,7 @@ const ToggleSwitch: FC<{ label: string; checked: boolean; onChange: (checked: bo
             role="switch"
             aria-checked={checked}
             onClick={() => onChange(!checked)}
-            className={`${checked ? 'bg-indigo-600' : 'bg-[var(--background-tertiary)]'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
+            className={`${checked ? 'bg-[var(--background-interactive)] border-[var(--background-interactive)]' : 'bg-[var(--background-tertiary)]/40 border-[var(--border-primary)]'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--ring-focus)] focus:ring-offset-2 focus:ring-offset-[var(--background-primary)] hover:border-[var(--border-highlight)]`}
         >
             <span className={`${checked ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}/>
         </button>
@@ -77,7 +77,7 @@ const SettingsViewUI: FC = () => {
                         </CardContent>
                     </Card>
                     <Card><CardHeader><h3 className="text-lg font-semibold text-[var(--foreground-primary)]">{t('settings.editor.previewTitle')}</h3></CardHeader>
-                        <CardContent><div style={previewStyle} className="p-4 bg-[var(--background-secondary)] rounded-md border border-[var(--border-primary)] max-h-48 overflow-y-auto text-[var(--foreground-primary)]"><p className="[&&]:my-0 [&&]:mb-[var(--paragraph-spacing)]">{t('settings.editor.previewText1')}</p><p className="[&&]:my-0">{t('settings.editor.previewText2')}</p></div></CardContent>
+                        <CardContent><div style={previewStyle} className="p-4 bg-white/5 rounded-md border border-[var(--border-primary)] max-h-48 overflow-y-auto text-[var(--foreground-primary)]"><p className="[&&]:my-0 [&&]:mb-[var(--paragraph-spacing)]">{t('settings.editor.previewText1')}</p><p className="[&&]:my-0">{t('settings.editor.previewText2')}</p></div></CardContent>
                     </Card>
                  </div>
                 );
@@ -98,7 +98,7 @@ const SettingsViewUI: FC = () => {
                     <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.data.title')}</h2></CardHeader>
                         <CardContent>
                             <p className="text-sm text-[var(--foreground-secondary)] mb-6">{t('settings.data.description')}</p>
-                            <div className="p-4 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-primary)] space-y-3">
+                            <div className="p-4 rounded-lg bg-white/5 border border-[var(--border-primary)] space-y-3">
                                 <h3 className="font-semibold text-[var(--foreground-primary)]">{t('settings.data.actions')}</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <Button onClick={handleExport} variant="secondary">{t('settings.data.export')}</Button>
@@ -119,7 +119,7 @@ const SettingsViewUI: FC = () => {
                             <p className="text-sm text-[var(--foreground-secondary)] mb-4">{t('settings.data.snapshotsDescription')}</p>
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                                 {snapshots.length > 0 ? snapshots.map(snap => (
-                                    <div key={snap.id} className="flex items-center justify-between p-3 bg-[var(--background-secondary)] rounded-md border border-[var(--border-primary)]">
+                                    <div key={snap.id} className="flex items-center justify-between p-3 bg-white/5 rounded-md border border-[var(--border-primary)] hover:border-[var(--border-interactive)] transition-colors">
                                         <div>
                                             <p className="font-semibold text-[var(--foreground-primary)]">{snap.name === 'Automatic Snapshot' ? t('settings.data.automaticSnapshot') : snap.name}</p>
                                             <p className="text-xs text-[var(--foreground-muted)]">{new Date(snap.date).toLocaleString()} - {snap.wordCount} {t('dashboard.stats.totalWordCount')}</p>
@@ -130,7 +130,14 @@ const SettingsViewUI: FC = () => {
                                         </div>
                                     </div>
                                 )) : (
-                                    <div className="text-sm text-center text-[var(--foreground-muted)] py-8 border-2 border-dashed border-[var(--border-primary)] rounded-md">{t('settings.data.noSnapshots')}</div>
+                                    <div className="flex flex-col items-center justify-center text-center py-12 border-2 border-dashed border-[var(--border-primary)] rounded-xl bg-[var(--background-secondary)]/30">
+                                        <div className="p-4 rounded-full bg-[var(--background-tertiary)] mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-[var(--foreground-muted)]">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <p className="text-sm font-medium text-[var(--foreground-primary)]">{t('settings.data.noSnapshots')}</p>
+                                    </div>
                                 )}
                             </div>
                         </CardContent>

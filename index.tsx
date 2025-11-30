@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import App from './App';
 import { setupStore } from './app/store';
 import { dbService } from './services/dbService';
+import { PersistedRootState } from './types';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,7 +17,7 @@ const root = ReactDOM.createRoot(rootElement);
   try {
     await dbService.initDB();
     const loadedState = await dbService.loadState();
-    let preloadedState: any = loadedState; // Cast for manipulation before Redux
+    const preloadedState: PersistedRootState | undefined = loadedState as PersistedRootState | undefined;
     
     const isNewUser = !preloadedState;
     
@@ -25,18 +26,18 @@ const root = ReactDOM.createRoot(rootElement);
     // However, redux-undo expects { past: [], present: ..., future: [] }.
     // We must manually reconstruct the undo envelope if we loaded flat data.
     if (preloadedState && preloadedState.project) {
+        const projectPart = preloadedState.project;
+        
         // Check if the loaded project is "flat" (i.e., it doesn't have a 'present' key, but HAS 'data')
-        // or if it matches the shape of ProjectData directly.
-        const projectPart = preloadedState.project as any;
         const isFlatData = !projectPart.present && projectPart.data;
         
-        if (isFlatData) {
+        if (isFlatData && projectPart.data) {
              console.debug("Hydrating flat project state into Redux-Undo envelope.");
              preloadedState.project = {
                  past: [],
-                 present: preloadedState.project, // The DB saved the 'present' slice directly
+                 present: { data: projectPart.data }, // Reconstruct the slice structure
                  future: [],
-                 _latestUnfiltered: preloadedState.project // Helper for redux-undo if needed
+                 _latestUnfiltered: projectPart.data // Helper for redux-undo if needed
              };
         } else if (!projectPart.present && !projectPart.data) {
             // Fallback: Corrupt or empty project state

@@ -72,7 +72,7 @@ export const useDashboard = ({ onNavigate }: UseDashboardProps) => {
         try {
             const result = await dispatch(generateLoglineSuggestionsThunk(language)).unwrap();
             setLoglineSuggestions(result || []);
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error(t('error.apiErrorTitle'), typeof e === 'string' ? e : t('error.apiErrorDescription'));
             setIsLoglineModalOpen(false);
         } finally {

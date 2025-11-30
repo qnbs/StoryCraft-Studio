@@ -8,5 +8,9 @@
     "manuscript.inspector.statsTitle": "Abschnittsstatistiken",
     "manuscript.inspector.charCount": "Zeichenzahl",
     "manuscript.inspector.readTime": "Gesch. Lesezeit",
-    "manuscript.inspector.readTimeValue": "~{{time}} Min."
+    "manuscript.inspector.readTimeValue": "~{{time}} Min.",
+    "manuscript.addSection": "Neuen Abschnitt hinzufügen",
+    "manuscript.untitledSection": "Unbenannter Abschnitt",
+    "manuscript.deleteSection": "Abschnitt löschen",
+    "manuscript.titlePlaceholder": "Kapiteltitel"
 }

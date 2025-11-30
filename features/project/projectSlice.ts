@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, createEntityAdapter, PayloadAction, EntityState } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { getPrompts, generateText, generateJson, generateImage, streamText } from '../../services/geminiService';
@@ -150,8 +149,9 @@ export const generateCharacterProfileThunk = createAsyncThunk(
     'project/generateCharacterProfile',
     async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('characterProfile', { concept, lang });
-        return await generateJson<Omit<Character, 'id'>>(prompt, state.settings.aiCreativity, schema);
+        // Pass thinking budget indirectly via prompt type config in geminiService
+        const { prompt, schema, thinkingBudget } = getPrompts('characterProfile', { concept, lang });
+        return await generateJson<Omit<Character, 'id'>>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -175,12 +175,28 @@ export const generateCharacterPortraitThunk = createAsyncThunk(
     }
 );
 
+export const uploadCharacterImageThunk = createAsyncThunk(
+    'project/uploadCharacterImage',
+    async ({ characterId, file }: { characterId: string, file: File }) => {
+        return new Promise<{ characterId: string }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
+                await dbService.saveImage(characterId, base64);
+                resolve({ characterId });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+);
+
 export const generateWorldProfileThunk = createAsyncThunk(
     'project/generateWorldProfile',
     async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('worldProfile', { concept, lang });
-        return await generateJson<Omit<World, 'id'>>(prompt, state.settings.aiCreativity, schema);
+        const { prompt, schema, thinkingBudget } = getPrompts('worldProfile', { concept, lang });
+        return await generateJson<Omit<World, 'id'>>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -204,12 +220,28 @@ export const generateWorldImageThunk = createAsyncThunk(
     }
 );
 
+export const uploadWorldImageThunk = createAsyncThunk(
+    'project/uploadWorldImage',
+    async ({ worldId, file }: { worldId: string, file: File }) => {
+        return new Promise<{ worldId: string }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
+                await dbService.saveImage(worldId, base64);
+                resolve({ worldId });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+);
+
 export const generateOutlineThunk = createAsyncThunk(
     'project/generateOutline',
     async (params: OutlineGenerationParams, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('outline', params);
-        return await generateJson<OutlineSection[]>(prompt, state.settings.aiCreativity, schema);
+        const { prompt, schema, thinkingBudget } = getPrompts('outline', params);
+        return await generateJson<OutlineSection[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -217,8 +249,8 @@ export const regenerateOutlineSectionThunk = createAsyncThunk(
     'project/regenerateOutlineSection',
     async ({ allSections, sectionToIndex, lang }: { allSections: OutlineSection[], sectionToIndex: number, lang: string }, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('regenerateOutlineSection', { allSections, sectionToIndex, lang });
-        const response = await generateJson<OutlineSection>(prompt, state.settings.aiCreativity, schema);
+        const { prompt, schema, thinkingBudget } = getPrompts('regenerateOutlineSection', { allSections, sectionToIndex, lang });
+        const response = await generateJson<OutlineSection>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
         return { index: sectionToIndex, newSection: response };
     }
 );
@@ -227,8 +259,8 @@ export const personalizeTemplateThunk = createAsyncThunk(
     'project/personalizeTemplate',
     async ({ sections, concept, lang }: { sections: {title: string}[], concept: string, lang: string }, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('personalizeTemplate', { sections, concept, lang });
-        return await generateJson<{ title: string; prompt: string }[]>(prompt, state.settings.aiCreativity, schema);
+        const { prompt, schema, thinkingBudget } = getPrompts('personalizeTemplate', { sections, concept, lang });
+        return await generateJson<{ title: string; prompt: string }[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -236,8 +268,8 @@ export const generateCustomTemplateThunk = createAsyncThunk(
     'project/generateCustomTemplate',
     async (params: CustomTemplateParams, { getState }) => {
         const state = getState() as RootState;
-        const { prompt, schema } = getPrompts('customTemplate', params);
-        return await generateJson<{ title: string }[]>(prompt, state.settings.aiCreativity, schema);
+        const { prompt, schema, thinkingBudget } = getPrompts('customTemplate', params);
+        return await generateJson<{ title: string }[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -257,8 +289,18 @@ export const generateSynopsisThunk = createAsyncThunk(
         const state = getState() as RootState;
         const project = state.project.present.data;
         const creativity = state.settings.aiCreativity;
-        const { prompt } = getPrompts('synopsis', { project, lang });
-        return await generateText(prompt, creativity);
+        const { prompt, thinkingBudget } = getPrompts('synopsis', { project, lang });
+        return await generateText(prompt, creativity, undefined, thinkingBudget);
+    }
+);
+
+export const proofreadTextThunk = createAsyncThunk(
+    'project/proofreadText',
+    async ({ text, lang }: { text: string, lang: string }, { getState }) => {
+        const state = getState() as RootState;
+        const creativity = state.settings.aiCreativity;
+        const { prompt, schema, thinkingBudget } = getPrompts('proofread', { text, lang });
+        return await generateJson<{ original: string, suggestion: string, explanation: string }[]>(prompt, creativity, schema, undefined, thinkingBudget);
     }
 );
 
@@ -276,8 +318,11 @@ const projectSlice = createSlice({
         },
         updateProjectGoal: (state, action: PayloadAction<{ key: 'totalWordCount' | 'targetDate'; value: number | string | null }>) => {
             if (state.data.projectGoals) {
-                // TS requires assertion or more specific union type logic, casting generally safe here
-                (state.data.projectGoals as any)[action.payload.key] = action.payload.value;
+                if (action.payload.key === 'totalWordCount') {
+                    state.data.projectGoals.totalWordCount = action.payload.value as number;
+                } else if (action.payload.key === 'targetDate') {
+                    state.data.projectGoals.targetDate = action.payload.value as string | null;
+                }
             }
         },
         resetProject: (state, action: PayloadAction<{title: string, logline: string}>) => {
@@ -364,7 +409,19 @@ const projectSlice = createSlice({
                     changes: { hasAvatar: true }
                 });
             })
+            .addCase(uploadCharacterImageThunk.fulfilled, (state, action) => {
+                charactersAdapter.updateOne(state.data.characters, {
+                    id: action.payload.characterId,
+                    changes: { hasAvatar: true }
+                });
+            })
             .addCase(generateWorldImageThunk.fulfilled, (state, action) => {
+                worldsAdapter.updateOne(state.data.worlds, {
+                    id: action.payload.worldId,
+                    changes: { hasAmbianceImage: true }
+                });
+            })
+            .addCase(uploadWorldImageThunk.fulfilled, (state, action) => {
                 worldsAdapter.updateOne(state.data.worlds, {
                     id: action.payload.worldId,
                     changes: { hasAmbianceImage: true }

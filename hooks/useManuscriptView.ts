@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
-import { projectActions, generateLoglineSuggestionsThunk } from '../features/project/projectSlice';
+import { projectActions, generateLoglineSuggestionsThunk, proofreadTextThunk } from '../features/project/projectSlice';
 import { useTranslation } from './useTranslation';
 import { Character, StorySection, View, World } from '../types';
 import { useToast } from '../components/ui/Toast';
@@ -12,7 +12,7 @@ const getCursorXY = (input: HTMLTextAreaElement, selectionPoint: number) => {
     const style = getComputedStyle(input);
     
     // Properties that affect layout and position
-    const props = [
+    const props: (keyof CSSStyleDeclaration)[] = [
         'width', 'height', 'font', 'lineHeight', 'padding', 'border', 'textIndent', 'whiteSpace', 'wordWrap', 'wordBreak', 'letterSpacing', 'textAlign'
     ];
     props.forEach(prop => {
@@ -60,6 +60,8 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
   const [isLoglineModalOpen, setIsLoglineModalOpen] = useState(false);
   const [loglineSuggestions, setLoglineSuggestions] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isProofreading, setIsProofreading] = useState(false);
+  const [proofreadSuggestions, setProofreadSuggestions] = useState<{ original: string, suggestion: string, explanation: string }[]>([]);
   
   // Drag and drop state
   const draggedItem = useRef<number | null>(null);
@@ -67,7 +69,7 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   // Mention state
-  const [mentions, setMentions] = useState<(Character & { type: 'character' })[] | (World & { type: 'world' })[]>([]);
+  const [mentions, setMentions] = useState<((Character & { type: 'character' }) | (World & { type: 'world' }))[]>([]);
   const [mentionPosition, setMentionPosition] = useState<{ top: number, left: number } | null>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
@@ -99,12 +101,16 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
             const [_, symbol, query] = mentionMatch;
             const normalizedQuery = query.toLowerCase();
             
-            const suggestions = symbol === '@'
-                ? characters.filter(c => c.name.toLowerCase().startsWith(normalizedQuery)).map(c => ({...c, type: 'character' as const}))
-                : worlds.filter(w => w.name.toLowerCase().startsWith(normalizedQuery)).map(w => ({...w, type: 'world' as const}));
+            const suggestions: ((Character & { type: 'character' }) | (World & { type: 'world' }))[] = symbol === '@'
+                ? characters
+                    .filter(c => c.name.toLowerCase().startsWith(normalizedQuery))
+                    .map(c => ({...c, type: 'character' as const}))
+                : worlds
+                    .filter(w => w.name.toLowerCase().startsWith(normalizedQuery))
+                    .map(w => ({...w, type: 'world' as const}));
 
             if(suggestions.length > 0) {
-                 setMentions(suggestions as any);
+                 setMentions(suggestions);
                  const { top, left, height } = getCursorXY(editorRef.current, cursor);
                  setMentionPosition({ top: top + height, left: left });
             } else {
@@ -116,6 +122,26 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     }
   }, [dispatch, characters, worlds]);
   
+  const handleTitleChange = useCallback((id: string, title: string) => {
+      dispatch(projectActions.updateManuscriptSection({ id, changes: { title }}));
+  }, [dispatch]);
+
+  const handleAddSection = useCallback(() => {
+      dispatch(projectActions.addManuscriptSection({ title: t('manuscript.untitledSection') }));
+  }, [dispatch, t]);
+
+  const handleDeleteSection = useCallback((id: string) => {
+      if (manuscript.length <= 1) return; // Prevent deleting last section
+      
+      const index = manuscript.findIndex(s => s.id === id);
+      const newActiveId = index > 0 ? manuscript[index - 1].id : manuscript[index + 1].id;
+      
+      dispatch(projectActions.deleteManuscriptSection(id));
+      if (activeSectionId === id) {
+          setActiveSectionId(newActiveId);
+      }
+  }, [dispatch, manuscript, activeSectionId]);
+
   const handleMentionSelect = (item: { id: string, name: string }) => {
     if (!activeSection || !editorRef.current) return;
     
@@ -169,8 +195,14 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     try {
       const result = await dispatch(generateLoglineSuggestionsThunk(language)).unwrap();
       setLoglineSuggestions(result || []);
-    } catch (e: any) {
-      toast.error(t('error.apiErrorTitle'), typeof e === 'string' ? e : t('error.apiErrorDescription'));
+    } catch (e: unknown) {
+      let errorMessage = t('error.apiErrorDescription');
+      if (typeof e === 'string') {
+          errorMessage = e;
+      } else if (e instanceof Error) {
+          errorMessage = e.message;
+      }
+      toast.error(t('error.apiErrorTitle'), errorMessage);
       setIsLoglineModalOpen(false);
     } finally {
       setIsAiLoading(false);
@@ -181,6 +213,33 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     dispatch(projectActions.updateLogline(logline));
     setIsLoglineModalOpen(false);
   };
+
+  const handleProofread = async () => {
+      if (!activeSection?.content) return;
+      setIsProofreading(true);
+      setProofreadSuggestions([]);
+      
+      const resultAction = await dispatch(proofreadTextThunk({ text: activeSection.content, lang: language }));
+      
+      if (proofreadTextThunk.fulfilled.match(resultAction)) {
+          setProofreadSuggestions(resultAction.payload);
+          if (resultAction.payload.length === 0) {
+              toast.success("No issues found!", "Great job!");
+          }
+      } else {
+          toast.error(t('error.apiErrorTitle'));
+      }
+      setIsProofreading(false);
+  }
+
+  const applyProofreadSuggestion = (index: number) => {
+      if (!activeSection) return;
+      const suggestion = proofreadSuggestions[index];
+      // Simple string replacement (basic implementation, improved via real diffing in production)
+      const newContent = activeSection.content.replace(suggestion.original, suggestion.suggestion);
+      handleContentChange(activeSection.id, newContent);
+      setProofreadSuggestions(prev => prev.filter((_, i) => i !== index));
+  }
   
   return {
     t,
@@ -194,6 +253,9 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     activeSection,
     activeSectionStats,
     handleContentChange,
+    handleTitleChange,
+    handleAddSection,
+    handleDeleteSection,
     isLoglineModalOpen,
     setIsLoglineModalOpen,
     loglineSuggestions,
@@ -212,6 +274,11 @@ export const useManuscriptView = ({ onNavigate }: { onNavigate: (view: View) => 
     mentionPosition,
     handleMentionSelect,
     editorRef,
+    // Proofreading
+    isProofreading,
+    handleProofread,
+    proofreadSuggestions,
+    applyProofreadSuggestion,
   };
 };
 

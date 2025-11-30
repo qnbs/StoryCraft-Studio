@@ -5,6 +5,7 @@ import { Button } from './ui/Button';
 import { projectActions, importProjectThunk } from '../features/project/projectSlice';
 import { useAppDispatch } from '../app/hooks';
 import { View } from '../types';
+import { dbService } from '../services/dbService';
 
 interface WelcomePortalProps {
   onExit: (view?: View) => void;
@@ -62,12 +63,9 @@ export const WelcomePortal: React.FC<WelcomePortalProps> = ({ onExit }) => {
   const [hasExistingSession, setHasExistingSession] = useState(false);
 
   useEffect(() => {
-    // A simple check is sufficient. dbService handles the actual loading.
     const checkDb = async () => {
-        const dbs = await indexedDB.databases();
-        if(dbs.some(db => db.name === 'storycraft-db')) {
-            setHasExistingSession(true);
-        }
+        const hasData = await dbService.hasSavedData();
+        setHasExistingSession(hasData);
     };
     checkDb();
   }, []);

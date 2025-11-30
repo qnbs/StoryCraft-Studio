@@ -1,9 +1,10 @@
-import { createListenerMiddleware, isAnyOf, isRejected, addListener } from '@reduxjs/toolkit';
+import { createListenerMiddleware, isAnyOf, isRejected, addListener, TypedStartListening } from '@reduxjs/toolkit';
 import type { RootState, AppDispatch } from './store';
 import { dbService } from '../services/dbService';
 import { statusActions } from '../features/status/statusSlice';
 import { projectActions } from '../features/project/projectSlice';
 import { settingsActions } from '../features/settings/settingsSlice';
+import { PersistedRootState } from '../types';
 
 export const listenerMiddleware = createListenerMiddleware();
 
@@ -14,7 +15,8 @@ listenerMiddleware.startListening({
     const currentRoot = currentState as RootState;
     const prevRoot = previousState as RootState;
 
-    // Check if project.present has changed (ignoring past/future changes to avoid saving on undo/redo steps purely)
+    // Check if project.present has changed (ignoring past/future changes to avoid saving on undo/redo steps purely if content is identical)
+    // We strictly want to save when content changes.
     const projectChanged = currentRoot.project.present !== prevRoot.project.present;
     const settingsChanged = currentRoot.settings !== prevRoot.settings;
 
@@ -31,13 +33,17 @@ listenerMiddleware.startListening({
     try {
       const promises = [];
       
-      // CRITICAL AUDIT FIX: 
-      // We must NOT save the entire `state.project` which includes `past` and `future` arrays.
-      // As the user writes, the history grows massively, causing IndexedDB writes to block the main thread.
-      // We only save `state.project.present`.
-      const projectDataToSave = state.project.present ? state.project.present : state.project;
+      // CRITICAL FIX: 
+      // We must NOT save the entire `state.project` which includes `past` and `future` arrays from redux-undo.
+      // As the user writes, the history grows massively, causing IndexedDB writes to block the main thread and crash the browser.
+      // We only save `state.project.present`. The hydration logic in index.tsx handles re-wrapping it.
+      
+      // Check if 'present' exists (it should with redux-undo), otherwise fallback to flat state
+      const projectDataToSave = state.project.present ? { data: state.project.present.data } : { data: state.project.data };
 
-      promises.push(dbService.saveProject(projectDataToSave));
+      // We are saving a structure that matches { data: ProjectData } essentially, stripping history.
+      // Casting to PersistedRootState['project'] (which is `PersistedProjectState`) satisfies the service.
+      promises.push(dbService.saveProject(projectDataToSave as NonNullable<PersistedRootState['project']>));
       promises.push(dbService.saveSettings(state.settings));
 
       await Promise.all(promises);
@@ -92,5 +98,5 @@ listenerMiddleware.startListening({
 });
 
 // Type-safe export
-export const startAppListening = listenerMiddleware.startListening as any;
-export const addAppListener = addListener as any;
+export const startAppListening = listenerMiddleware.startListening as TypedStartListening<RootState, AppDispatch>;
+export const addAppListener = addListener as TypedStartListening<RootState, AppDispatch>;

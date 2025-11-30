@@ -2,20 +2,17 @@ import React, { useEffect, useRef } from 'react';
 import { useAppSelector } from '../../app/hooks';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
-export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
+export const Textarea = React.memo(React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className, style, ...props }, ref) => {
     const settings = useAppSelector((state) => state.settings);
-    
     const innerRef = useRef<HTMLTextAreaElement>(null);
-    // Use the forwarded ref if available, otherwise use innerRef
     const inputRef = (ref as React.RefObject<HTMLTextAreaElement>) || innerRef;
-
     const { isListening, transcript, toggleListening, setTranscript } = useSpeechRecognition();
 
     const fontMap = {
-        'serif': 'serif',
-        'sans-serif': 'sans-serif',
-        'monospace': 'monospace'
+        'serif': 'Merriweather, serif',
+        'sans-serif': 'Inter, sans-serif',
+        'monospace': 'JetBrains Mono, monospace'
     };
 
     const editorStyles: React.CSSProperties = {
@@ -24,11 +21,9 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
         lineHeight: settings.lineSpacing,
     };
 
-    // Handle incoming transcript
     useEffect(() => {
         if (transcript && inputRef.current) {
             const input = inputRef.current;
-            
             const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
                 window.HTMLTextAreaElement.prototype,
                 "value"
@@ -36,24 +31,32 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
             
             if (nativeInputValueSetter) {
                 const currentValue = input.value;
-                // Smart spacing for textarea
                 const separator = currentValue.length > 0 && !currentValue.endsWith('\n') ? ' ' : '';
                 const newValue = currentValue ? `${currentValue}${separator}${transcript}` : transcript;
-                
                 nativeInputValueSetter.call(input, newValue);
-                
                 const event = new Event('input', { bubbles: true });
                 input.dispatchEvent(event);
             }
-            
             setTranscript(''); 
         }
     }, [transcript, setTranscript, inputRef]);
 
     return (
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full group">
           <textarea
-            className={`flex min-h-[120px] w-full rounded-md border border-[var(--border-primary)] bg-[var(--background-secondary)] pl-3 pr-12 py-2 text-base sm:text-sm text-[var(--foreground-primary)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--border-interactive)] focus:ring-2 focus:ring-[var(--ring-focus)] focus:ring-offset-2 focus:ring-offset-[var(--background-primary)] touch-manipulation transition-all duration-200 ${className}`}
+            className={`
+                flex min-h-[120px] w-full rounded-xl
+                border border-[var(--border-primary)] 
+                bg-white/5 backdrop-blur-md
+                px-4 py-3 pb-12 text-sm 
+                text-[var(--foreground-primary)] placeholder:text-[var(--foreground-muted)] 
+                shadow-sm transition-all duration-200
+                focus:outline-none focus:border-[var(--border-interactive)] focus:ring-4 focus:ring-[var(--ring-focus)] focus:bg-[var(--background-secondary)]/50
+                hover:border-[var(--border-highlight)] hover:bg-white/10
+                disabled:opacity-50 disabled:cursor-not-allowed
+                scrollbar-thin scrollbar-thumb-rounded-md
+                ${className}
+            `}
             ref={inputRef}
             style={{ ...editorStyles, ...style }}
             {...props}
@@ -64,7 +67,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
             className={`absolute right-3 bottom-3 p-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--ring-focus)] z-10 ${
                 isListening 
                 ? 'text-red-500 bg-red-500/10 animate-pulse shadow-[0_0_0_4px_rgba(239,68,68,0.3)] scale-110' 
-                : 'text-[var(--foreground-muted)] bg-[var(--background-primary)]/80 hover:text-[var(--foreground-primary)] hover:bg-[var(--background-tertiary)] shadow-sm border border-[var(--border-primary)]'
+                : 'text-[var(--foreground-muted)] bg-[var(--background-secondary)]/80 hover:text-[var(--foreground-primary)] hover:bg-white/10 shadow-sm border border-[var(--border-primary)]'
             }`}
             title="Dictate text"
             aria-label={isListening ? "Stop dictation" : "Start dictation"}
@@ -83,5 +86,5 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
       </div>
     );
   }
-);
+));
 Textarea.displayName = 'Textarea';

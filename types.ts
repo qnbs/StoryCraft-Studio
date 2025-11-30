@@ -1,5 +1,6 @@
 import { EntityState } from '@reduxjs/toolkit';
 import { Type } from '@google/genai';
+import { ProjectData } from './features/project/projectSlice'; // Import ProjectData type
 
 export type View = 'dashboard' | 'manuscript' | 'writer' | 'templates' | 'outline' | 'characters' | 'world' | 'export' | 'settings' | 'help';
 
@@ -148,10 +149,14 @@ export interface CustomTemplateParams {
 }
 
 // Speech Recognition Types
+interface ISpeechRecognitionConstructor {
+    new (): ISpeechRecognition;
+}
+
 declare global {
     interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
+        SpeechRecognition: ISpeechRecognitionConstructor;
+        webkitSpeechRecognition: ISpeechRecognitionConstructor;
     }
 }
 
@@ -182,4 +187,18 @@ export interface ISpeechRecognition {
     onresult: (event: ISpeechRecognitionEvent) => void;
     onend: () => void;
     onerror: (event: ISpeechRecognitionError) => void;
+}
+
+// Persistence Types
+export interface PersistedRootState {
+    project?: {
+        present?: { data: ProjectData };
+        data?: ProjectData;
+        past?: unknown[];
+        future?: unknown[];
+        _latestUnfiltered?: unknown;
+    };
+    settings?: Settings;
+    status?: unknown;
+    writer?: unknown;
 }

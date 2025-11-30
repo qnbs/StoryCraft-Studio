@@ -6,6 +6,7 @@ import { settingsActions } from '../features/settings/settingsSlice';
 import { projectActions, importProjectThunk, restoreSnapshotThunk } from '../features/project/projectSlice';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
 import { dbService } from '../services/dbService';
+import { RootState } from '../../app/store';
 
 type ModalState = 'closed' | 'reset' | 'restore' | 'delete' | 'create';
 type ModalPayload = { id?: number; name?: string; date?: string; wordCount?: number; };
@@ -16,8 +17,9 @@ export const useSettingsView = () => {
   const settings = useAppSelector((state) => state.settings);
   const projectState = useAppSelector((state) => state.project.present);
   const project = projectState.data;
-  const characters = selectAllCharacters({ project: { present: projectState } } as any);
-  const worlds = selectAllWorlds({ project: { present: projectState } } as any);
+  // We mock the RootState structure for the selector, as we are pulling from a detached state slice for export/management
+  const characters = selectAllCharacters({ project: { present: projectState } } as RootState);
+  const worlds = selectAllWorlds({ project: { present: projectState } } as RootState);
   
   const [activeCategory, setActiveCategory] = useState('data');
   const [modal, setModal] = useState<{ state: ModalState, payload: ModalPayload }>({ state: 'closed', payload: {} });

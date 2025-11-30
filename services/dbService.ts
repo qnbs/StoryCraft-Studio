@@ -102,8 +102,23 @@ class IndexedDBService {
       // If project is missing but we have settings, return partial to allow new user flow
       if (!project && !settings) return undefined;
 
-      const validProject = project ? (project as PersistedProjectState) : undefined;
+      let validProject = project ? (project as PersistedProjectState) : undefined;
       
+      // Ensure Project Structure consistency
+      if (validProject) {
+          const rawData = validProject.present ? validProject.present.data : validProject.data;
+          if (rawData) {
+              // Ensure projectGoals exists
+              if (!rawData.projectGoals) {
+                  rawData.projectGoals = { totalWordCount: 50000, targetDate: null };
+              }
+              // Ensure writingHistory exists
+              if (!rawData.writingHistory) {
+                  rawData.writingHistory = [];
+              }
+          }
+      }
+
       // Ensure settings has defaults if missing keys
       let validSettings = settings as Settings;
       if (settings) {
@@ -151,6 +166,21 @@ class IndexedDBService {
         projectRequest.onerror = () => reject(projectRequest.error);
         settingsRequest.onerror = () => reject(settingsRequest.error);
     });
+  }
+  
+  async hasSavedData(): Promise<boolean> {
+      try {
+          const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
+          const request = store.count(); 
+          return new Promise((resolve) => {
+              request.onsuccess = () => {
+                  resolve(request.result > 0);
+              };
+              request.onerror = () => resolve(false);
+          });
+      } catch (e) {
+          return false;
+      }
   }
   
   // --- Image Store Methods ---

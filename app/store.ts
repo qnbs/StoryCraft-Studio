@@ -5,6 +5,7 @@ import statusReducer from '../features/status/statusSlice';
 import writerReducer from '../features/writer/writerSlice';
 import undoable from 'redux-undo';
 import { listenerMiddleware } from './listenerMiddleware';
+import { PersistedRootState } from '../types';
 
 // A sophisticated filter to prevent async thunk actions from populating the undo history.
 const filterUndoableActions = (action: AnyAction) => {
@@ -60,10 +61,10 @@ export const rootReducer = (state: ReturnType<typeof combinedReducer> | undefine
 
 // The store is now configured and created in index.tsx after async state loading.
 // To support preloadedState, we export a factory function or use this temp store for types.
-export const setupStore = (preloadedState?: any) => {
+export const setupStore = (preloadedState?: PersistedRootState) => {
   return configureStore({
     reducer: rootReducer,
-    preloadedState,
+    preloadedState: preloadedState as any, // Redux expects partial state matching generic, our specific persisted type is compatible but needs cast due to strictness
     middleware: (getDefaultMiddleware) => 
         getDefaultMiddleware({
             serializableCheck: {

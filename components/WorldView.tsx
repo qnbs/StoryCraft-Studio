@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useRef } from 'react';
 import { World, WorldTimelineEvent, WorldLocation } from '../types';
 import { ICONS } from '../constants';
 import { Button } from './ui/Button';
@@ -13,6 +13,8 @@ import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { AddNewCard } from './ui/AddNewCard';
 import { dbService } from '../services/dbService';
+import { useAppDispatch } from '../app/hooks';
+import { uploadWorldImageThunk } from '../features/project/projectSlice';
 
 // A local hook to fetch image data on-demand from IndexedDB
 const useStoredImage = (id: string | undefined, hasImage: boolean | undefined) => {
@@ -72,7 +74,19 @@ const WorldAtlas: FC = () => {
      } = useWorldViewContext();
     const [activeTab, setActiveTab] = useState('overview');
     const imageUrl = useStoredImage(selectedWorld?.id, selectedWorld?.hasAmbianceImage);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const dispatch = useAppDispatch();
 
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files[0] && selectedWorld) {
+            const file = event.target.files[0];
+            await dispatch(uploadWorldImageThunk({ worldId: selectedWorld.id, file }));
+        }
+    };
 
     if (!selectedWorld) return null;
 
@@ -83,11 +97,19 @@ const WorldAtlas: FC = () => {
                     <div className="relative aspect-video w-full rounded-lg bg-[var(--background-tertiary)]/50 flex items-center justify-center overflow-hidden border border-[var(--border-primary)]">
                         {selectedWorld.hasAmbianceImage && imageUrl ? <img src={imageUrl} alt={selectedWorld.name} className="w-full h-full object-cover" /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-24 h-24 text-[var(--foreground-muted)]">{ICONS.PHOTO}</svg>}
                         {(isGeneratingImage || isRefiningImage) && <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-[var(--foreground-primary)]"><Spinner className="w-8 h-8"/> <p className="mt-2 text-sm">{t('worlds.edit.generatingImage')}</p></div>}
+                        
+                        {/* Hidden File Input */}
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                     </div>
-                    <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !selectedWorld.description} className="w-full">
-                        {isGeneratingImage ? <Spinner/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">{ICONS.PHOTO}</svg>}
-                        {t('worlds.edit.generateImageButton')}
-                    </Button>
+                    <div className="grid grid-cols-5 gap-2">
+                        <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !selectedWorld.description} className="col-span-4" title={t('worlds.edit.generateImageButton')}>
+                            {isGeneratingImage ? <Spinner/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">{ICONS.PHOTO}</svg>}
+                            {t('common.generate')}
+                        </Button>
+                        <Button onClick={handleUploadClick} variant="secondary" className="col-span-1 px-0 flex items-center justify-center" title="Upload Image">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                        </Button>
+                    </div>
                      {selectedWorld.hasAmbianceImage && (
                         <div className="space-y-2">
                            <label htmlFor="refine-prompt-world" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('worlds.atlas.refineLabel')}</label>
@@ -126,7 +148,7 @@ const WorldAtlas: FC = () => {
                         </div>
                         <div id="tabpanel-timeline-w" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'timeline'} className="space-y-4">
                             {(selectedWorld.timeline || []).map((event, index) => (
-                                <div key={event.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-start bg-[var(--background-tertiary)]/50 p-2 rounded-md">
+                                <div key={event.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-start border border-[var(--border-primary)] bg-white/5 p-2 rounded-md">
                                     <Input placeholder={t('worlds.edit.eraPlaceholder')} value={event.era} onChange={e => handleTimelineChange(event.id, 'era', e.target.value)} />
                                     <Textarea placeholder={t('worlds.edit.eventPlaceholder')} value={event.description} onChange={e => handleTimelineChange(event.id, 'description', e.target.value)} className="md:col-span-2 min-h-[60px]" rows={2}/>
                                     <Button variant="ghost" size="sm" onClick={() => deleteTimelineEvent(event.id)} className="text-red-500 dark:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-900/50 md:col-start-3 justify-self-end"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>
@@ -136,7 +158,7 @@ const WorldAtlas: FC = () => {
                         </div>
                         <div id="tabpanel-locations-w" role="tabpanel" hidden={isGeneratingProfile || activeTab !== 'locations'} className="space-y-4">
                             {(selectedWorld.locations || []).map((loc) => (
-                                <div key={loc.id} className="bg-[var(--background-tertiary)]/50 p-3 rounded-md space-y-2">
+                                <div key={loc.id} className="border border-[var(--border-primary)] bg-white/5 p-3 rounded-md space-y-2">
                                     <div className="flex justify-between items-center">
                                         <Input placeholder={t('worlds.edit.locationNamePlaceholder')} value={loc.name} onChange={e => handleLocationChange(loc.id, 'name', e.target.value)} className="font-semibold text-[var(--foreground-primary)] bg-transparent border-0 focus:ring-1 focus:bg-[var(--background-tertiary)] h-auto" />
                                         <Button variant="ghost" size="sm" onClick={() => deleteLocation(loc.id)} className="text-red-500 dark:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-900/50"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>

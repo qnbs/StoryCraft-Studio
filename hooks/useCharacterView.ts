@@ -5,11 +5,13 @@ import { selectAllCharacters } from '../features/project/projectSelectors';
 import { projectActions, generateCharacterProfileThunk, regenerateCharacterFieldThunk, generateCharacterPortraitThunk } from '../features/project/projectSlice';
 import { Character } from '../types';
 import { dbService } from '../services/dbService';
+import { useToast } from '../components/ui/Toast';
 
 export const useCharacterView = () => {
     const { t, language } = useTranslation();
     const dispatch = useAppDispatch();
     const characters = useAppSelector(selectAllCharacters);
+    const toast = useToast();
 
     const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
     const [isDossierOpen, setIsDossierOpen] = useState(false);
@@ -40,20 +42,21 @@ export const useCharacterView = () => {
         if (generateCharacterProfileThunk.fulfilled.match(resultAction)) {
             const newChar = resultAction.payload;
             dispatch(projectActions.addCharacter(newChar));
+            toast.success(t('common.saved'), newChar.name);
         } else {
-            // Handle error
+            toast.error(t('error.apiErrorTitle'), t('error.apiErrorDescription'));
         }
         
         setIsGeneratingProfile(false);
         setAiConcept('');
-    }, [dispatch, aiConcept, language]);
+    }, [dispatch, aiConcept, language, toast, t]);
 
     const handleSelect = useCallback((character: Character) => {
         setSelectedCharacter(character);
         setIsDossierOpen(true);
     }, []);
     
-    const handleFieldChange = useCallback((field: keyof Character, value: any) => {
+    const handleFieldChange = useCallback((field: keyof Character, value: string) => {
         if (selectedCharacter) {
             const changes = { [field]: value };
             setSelectedCharacter(c => c ? { ...c, ...changes } : null);
@@ -67,22 +70,24 @@ export const useCharacterView = () => {
         const resultAction = await dispatch(regenerateCharacterFieldThunk({ character: selectedCharacter, field, lang: language }));
         if (regenerateCharacterFieldThunk.fulfilled.match(resultAction)) {
             handleFieldChange(resultAction.payload.field, resultAction.payload.value);
+        } else {
+            toast.error(t('error.apiErrorTitle'));
         }
         setIsRegeneratingField(null);
-    }, [dispatch, selectedCharacter, language, handleFieldChange]);
+    }, [dispatch, selectedCharacter, language, handleFieldChange, toast, t]);
 
     const handleGeneratePortrait = useCallback(async () => {
         if (!selectedCharacter || !selectedCharacter.appearance) return;
         setIsGeneratingPortrait(true);
         const resultAction = await dispatch(generateCharacterPortraitThunk({ characterId: selectedCharacter.id, description: selectedCharacter.appearance, lang: language }));
         if (!generateCharacterPortraitThunk.fulfilled.match(resultAction)) {
-             alert(t('characters.error.portraitFailed'));
+             toast.error(t('characters.error.portraitFailed'));
         } else {
             // Trigger re-render by updating local state, redux state will update via extraReducer
             setSelectedCharacter(c => c ? { ...c, hasAvatar: true } : null);
         }
         setIsGeneratingPortrait(false);
-    }, [dispatch, selectedCharacter, language, t]);
+    }, [dispatch, selectedCharacter, language, t, toast]);
 
     const handleRefinePortrait = useCallback(async () => {
         if (!selectedCharacter || !refinementPrompt) return;
@@ -90,11 +95,11 @@ export const useCharacterView = () => {
         const description = `${selectedCharacter.appearance}. Refinement: ${refinementPrompt}`;
         const resultAction = await dispatch(generateCharacterPortraitThunk({ characterId: selectedCharacter.id, description, lang: language }));
         if (!generateCharacterPortraitThunk.fulfilled.match(resultAction)) {
-            alert(t('characters.error.portraitFailed'));
+            toast.error(t('characters.error.portraitFailed'));
         }
         setRefinementPrompt('');
         setIsRefiningPortrait(false);
-    }, [dispatch, selectedCharacter, refinementPrompt, language, t]);
+    }, [dispatch, selectedCharacter, refinementPrompt, language, t, toast]);
 
     const handleDelete = useCallback((id: string) => {
         const char = characters.find(c => c.id === id);
@@ -110,8 +115,9 @@ export const useCharacterView = () => {
             setCharacterToDelete(null);
             setIsDossierOpen(false);
             setSelectedCharacter(null);
+            toast.info(t('characters.deleteLabel', { name: characterToDelete.name }));
         }
-    }, [dispatch, characterToDelete]);
+    }, [dispatch, characterToDelete, toast, t]);
 
     return {
         t,

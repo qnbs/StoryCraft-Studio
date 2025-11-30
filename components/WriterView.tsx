@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect, useRef } from 'react';
 import { Button } from './ui/Button';
 import { Select } from './ui/Select';
 import { Card, CardContent, CardHeader } from './ui/Card';
@@ -11,6 +11,8 @@ import { useWriterView } from '../hooks/useWriterView';
 import { WriterViewContext, useWriterViewContext } from '../contexts/WriterViewContext';
 import { Textarea } from './ui/Textarea';
 import { useAppSelector } from '../app/hooks';
+import { Checkbox } from './ui/Checkbox';
+import { Input } from './ui/Input';
 
 // --- SUB-COMPONENTS ---
 
@@ -33,7 +35,7 @@ const ContextPanel: FC = React.memo(() => {
         lineHeight: settings.lineSpacing,
     };
 
-    const handleMouseAndKeyUp = (e: React.MouseEvent<HTMLTextAreaElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleSelectionEvents = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
         const target = e.currentTarget;
         const { selectionStart, selectionEnd, value } = target;
         dispatch(writerActions.setSelection({ start: selectionStart, end: selectionEnd, text: value.substring(selectionStart, selectionEnd) }));
@@ -60,7 +62,7 @@ const ContextPanel: FC = React.memo(() => {
                         <DebouncedTextarea
                             value={selectedSection?.content || ''}
                             onDebouncedChange={(content) => selectedSectionIndex > -1 && handleContentChange(selectedSectionIndex, content)}
-                            onSelect={handleMouseAndKeyUp as any} onMouseUp={handleMouseAndKeyUp} onKeyUp={handleMouseAndKeyUp}
+                            onSelect={handleSelectionEvents} onMouseUp={handleSelectionEvents} onKeyUp={handleSelectionEvents}
                             className="h-full absolute inset-0 resize-none text-transparent bg-transparent caret-[var(--foreground-primary)] z-10 p-4"
                             placeholder={t('writer.studio.context.contentPlaceholder')} />
                         <div 
@@ -88,6 +90,19 @@ const ToolsPanel: FC = React.memo(() => {
     const { project, writerState, dispatch, isGenerateDisabled, handleGenerate } = useWriterViewContext();
     const { activeTool, selection, dialogueCharacters, scenario, brainstormContext, tone, style, isLoading } = writerState;
     
+    // Preset tones for dropdown logic
+    const presetTones = [
+        "More Cinematic",
+        "More Suspenseful",
+        "More Humorous",
+        "More Formal",
+        "More Poetic"
+    ];
+
+    // Determine if we are in "Custom" mode. 
+    // True if current tone is not empty AND not in presets.
+    const isCustomTone = tone && !presetTones.includes(tone);
+    
     const tools = [
         { id: 'continue', title: t('writer.studio.tools.continue.title'), icon: ICONS.CONTINUE },
         { id: 'improve', title: t('writer.studio.tools.improve.title'), icon: ICONS.IMPROVE },
@@ -97,11 +112,42 @@ const ToolsPanel: FC = React.memo(() => {
         { id: 'synopsis', title: t('writer.studio.tools.synopsis.title'), icon: ICONS.NEWSPAPER },
     ];
     
+    const handleToneSelect = (val: string) => {
+        if (val === 'Custom') {
+            // Keep existing tone if it's already custom, or clear if switching from preset
+            if (!isCustomTone) dispatch(writerActions.setTone(''));
+        } else {
+            dispatch(writerActions.setTone(val));
+        }
+    };
+
     const renderToolInputs = () => {
         switch(activeTool) {
             case 'improve': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.improve.instruction', {selection: selection.text ? `"${selection.text.substring(0, 50)}..."` : t('writer.studio.tools.improve.noSelection')})}</p>
-            case 'changeTone': return <div><p className="text-sm text-[var(--foreground-muted)] mb-3">{t('writer.studio.tools.improve.instruction', {selection: selection.text ? `"${selection.text.substring(0, 50)}..."` : t('writer.studio.tools.improve.noSelection')})}</p><Select id="tone" value={tone} onChange={e => dispatch(writerActions.setTone(e.target.value))}><option value="">{t('writer.studio.controls.selectTone')}</option><option value="More Cinematic">{t('writer.studio.controls.tones.cinematic')}</option><option value="More Suspenseful">{t('writer.studio.controls.tones.suspenseful')}</option><option value="More Humorous">{t('writer.studio.controls.tones.humorous')}</option><option value="More Formal">{t('writer.studio.controls.tones.formal')}</option><option value="More Poetic">{t('writer.studio.controls.tones.poetic')}</option></Select></div>;
-            case 'dialogue': return <div className="space-y-4"><div><label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.charactersLabel')}</label><div className="space-y-2 max-h-32 overflow-y-auto bg-[var(--background-tertiary)]/30 p-2 rounded-md">{project.characters.map(char => (<div key={char.id} className="flex items-center p-1"><input type="checkbox" id={`char-${char.id}`} checked={dialogueCharacters.some(c => c.id === char.id)} onChange={() => dispatch(writerActions.toggleDialogueCharacter(char))} className="h-4 w-4 rounded border-gray-300 dark:border-gray-500 bg-gray-200 dark:bg-gray-800 text-indigo-600 focus:ring-indigo-500" /><label htmlFor={`char-${char.id}`} className="ml-3 text-sm text-[var(--foreground-primary)]">{char.name}</label></div>))}</div></div><div><label htmlFor="scenario" className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.scenarioLabel')}</label><DebouncedTextarea id="scenario" value={scenario} onDebouncedChange={(val) => dispatch(writerActions.setScenario(val))} placeholder={t('writer.studio.tools.dialogue.scenarioPlaceholder')} rows={3}/></div></div>;
+            case 'changeTone': return (
+                <div>
+                    <p className="text-sm text-[var(--foreground-muted)] mb-3">{t('writer.studio.tools.improve.instruction', {selection: selection.text ? `"${selection.text.substring(0, 50)}..."` : t('writer.studio.tools.improve.noSelection')})}</p>
+                    <Select id="tone" value={isCustomTone ? 'Custom' : tone} onChange={e => handleToneSelect(e.target.value)}>
+                        <option value="">{t('writer.studio.controls.selectTone')}</option>
+                        <option value="More Cinematic">{t('writer.studio.controls.tones.cinematic')}</option>
+                        <option value="More Suspenseful">{t('writer.studio.controls.tones.suspenseful')}</option>
+                        <option value="More Humorous">{t('writer.studio.controls.tones.humorous')}</option>
+                        <option value="More Formal">{t('writer.studio.controls.tones.formal')}</option>
+                        <option value="More Poetic">{t('writer.studio.controls.tones.poetic')}</option>
+                        <option value="Custom">Custom...</option>
+                    </Select>
+                    {isCustomTone && (
+                        <div className="mt-2 animate-in">
+                            <Input 
+                                placeholder="e.g., Sarcastic, Melancholic, Fast-paced" 
+                                value={tone} 
+                                onChange={(e) => dispatch(writerActions.setTone(e.target.value))}
+                            />
+                        </div>
+                    )}
+                </div>
+            );
+            case 'dialogue': return <div className="space-y-4"><div><label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.charactersLabel')}</label><div className="space-y-2 max-h-32 overflow-y-auto bg-white/5 p-2 rounded-md border border-[var(--border-primary)]">{project.characters.map(char => (<div key={char.id}><Checkbox id={`char-${char.id}`} label={char.name} checked={dialogueCharacters.some(c => c.id === char.id)} onChange={() => dispatch(writerActions.toggleDialogueCharacter(char))} /></div>))}</div></div><div><label htmlFor="scenario" className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.scenarioLabel')}</label><DebouncedTextarea id="scenario" value={scenario} onDebouncedChange={(val) => dispatch(writerActions.setScenario(val))} placeholder={t('writer.studio.tools.dialogue.scenarioPlaceholder')} rows={3}/></div></div>;
             case 'brainstorm': return <div><label htmlFor="brainstorm-context" className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.brainstorm.contextLabel')}</label><DebouncedTextarea id="brainstorm-context" value={brainstormContext} onDebouncedChange={(val) => dispatch(writerActions.setBrainstormContext(val))} placeholder={t('writer.studio.tools.brainstorm.contextPlaceholder')} rows={4}/></div>
             case 'synopsis': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.synopsis.instruction')}</p>
             default: return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.continue.instruction')}</p>;
@@ -123,8 +169,8 @@ const ToolsPanel: FC = React.memo(() => {
                                 onClick={() => dispatch(writerActions.setActiveTool(tool.id as WriterTool))} 
                                 className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 active:scale-95 touch-manipulation min-h-[44px] min-w-[44px] ${
                                     activeTool === tool.id 
-                                    ? 'bg-indigo-600 text-white shadow-md transform scale-[1.02]' 
-                                    : 'bg-[var(--background-tertiary)] text-[var(--foreground-secondary)] hover:bg-[var(--border-primary)]'
+                                    ? 'bg-[var(--background-interactive)] text-white shadow-md transform scale-[1.02]' 
+                                    : 'bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10 border border-[var(--border-primary)]'
                                 }`}
                                 aria-label={tool.title}
                                 aria-pressed={activeTool === tool.id}
@@ -190,6 +236,14 @@ const AiScratchpad: FC = React.memo(() => {
     const { writerState, handleAccept, handleGenerate, handleNavigateHistory, handleUpdateScratchpad, dispatch } = useWriterViewContext();
     const { generationHistory, activeHistoryIndex, isLoading, activeTool } = writerState;
     const currentResult = generationHistory[activeHistoryIndex] || '';
+    
+    // Auto-scroll logic
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    useEffect(() => {
+        if (isLoading && textareaRef.current) {
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+        }
+    }, [currentResult, isLoading]);
 
     return (
         <div className="h-full flex flex-col">
@@ -200,9 +254,10 @@ const AiScratchpad: FC = React.memo(() => {
                 <CardContent className="flex flex-col flex-grow min-h-0 p-4 sm:p-6 overflow-hidden">
                     <div className="relative flex-grow mb-4 overflow-hidden flex flex-col">
                         <Textarea 
+                            ref={textareaRef}
                             value={currentResult}
                             onChange={(e) => handleUpdateScratchpad(e.target.value)}
-                            className="flex-grow w-full resize-none whitespace-pre-wrap bg-[var(--background-secondary)]/50 border-[var(--border-primary)] p-4 font-mono text-sm"
+                            className="flex-grow w-full resize-none whitespace-pre-wrap bg-white/5 border-[var(--border-primary)] p-4 font-mono text-sm"
                             placeholder={isLoading ? '' : t('writer.studio.result.placeholder')}
                             disabled={isLoading}
                         />

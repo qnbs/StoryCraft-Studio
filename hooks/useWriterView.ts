@@ -65,7 +65,9 @@ export const useWriterView = () => {
             case 'improve':
                 return `Improve the following text to be more ${style || 'engaging'}:\n\n"${selection.text}"`;
             case 'changeTone':
-                return `Rewrite the following text in a ${tone || 'different'} tone:\n\n"${selection.text}"`;
+                // The tone value is now directly used (either preset or custom)
+                const selectedTone = tone || 'different';
+                return `Rewrite the following text in a ${selectedTone} tone:\n\n"${selection.text}"`;
             case 'dialogue':
                 const charNames = dialogueCharacters.map(c => c.name).join(' and ');
                 return `Write a piece of dialogue between ${charNames}. The scenario is: ${scenario}. The dialogue should be placed at the current cursor location in the text:\n\n${content}`;

@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { selectManuscript, selectOutline } from '../features/project/projectSelectors';
 import { projectActions, generateOutlineThunk, regenerateOutlineSectionThunk } from '../features/project/projectSlice';
 import { OutlineSection, View, StorySection } from '../types';
+import { useToast } from '../components/ui/Toast';
 
 interface UseOutlineGeneratorProps {
   onNavigate: (view: View) => void;
@@ -22,6 +23,7 @@ export const useOutlineGenerator = ({ onNavigate }: UseOutlineGeneratorProps) =>
   const dispatch = useAppDispatch();
   const existingOutline = useAppSelector(selectOutline);
   const existingManuscript = useAppSelector(selectManuscript);
+  const toast = useToast();
 
   // Form State
   const [genre, setGenre] = useState('');
@@ -52,11 +54,13 @@ export const useOutlineGenerator = ({ onNavigate }: UseOutlineGeneratorProps) =>
     
     if(generateOutlineThunk.fulfilled.match(resultAction)) {
         setOutline(resultAction.payload.map(s => ({...s, id: s.id || `gen-${Math.random()}`})));
+        toast.success(t('common.saved'));
     } else {
         setError(t('outline.error.generationFailed'));
+        toast.error(t('outline.error.generationFailed'));
     }
     setIsLoading(false);
-  }, [dispatch, genre, idea, characters, setting, pacing, numChapters, includeTwist, language, t]);
+  }, [dispatch, genre, idea, characters, setting, pacing, numChapters, includeTwist, language, t, toast]);
 
   const handleGenerate = useCallback(() => {
     if (outline.length > 0) {
@@ -90,10 +94,10 @@ export const useOutlineGenerator = ({ onNavigate }: UseOutlineGeneratorProps) =>
             return newOutline;
         });
     } else {
-         alert(t('outline.error.generationFailed'));
+         toast.error(t('outline.error.generationFailed'));
     }
     setIsRegenerating(null);
-  }, [dispatch, outline, language, t]);
+  }, [dispatch, outline, language, t, toast]);
 
   const handleDragSort = useCallback(() => {
     if (draggedItem.current === null || dragOverItem.current === null) return;
@@ -140,8 +144,9 @@ export const useOutlineGenerator = ({ onNavigate }: UseOutlineGeneratorProps) =>
       dispatch(projectActions.setOutline(outline));
       dispatch(projectActions.setManuscript(newManuscript));
       setConfirmModal(null);
+      toast.success(t('common.saved'), t('sidebar.manuscript'));
       onNavigate('manuscript');
-  }, [dispatch, outline, onNavigate]);
+  }, [dispatch, outline, onNavigate, toast, t]);
   
   const handleApplyOutline = useCallback(() => {
       if (existingManuscript.length > 1 || (existingManuscript.length === 1 && existingManuscript[0].content !== '')) {

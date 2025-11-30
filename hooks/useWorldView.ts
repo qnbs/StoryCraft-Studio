@@ -6,11 +6,13 @@ import { projectActions, generateWorldProfileThunk, regenerateWorldFieldThunk, g
 import { World, WorldTimelineEvent, WorldLocation } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { dbService } from '../services/dbService';
+import { useToast } from '../components/ui/Toast';
 
 export const useWorldView = () => {
     const { t, language } = useTranslation();
     const dispatch = useAppDispatch();
     const worlds = useAppSelector(selectAllWorlds);
+    const toast = useToast();
 
     const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
     const [isAtlasOpen, setIsAtlasOpen] = useState(false);
@@ -39,17 +41,20 @@ export const useWorldView = () => {
         const resultAction = await dispatch(generateWorldProfileThunk({ concept: aiConcept, lang: language }));
         if (generateWorldProfileThunk.fulfilled.match(resultAction)) {
             dispatch(projectActions.addWorld(resultAction.payload));
+            toast.success(t('common.saved'), resultAction.payload.name);
+        } else {
+            toast.error(t('error.apiErrorTitle'));
         }
         setIsGeneratingProfile(false);
         setAiConcept('');
-    }, [dispatch, aiConcept, language]);
+    }, [dispatch, aiConcept, language, toast, t]);
 
     const handleSelect = useCallback((world: World) => {
         setSelectedWorld(world);
         setIsAtlasOpen(true);
     }, []);
 
-    const handleFieldChange = useCallback((field: keyof World, value: any) => {
+    const handleFieldChange = useCallback((field: keyof World, value: string | WorldTimelineEvent[] | WorldLocation[]) => {
         if (selectedWorld) {
             const changes = { [field]: value };
             setSelectedWorld(w => w ? { ...w, ...changes } : null);
@@ -63,9 +68,11 @@ export const useWorldView = () => {
         const resultAction = await dispatch(regenerateWorldFieldThunk({ world: selectedWorld, field, lang: language }));
         if (regenerateWorldFieldThunk.fulfilled.match(resultAction)) {
             handleFieldChange(resultAction.payload.field, resultAction.payload.value);
+        } else {
+            toast.error(t('error.apiErrorTitle'));
         }
         setIsRegeneratingField(null);
-    }, [dispatch, selectedWorld, language, handleFieldChange]);
+    }, [dispatch, selectedWorld, language, handleFieldChange, toast, t]);
 
     const handleGenerateImage = useCallback(async () => {
         if (!selectedWorld || !selectedWorld.description) return;
@@ -74,10 +81,10 @@ export const useWorldView = () => {
         if (generateWorldImageThunk.fulfilled.match(resultAction)) {
             setSelectedWorld(w => w ? { ...w, hasAmbianceImage: true } : null);
         } else {
-            alert(t('worlds.error.imageFailed'));
+            toast.error(t('worlds.error.imageFailed'));
         }
         setIsGeneratingImage(false);
-    }, [dispatch, selectedWorld, language, t]);
+    }, [dispatch, selectedWorld, language, t, toast]);
 
     const handleRefineImage = useCallback(async () => {
         if (!selectedWorld || !refinementPrompt) return;
@@ -85,11 +92,11 @@ export const useWorldView = () => {
         const description = `${selectedWorld.description}. Refinement: ${refinementPrompt}`;
         const resultAction = await dispatch(generateWorldImageThunk({ worldId: selectedWorld.id, description, lang: language }));
         if (!generateWorldImageThunk.fulfilled.match(resultAction)) {
-             alert(t('worlds.error.imageFailed'));
+             toast.error(t('worlds.error.imageFailed'));
         }
         setRefinementPrompt('');
         setIsRefiningImage(false);
-    }, [dispatch, selectedWorld, refinementPrompt, language, t]);
+    }, [dispatch, selectedWorld, refinementPrompt, language, t, toast]);
     
     // Timeline and Location Handlers
     const addTimelineEvent = useCallback(() => {
@@ -136,8 +143,9 @@ export const useWorldView = () => {
             setWorldToDelete(null);
             setIsAtlasOpen(false);
             setSelectedWorld(null);
+            toast.info(t('worlds.deleteLabel', { name: worldToDelete.name }));
         }
-    }, [dispatch, worldToDelete]);
+    }, [dispatch, worldToDelete, toast, t]);
 
     return {
         t,

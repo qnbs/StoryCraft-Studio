@@ -28,6 +28,8 @@
     "export.ai.synopsis": "KI-Synopse generieren",
     "export.ai.synopsisTitle": "Synopse",
     "export.ai.generating": "Generiere...",
+    "export.ai.generateButton": "Synopse generieren",
+    "export.ai.synopsisPlaceholder": "Die KI-generierte Synopse erscheint hier. Sie können sie vor dem Export bearbeiten.",
     "export.format.title": "Formatierung",
     "export.format.format": "Format",
     "export.format.md": "Markdown (.md)",

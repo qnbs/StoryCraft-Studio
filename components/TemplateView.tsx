@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Template } from '../types';
+import { Template, View } from '../types';
 import { ICONS } from '../constants';
 import { Card, CardContent, CardHeader } from './ui/Card';
 import { Button } from './ui/Button';
@@ -59,7 +59,7 @@ const PreviewModal: FC = () => {
                 <div className="order-2 md:order-1 border-t md:border-t-0 border-[var(--border-primary)]/50 pt-6 md:pt-0">
                     <h3 className="text-lg font-semibold text-[var(--foreground-primary)] mb-2">{isRemixMode ? t('templates.remix.title') : t('templates.modal.sectionsTitle')}</h3>
                     <p className="text-sm text-[var(--foreground-muted)] mb-4">{isRemixMode ? t('templates.remix.description') : t('templates.remix.descriptionHint')}</p>
-                    <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto bg-[var(--background-tertiary)]/50 p-2 rounded-md border border-[var(--border-primary)]/50">
+                    <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto bg-white/5 p-2 rounded-md border border-[var(--border-primary)]/50">
                         {remixedSections.map((sec, i) => (
                             <div key={sec.id} draggable={isRemixMode} onDragStart={() => isRemixMode && (draggedItem.current = i)} onDragEnter={() => isRemixMode && (dragOverItem.current = i)} onDragEnd={handleDragSort} onDragOver={(e) => isRemixMode && e.preventDefault()} className={`flex items-center gap-2 p-2 rounded-md ${isRemixMode ? 'bg-[var(--foreground-primary)]/5 cursor-move' : 'bg-transparent'}`}>
                                 {isRemixMode && <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500 flex-shrink-0">{ICONS.GRIP_VERTICAL}</svg>}
@@ -136,8 +136,9 @@ const TemplateViewUI: FC = () => {
     );
 };
 
-export const TemplateView: React.FC<{ onNavigate: (view: 'manuscript') => void }> = ({ onNavigate }) => {
-    const contextValue = useTemplateView({ onNavigate });
+export const TemplateView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => {
+    // Explicitly casting onNavigate to fit internal hook needs if necessary, but changing prop type above is cleaner
+    const contextValue = useTemplateView({ onNavigate: onNavigate as (view: 'manuscript') => void });
     return (
         <TemplateViewContext.Provider value={contextValue}>
             <TemplateViewUI />

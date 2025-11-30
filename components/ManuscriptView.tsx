@@ -1,4 +1,4 @@
-import React, { FC, useState, useRef, useCallback, ReactNode, useMemo } from 'react';
+import React, { FC, useState, useRef, useCallback, ReactNode, useMemo, useEffect } from 'react';
 import { Character, World } from '../types';
 import { Card, CardContent, CardHeader } from './ui/Card';
 import { ICONS } from '../constants';
@@ -13,10 +13,11 @@ import { useManuscriptView } from '../hooks/useManuscriptView';
 import { ManuscriptViewContext, useManuscriptViewContext } from '../contexts/ManuscriptViewContext';
 import { Textarea } from './ui/Textarea';
 import { useAppSelector } from '../app/hooks';
+import { useTranslation } from '../hooks/useTranslation';
 
 
 // --- Custom Hook for Resizable Panels ---
-const useResizablePanels = (initialLeft = 25, initialRight = 25) => {
+const useResizablePanels = (initialLeft = 20, initialRight = 20) => {
     const [leftPanelWidth, setLeftPanelWidth] = useState(initialLeft);
     const [rightPanelWidth, setRightPanelWidth] = useState(initialRight);
     const isResizingLeft = useRef(false);
@@ -87,18 +88,20 @@ interface NavigatorItemProps {
     isDragging: boolean;
     isFirst: boolean;
     isLast: boolean;
+    canDelete: boolean;
     onSelect: (id: string) => void;
     onDragStart: (index: number) => void;
     onDragEnter: (index: number) => void;
     onDragEnd: () => void;
     onMoveUp: (index: number) => void;
     onMoveDown: (index: number) => void;
+    onDelete: (id: string) => void;
     t: (key: string, params?: any) => string;
 }
 
 const NavigatorItem: FC<NavigatorItemProps> = React.memo(({ 
-    section, index, isActive, isDragging, isFirst, isLast, 
-    onSelect, onDragStart, onDragEnter, onDragEnd, onMoveUp, onMoveDown, t 
+    section, index, isActive, isDragging, isFirst, isLast, canDelete,
+    onSelect, onDragStart, onDragEnter, onDragEnd, onMoveUp, onMoveDown, onDelete, t 
 }) => {
     return (
         <div 
@@ -112,7 +115,7 @@ const NavigatorItem: FC<NavigatorItemProps> = React.memo(({
                 onClick={() => onSelect(section.id)} 
                 className={`group rounded-md cursor-pointer p-2 flex items-center justify-between text-left transition-all duration-200 w-full ${isActive ? 'bg-[var(--nav-background-active)] text-[var(--nav-text-active)]' : 'hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]'} ${isDragging ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}
             >
-                <span className="font-medium text-sm flex-grow truncate">{section.title}</span>
+                <span className="font-medium text-sm flex-grow truncate mr-2">{section.title}</span>
                  <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onMoveUp(index); }} 
@@ -132,6 +135,16 @@ const NavigatorItem: FC<NavigatorItemProps> = React.memo(({
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                     </button>
+                    {canDelete && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(section.id); }}
+                            className="p-1 rounded-md hover:bg-red-500/20 text-red-400 focus:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500"
+                            title={t('manuscript.deleteSection')}
+                            aria-label={t('manuscript.deleteSection')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                        </button>
+                    )}
                     <div 
                         title={t('outline.result.dragHandleTooltip')} 
                         aria-label={t('outline.result.dragHandleTooltip')} 
@@ -147,7 +160,7 @@ const NavigatorItem: FC<NavigatorItemProps> = React.memo(({
 NavigatorItem.displayName = 'NavigatorItem';
 
 const StoryNavigator: FC<{onSectionSelect?: () => void}> = React.memo(({ onSectionSelect }) => {
-    const { t, manuscript, activeSectionId, setActiveSectionId, draggedItem, dragOverItem, handleDragSort, handleMoveSection, draggingIndex, setDraggingIndex } = useManuscriptViewContext();
+    const { t, manuscript, activeSectionId, setActiveSectionId, draggedItem, dragOverItem, handleDragSort, handleMoveSection, draggingIndex, setDraggingIndex, handleAddSection, handleDeleteSection } = useManuscriptViewContext();
     
     const handleSelect = useCallback((id: string) => {
         setActiveSectionId(id);
@@ -177,34 +190,87 @@ const StoryNavigator: FC<{onSectionSelect?: () => void}> = React.memo(({ onSecti
     }, [handleMoveSection]);
 
     return (
-        <div className="space-y-1 h-full overflow-y-auto p-2 no-scrollbar">
-            {(Array.isArray(manuscript) ? manuscript : []).map((section, index) => (
-                <NavigatorItem
-                    key={section.id}
-                    section={section}
-                    index={index}
-                    isActive={activeSectionId === section.id}
-                    isDragging={draggingIndex === index}
-                    isFirst={index === 0}
-                    isLast={index === manuscript.length - 1}
-                    onSelect={handleSelect}
-                    onDragStart={handleDragStart}
-                    onDragEnter={handleDragEnter}
-                    onDragEnd={handleDragEnd}
-                    onMoveUp={handleMoveUp}
-                    onMoveDown={handleMoveDown}
-                    t={t}
-                />
-            ))}
+        <div className="flex flex-col h-full">
+            <div className="flex-grow space-y-1 overflow-y-auto p-2 no-scrollbar">
+                {(Array.isArray(manuscript) ? manuscript : []).map((section, index) => (
+                    <NavigatorItem
+                        key={section.id}
+                        section={section}
+                        index={index}
+                        isActive={activeSectionId === section.id}
+                        isDragging={draggingIndex === index}
+                        isFirst={index === 0}
+                        isLast={index === manuscript.length - 1}
+                        canDelete={manuscript.length > 1}
+                        onSelect={handleSelect}
+                        onDragStart={handleDragStart}
+                        onDragEnter={handleDragEnter}
+                        onDragEnd={handleDragEnd}
+                        onMoveUp={handleMoveUp}
+                        onMoveDown={handleMoveDown}
+                        onDelete={handleDeleteSection}
+                        t={t}
+                    />
+                ))}
+            </div>
+            <div className="p-3 border-t border-[var(--border-primary)] bg-[var(--background-secondary)]/50">
+                <Button onClick={handleAddSection} variant="secondary" size="sm" className="w-full justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    {t('manuscript.addSection')}
+                </Button>
+            </div>
         </div>
     );
 });
 StoryNavigator.displayName = 'StoryNavigator';
 
+// Mock Dictionary for simple spell check (English)
+const TYPOS_EN: Record<string, string> = {
+    'teh': 'the',
+    'recieve': 'receive',
+    'seperate': 'separate',
+    'occured': 'occurred',
+    'definately': 'definitely',
+    'wierd': 'weird',
+    'accommodate': 'accommodate',
+    'wich': 'which',
+    'thier': 'their',
+    'alot': 'a lot',
+    'wont': "won't",
+    'dont': "don't",
+    'cant': "can't",
+    'its': "it's", 
+    'your': "you're",
+    'there': "their",
+    'then': "than",
+};
 
-const ManuscriptEditor: FC = React.memo(() => {
-    const { t, activeSection, handleContentChange, mentions, handleMentionSelect, mentionPosition, editorRef, activeSectionStats, characters, worlds } = useManuscriptViewContext();
+// Mock Dictionary for simple spell check (German)
+const TYPOS_DE: Record<string, string> = {
+    'dass': 'das', 
+    'das': 'dass',
+    'warscheinlich': 'wahrscheinlich',
+    'nähmlich': 'nämlich',
+    'maschine': 'Maschine',
+    'wieder': 'wider',
+    'wider': 'wieder',
+    'seit': 'seid',
+    'seid': 'seit',
+    'standart': 'Standard',
+    'im voraus': 'im Voraus',
+    'vorraus': 'Voraus',
+    'packet': 'Paket',
+    'entgültig': 'endgültig',
+    'rythmus': 'Rhythmus',
+    'haken': 'Haken',
+};
+
+const ManuscriptEditor: FC<{ isFocusMode: boolean }> = React.memo(({ isFocusMode }) => {
+    const { t, activeSection, handleContentChange, handleTitleChange, mentions, handleMentionSelect, mentionPosition, editorRef, activeSectionStats, characters, worlds } = useManuscriptViewContext();
     const settings = useAppSelector((state) => state.settings);
+    const { language } = useTranslation();
+    const [spellCheckPopover, setSpellCheckPopover] = useState<{ x: number, y: number, word: string, suggestion: string } | null>(null);
+    const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
 
     const editorStyles: React.CSSProperties = {
         fontFamily: settings.editorFont,
@@ -214,42 +280,115 @@ const ManuscriptEditor: FC = React.memo(() => {
         wordWrap: 'break-word',
     };
 
+    // Determine active dictionary based on language
+    const currentTypos = language === 'de' ? TYPOS_DE : TYPOS_EN;
+
+    const handleSpellErrorClick = (e: React.MouseEvent, word: string) => {
+        e.stopPropagation();
+        const suggestion = currentTypos[word.toLowerCase()] || '';
+        if (suggestion) {
+            setSpellCheckPopover({
+                x: e.clientX,
+                y: e.clientY,
+                word,
+                suggestion
+            });
+        }
+    };
+
+    const applyCorrection = () => {
+        if (spellCheckPopover && activeSection) {
+            // Case-insensitive regex replacement for the specific word bound by whitespace/punctuation logic
+            const regex = new RegExp(`\\b${spellCheckPopover.word}\\b`);
+            const newContent = activeSection.content.replace(regex, spellCheckPopover.suggestion);
+            handleContentChange(activeSection.id, newContent);
+            setSpellCheckPopover(null);
+        }
+    };
+
+    // Close popover when clicking elsewhere
+    useEffect(() => {
+        const closePopover = () => setSpellCheckPopover(null);
+        window.addEventListener('click', closePopover);
+        return () => window.removeEventListener('click', closePopover);
+    }, []);
+
+    // Reset mention selection index when suggestions change
+    useEffect(() => {
+        setSelectedMentionIndex(0);
+    }, [mentions]);
+
+    // Keyboard handling for mention popup navigation
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (mentions.length > 0 && mentionPosition) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedMentionIndex(prev => (prev + 1) % mentions.length);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedMentionIndex(prev => (prev - 1 + mentions.length) % mentions.length);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                handleMentionSelect(mentions[selectedMentionIndex]);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // We need a way to clear mentions from parent, passing empty list for now is handled by parent state
+                handleContentChange(activeSection?.id || '', activeSection?.content || ''); // This triggers a re-eval and clears mentions
+            }
+        }
+    };
+
     // Memoize the parsed content to prevent recalculation on every render/keystroke
-    // This significantly improves performance for large documents.
     const renderedContent = useMemo(() => {
         if(!activeSection?.content) return '';
 
-        const text = activeSection.content;
-        const regex = /([@#][\w\s]+?)(?=[.,:;!?\s]|$)/g;
+        let text = activeSection.content;
         const characterMap = new Map(characters.map(c => [c.name.toLowerCase(), c]));
         const worldMap = new Map(worlds.map(w => [w.name.toLowerCase(), w]));
         
-        let lastIndex = 0;
         const parts: ReactNode[] = [];
         
-        text.replace(regex, (match, p1, offset) => {
-            const symbol = p1[0];
-            const name = p1.substring(1).toLowerCase();
-            let found = false;
-
-            if (symbol === '@' && characterMap.has(name)) {
-                found = true;
-            } else if (symbol === '#' && worldMap.has(name)) {
-                found = true;
+        let lastIndex = 0;
+        // Regex matching: Mentions (@Word, #Word) OR Words (for spellcheck)
+        const regex = /([@#][\w\s]+?)(?=[.,:;!?\s]|$)|(\b[\w\u00C0-\u017F']+\b)/g;
+        
+        text.replace(regex, (match, mention, word, offset) => {
+            // Push any text between matches (whitespace, punctuation)
+            if (offset > lastIndex) {
+                parts.push(text.substring(lastIndex, offset));
             }
             
-            if(offset > lastIndex) {
-                 parts.push(text.substring(lastIndex, offset));
-            }
+            if (mention) {
+                const symbol = mention[0];
+                const name = mention.substring(1).toLowerCase();
+                let found = false;
+                if (symbol === '@' && characterMap.has(name)) found = true;
+                else if (symbol === '#' && worldMap.has(name)) found = true;
 
-            if (found) {
-                const className = symbol === '@' ? 'mention-pill mention-pill-character' : 'mention-pill mention-pill-world';
-                parts.push(<span key={offset} className={className}>{p1}</span>);
-            } else {
-                 parts.push(p1);
+                if (found) {
+                    const className = symbol === '@' ? 'mention-pill mention-pill-character' : 'mention-pill mention-pill-world';
+                    parts.push(<span key={offset} className={className}>{mention}</span>);
+                } else {
+                    parts.push(mention);
+                }
+            } else if (word) {
+                const lowerWord = word.toLowerCase();
+                if (currentTypos.hasOwnProperty(lowerWord)) {
+                    parts.push(
+                        <span 
+                            key={offset} 
+                            className="spell-error" 
+                            onClick={(e) => handleSpellErrorClick(e, word)}
+                        >
+                            {word}
+                        </span>
+                    );
+                } else {
+                    parts.push(word);
+                }
             }
-
-            lastIndex = offset + p1.length;
+            
+            lastIndex = offset + match.length;
             return match;
         });
         
@@ -258,7 +397,7 @@ const ManuscriptEditor: FC = React.memo(() => {
         }
 
         return <>{parts}</>;
-    }, [activeSection?.content, characters, worlds]);
+    }, [activeSection?.content, characters, worlds, currentTypos]);
 
     if (!activeSection) {
         return <div className="flex h-full w-full items-center justify-center text-center text-[var(--foreground-muted)] p-4"><p>{t('manuscript.select')}</p></div>;
@@ -276,29 +415,41 @@ const ManuscriptEditor: FC = React.memo(() => {
 
     return (
         <div className="relative h-full flex flex-col">
-            <Textarea
-                ref={editorRef}
-                value={activeSection.content}
-                onChange={(e) => handleContentChange(activeSection.id, e.target.value)}
-                onSelect={handleSelectionEvents} // Trigger mention check on select
-                onKeyUp={handleSelectionEvents} // and keyup
-                onClick={handleSelectionEvents} // and click
-                className="h-full w-full leading-relaxed resize-none p-4 sm:p-6 md:p-12 bg-transparent border-0 focus:ring-0 flex-grow caret-[var(--foreground-primary)] text-transparent max-w-3xl mx-auto selection:bg-indigo-500/30"
-                placeholder={activeSection.prompt || t('manuscript.contentPlaceholder', { title: activeSection.title })}
-                style={{
-                     fontSize: `${settings.fontSize}px`,
-                     fontFamily: settings.editorFont,
-                     lineHeight: settings.lineSpacing
-                }}
-            />
-            <div 
-                className="absolute inset-0 p-4 sm:p-6 md:p-12 leading-relaxed pointer-events-none overflow-auto max-w-3xl mx-auto" 
-                style={editorStyles}
-                aria-hidden="true"
-            >
-                {renderedContent}
+            <div className={`transition-all duration-500 ease-in-out px-4 sm:px-6 md:px-12 pt-6 pb-2 ${isFocusMode ? 'opacity-0 h-0 overflow-hidden py-0' : 'opacity-100'}`}>
+                <DebouncedInput
+                    value={activeSection.title}
+                    onDebouncedChange={(val) => handleTitleChange(activeSection.id, val)}
+                    className="text-2xl sm:text-3xl font-bold bg-transparent border-0 px-0 h-auto text-[var(--foreground-primary)] placeholder:text-[var(--foreground-muted)] focus:ring-0"
+                    placeholder={t('manuscript.titlePlaceholder')}
+                />
             </div>
-             <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/90 border border-[var(--border-primary)] px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm shadow-sm">
+            <div className="relative flex-grow">
+                <Textarea
+                    ref={editorRef}
+                    value={activeSection.content}
+                    onChange={(e) => handleContentChange(activeSection.id, e.target.value)}
+                    onSelect={handleSelectionEvents} // Trigger mention check on select
+                    onKeyUp={handleSelectionEvents} // and keyup
+                    onClick={handleSelectionEvents} // and click
+                    onKeyDown={handleKeyDown} // Intercept keys for mention nav
+                    className={`h-full w-full leading-relaxed resize-none p-4 sm:p-6 md:p-12 pt-2 bg-transparent border-0 focus:ring-0 flex-grow caret-[var(--foreground-primary)] text-transparent max-w-3xl mx-auto selection:bg-indigo-500/30 transition-all duration-500 ${isFocusMode ? 'max-w-4xl pt-12' : ''}`}
+                    placeholder={activeSection.prompt || t('manuscript.contentPlaceholder', { title: activeSection.title })}
+                    style={{
+                        fontSize: `${settings.fontSize}px`,
+                        fontFamily: settings.editorFont,
+                        lineHeight: settings.lineSpacing
+                    }}
+                    spellCheck={false} // We are implementing our own simple highlight
+                />
+                <div 
+                    className={`absolute inset-0 p-4 sm:p-6 md:p-12 pt-2 leading-relaxed pointer-events-none overflow-auto max-w-3xl mx-auto transition-all duration-500 ${isFocusMode ? 'max-w-4xl pt-12' : ''}`} 
+                    style={editorStyles}
+                    aria-hidden="true"
+                >
+                    {renderedContent}
+                </div>
+            </div>
+             <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/90 border border-[var(--border-primary)] px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm shadow-sm transition-opacity duration-300">
                 {activeSectionStats.wordCount} words
             </div>
             {mentions.length > 0 && (mentionPosition !== null || isMobile) && (
@@ -307,14 +458,37 @@ const ManuscriptEditor: FC = React.memo(() => {
                     <div className="max-h-64 overflow-y-auto p-2">
                         <p className="text-xs font-semibold text-[var(--foreground-muted)] px-2 mb-2 uppercase tracking-wider">{t('manuscript.mention.suggestions')}</p>
                         <ul className="space-y-1">
-                            {mentions.map(item => (
-                                <li key={item.id} onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(item); }} className="px-3 py-3 rounded-md text-sm text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white cursor-pointer flex items-center space-x-3 transition-colors">
-                                {item.type === 'character' ? <div className="p-1 bg-blue-500/20 rounded flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-blue-400">{ICONS.CHARACTERS}</svg></div> : <div className="p-1 bg-emerald-500/20 rounded flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-emerald-400">{ICONS.WORLD}</svg></div>}
+                            {mentions.map((item, index) => (
+                                <li 
+                                    key={item.id} 
+                                    onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(item); }} 
+                                    className={`px-3 py-3 rounded-md text-sm cursor-pointer flex items-center space-x-3 transition-colors ${index === selectedMentionIndex ? 'bg-[var(--background-interactive)] text-white' : 'text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)] hover:text-white'}`}
+                                >
+                                {item.type === 'character' ? <div className={`p-1 rounded flex-shrink-0 ${index === selectedMentionIndex ? 'bg-white/20' : 'bg-blue-500/20'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className={`w-4 h-4 ${index === selectedMentionIndex ? 'text-white' : 'text-blue-400'}`}>{ICONS.CHARACTERS}</svg></div> : <div className={`p-1 rounded flex-shrink-0 ${index === selectedMentionIndex ? 'bg-white/20' : 'bg-emerald-500/20'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className={`w-4 h-4 ${index === selectedMentionIndex ? 'text-white' : 'text-emerald-400'}`}>{ICONS.WORLD}</svg></div>}
                                 <span className="font-medium truncate">{item.name}</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
+                </div>
+            )}
+            {/* Spell Check Popover */}
+            {spellCheckPopover && (
+                <div 
+                    className="absolute z-50 bg-[var(--background-secondary)] border border-[var(--border-primary)] shadow-xl rounded-md p-2 animate-in fade-in zoom-in-95"
+                    style={{ 
+                        top: spellCheckPopover.y + 10, 
+                        left: spellCheckPopover.x - 20 
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <p className="text-xs text-[var(--foreground-muted)] mb-1 uppercase tracking-wide px-2">Did you mean?</p>
+                    <button 
+                        onClick={applyCorrection}
+                        className="block w-full text-left px-3 py-1.5 rounded hover:bg-[var(--background-interactive)] hover:text-white text-[var(--foreground-primary)] font-medium"
+                    >
+                        {spellCheckPopover.suggestion}
+                    </button>
                 </div>
             )}
         </div>
@@ -324,7 +498,7 @@ ManuscriptEditor.displayName = 'ManuscriptEditor';
 
 
 const InspectorPanel: FC = React.memo(() => {
-    const { t, project, dispatch, activeSectionStats, isLoglineModalOpen, setIsLoglineModalOpen, loglineSuggestions, isAiLoading, handleGenerateLoglines, selectLogline } = useManuscriptViewContext();
+    const { t, project, dispatch, activeSectionStats, isLoglineModalOpen, setIsLoglineModalOpen, loglineSuggestions, isAiLoading, handleGenerateLoglines, selectLogline, isProofreading, handleProofread, proofreadSuggestions, applyProofreadSuggestion } = useManuscriptViewContext();
     return (
         <>
             <div className="space-y-4 p-4">
@@ -341,11 +515,38 @@ const InspectorPanel: FC = React.memo(() => {
                     </Button>
                 </div>
                  <Card>
-                    <CardHeader><h3 className="text-base font-semibold">{t('manuscript.inspector.statsTitle')}</h3></CardHeader>
+                    <CardHeader className="flex justify-between items-center">
+                        <h3 className="text-base font-semibold">{t('manuscript.inspector.statsTitle')}</h3>
+                    </CardHeader>
                     <CardContent className="text-sm space-y-3">
                         <div className="flex justify-between border-b border-[var(--border-primary)]/50 pb-2"><span>{t('dashboard.stats.totalWordCount')}</span><span className="font-bold">{activeSectionStats.wordCount.toLocaleString()}</span></div>
                         <div className="flex justify-between border-b border-[var(--border-primary)]/50 pb-2"><span>{t('manuscript.inspector.charCount')}</span><span className="font-bold">{activeSectionStats.charCount.toLocaleString()}</span></div>
                         <div className="flex justify-between"><span>{t('manuscript.inspector.readTime')}</span><span className="font-bold">{t('manuscript.inspector.readTimeValue', { time: String(activeSectionStats.readTime) })}</span></div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex justify-between items-center pb-2">
+                        <h3 className="text-base font-semibold">AI Proofreader</h3>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <Button onClick={handleProofread} disabled={isProofreading} className="w-full">
+                            {isProofreading ? <Spinner/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                            Check Grammar & Style
+                        </Button>
+                        {proofreadSuggestions.length > 0 && (
+                            <div className="space-y-2 mt-4 max-h-60 overflow-y-auto pr-1">
+                                {proofreadSuggestions.map((suggestion, idx) => (
+                                    <div key={idx} className="p-3 bg-[var(--background-secondary)] rounded-md border border-[var(--border-primary)] text-sm">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-red-400 line-through mr-2 opacity-70">{suggestion.original}</span>
+                                            <span className="text-green-400 font-semibold">{suggestion.suggestion}</span>
+                                        </div>
+                                        <p className="text-[var(--foreground-muted)] text-xs mb-2">{suggestion.explanation}</p>
+                                        <Button size="sm" variant="secondary" onClick={() => applyProofreadSuggestion(idx)} className="w-full text-xs h-7">Apply Fix</Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -372,6 +573,7 @@ const ManuscriptViewUI: FC = () => {
     const { project, activeSection, t } = useManuscriptViewContext();
     const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
     const [isInspectorDrawerOpen, setIsInspectorDrawerOpen] = useState(false);
+    const [isFocusMode, setIsFocusMode] = useState(false);
     const { leftPanelWidth, rightPanelWidth, startLeftResize, startRightResize } = useResizablePanels(20, 20);
 
     if (!project) {
@@ -391,33 +593,62 @@ const ManuscriptViewUI: FC = () => {
                 </Button>
             </header>
 
+            {/* Desktop Toolbar - Focus Toggle */}
+            <div className="hidden lg:flex justify-end px-2 pb-2">
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsFocusMode(!isFocusMode)}
+                    className={`transition-colors ${isFocusMode ? 'text-[var(--background-interactive)] bg-[var(--background-interactive)]/10' : 'text-[var(--foreground-muted)]'}`}
+                    title={isFocusMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
+                        {isFocusMode 
+                            ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25" />
+                            : <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        }
+                    </svg>
+                    {isFocusMode ? "Exit Zen Mode" : "Zen Mode"}
+                </Button>
+            </div>
+
             {/* Main Content Area */}
-            <main className="flex-grow min-h-0 hidden lg:flex lg:flex-row">
+            <main className="flex-grow min-h-0 hidden lg:flex lg:flex-row relative">
                 {/* Desktop Navigator */}
-                <Card className="h-full flex flex-col rounded-r-none border-r-0" style={{ flexBasis: `${leftPanelWidth}%` }}>
-                    <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.navigator.title')}</h2></CardHeader>
-                    <div className="flex-grow overflow-y-auto"><StoryNavigator /></div>
-                </Card>
+                <div 
+                    className={`h-full flex flex-col transition-all duration-500 ease-in-out overflow-hidden ${isFocusMode ? 'opacity-0 w-0 border-0 pointer-events-none' : 'opacity-100 border-r border-[var(--border-primary)]'}`}
+                    style={{ width: isFocusMode ? 0 : `${leftPanelWidth}%` }}
+                >
+                    <Card className="h-full flex flex-col rounded-none border-0 shadow-none">
+                        <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.navigator.title')}</h2></CardHeader>
+                        <div className="flex-grow overflow-y-auto"><StoryNavigator /></div>
+                    </Card>
+                </div>
                 
-                <Resizer onMouseDown={startLeftResize} />
+                {!isFocusMode && <Resizer onMouseDown={startLeftResize} />}
 
                 {/* Editor */}
-                <Card className="h-full flex-grow p-0 rounded-none border-x-0 shadow-none z-0 bg-[var(--background-primary)]">
-                    <ManuscriptEditor />
+                <Card className={`h-full flex-grow p-0 rounded-none border-0 shadow-none z-0 bg-[var(--background-primary)] transition-all duration-500`}>
+                    <ManuscriptEditor isFocusMode={isFocusMode} />
                 </Card>
                 
-                <Resizer onMouseDown={startRightResize} />
+                {!isFocusMode && <Resizer onMouseDown={startRightResize} />}
 
                 {/* Desktop Inspector */}
-                 <Card className="h-full flex flex-col rounded-l-none border-l-0" style={{ flexBasis: `${rightPanelWidth}%` }}>
-                    <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.inspector.title')}</h2></CardHeader>
-                    <div className="flex-grow overflow-y-auto"><InspectorPanel /></div>
-                </Card>
+                 <div 
+                    className={`h-full flex flex-col transition-all duration-500 ease-in-out overflow-hidden ${isFocusMode ? 'opacity-0 w-0 border-0 pointer-events-none' : 'opacity-100 border-l border-[var(--border-primary)]'}`}
+                    style={{ width: isFocusMode ? 0 : `${rightPanelWidth}%` }}
+                >
+                    <Card className="h-full flex flex-col rounded-none border-0 shadow-none">
+                        <CardHeader className="py-3 min-h-[50px]"><h2 className="font-semibold text-sm uppercase tracking-wide text-[var(--foreground-muted)]">{t('manuscript.inspector.title')}</h2></CardHeader>
+                        <div className="flex-grow overflow-y-auto"><InspectorPanel /></div>
+                    </Card>
+                </div>
             </main>
             
             {/* Mobile Editor (takes full space) */}
             <main className="flex-grow min-h-0 lg:hidden bg-[var(--background-secondary)] overflow-hidden relative">
-                <ManuscriptEditor />
+                <ManuscriptEditor isFocusMode={false} />
             </main>
 
             {/* Mobile Drawers */}

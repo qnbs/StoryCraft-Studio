@@ -43,6 +43,13 @@ export const useSpeechRecognition = () => {
         }
       }
     }
+    
+    // Cleanup on unmount to prevent keeping microphone open
+    return () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
+    }
   }, []); // Remove isListening dependency to prevent re-initialization
 
   const startListening = useCallback(() => {

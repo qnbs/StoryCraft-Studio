@@ -3,32 +3,38 @@ import { Card, CardHeader, CardContent } from './Card';
 import { Button } from './Button';
 import { ICONS } from '../../constants';
 
-interface Props {
+interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = { hasError: false };
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false
+  };
 
-  public static getDerivedStateFromError(_: Error): State {
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="flex h-full w-full items-center justify-center p-4">
             <Card className="max-w-lg w-full text-center animate-in">
                 <CardHeader className="flex items-center justify-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-red-500">{ICONS.LIGHTNING_BOLT}</svg>
+                    <div className="text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                            {ICONS.LIGHTNING_BOLT}
+                        </svg>
+                    </div>
                     <h1 className="text-xl font-bold text-red-500">Something went wrong.</h1>
                 </CardHeader>
                 <CardContent className="space-y-4">

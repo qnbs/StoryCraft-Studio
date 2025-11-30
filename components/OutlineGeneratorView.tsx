@@ -11,6 +11,7 @@ import { Skeleton } from './ui/Skeleton';
 import { Modal } from './ui/Modal';
 import { useOutlineGenerator } from '../hooks/useOutlineGenerator';
 import { OutlineGeneratorContext, useOutlineGeneratorContext } from '../contexts/OutlineGeneratorContext';
+import { Checkbox } from './ui/Checkbox';
 
 // --- SUB-COMPONENTS ---
 
@@ -52,10 +53,7 @@ const IdeaForm: FC = () => {
                                     <Input id="numChapters" type="number" value={numChapters} onChange={e => setNumChapters(Number(e.target.value) || 1)} min="1" max="50"/>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <input type="checkbox" id="includeTwist" checked={includeTwist} onChange={e => setIncludeTwist(e.target.checked)} className="h-4 w-4 rounded border-gray-300 dark:border-gray-500 bg-gray-200 dark:bg-gray-800 text-indigo-600 focus:ring-indigo-500" />
-                                <label htmlFor="includeTwist" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('outline.advanced.twistLabel')}</label>
-                            </div>
+                            <Checkbox id="includeTwist" label={t('outline.advanced.twistLabel')} checked={includeTwist} onChange={e => setIncludeTwist(e.target.checked)} />
                         </div>
                     )}
                 </div>
@@ -75,19 +73,19 @@ const OutlineResult: FC = () => {
     if (error) return <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.result.title')}</h2></CardHeader><CardContent><div className="flex justify-center items-center h-full min-h-[300px] text-red-400"><p>{error}</p></div></CardContent></Card>;
 
     return (
-        <Card>
+        <Card className="h-full flex flex-col">
             <CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('outline.result.title')}</h2></CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow flex flex-col">
                 {outline.length > 0 ? (
-                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 flex-grow">
                         {outline.map((section, index) => (
                             <div key={section.id} draggable onDragStart={() => { draggedItem.current = index; setDraggingIndex(index); }} onDragEnter={() => dragOverItem.current = index} onDragEnd={() => { handleDragSort(); setDraggingIndex(null); }} onDragOver={(e) => e.preventDefault()}>
-                                <Card className={`transition-all duration-300 ${section.isTwist ? 'bg-[var(--accent-1-background)] border-[var(--accent-1-border)]' : 'bg-[var(--background-tertiary)]'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
-                                    <CardHeader className="flex justify-between items-start gap-2">
+                                <div className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${section.isTwist ? 'bg-[var(--accent-1-background)]/20 border-[var(--accent-1-border)]' : 'bg-transparent border-[var(--border-primary)] hover:bg-[var(--background-secondary)]/30'} ${draggingIndex === index ? 'opacity-60 scale-[1.02] shadow-2xl shadow-indigo-500/50' : ''}`}>
+                                    <div className="p-4 border-b border-[var(--border-primary)]/50 flex justify-between items-start gap-2 bg-white/[0.01]">
                                         <div className="flex-grow flex items-center gap-2">
                                             <button className="cursor-move text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)]" title={t('outline.result.dragHandleTooltip')} aria-label={t('outline.result.dragHandleTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.GRIP_VERTICAL}</svg></button>
                                             {section.isTwist && <span title={t('outline.result.twistTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 text-[var(--accent-1-text)]`}>{ICONS.LIGHTNING_BOLT}</svg></span>}
-                                            <Input value={section.title} onChange={(e) => updateSection(section.id, { title: e.target.value })} className="bg-transparent border-0 p-0 text-lg font-semibold text-indigo-500 dark:text-indigo-300 h-auto focus:ring-0 focus:bg-[var(--background-tertiary)]/50 rounded-md px-2"/>
+                                            <Input value={section.title} onChange={(e) => updateSection(section.id, { title: e.target.value })} className="bg-transparent border-0 p-0 text-lg font-semibold text-indigo-500 dark:text-indigo-300 h-auto focus:ring-0 focus:bg-[var(--background-secondary)]/50 rounded-md px-2"/>
                                         </div>
                                         <div className="flex items-center space-x-1 flex-shrink-0">
                                             <button onClick={() => handleMove(index, 'up')} disabled={index === 0} className="p-1 rounded-md hover:bg-[var(--background-secondary)] disabled:opacity-20" title={t('common.moveUp')} aria-label={t('common.moveUp')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" /></svg></button>
@@ -96,14 +94,24 @@ const OutlineResult: FC = () => {
                                             <Button variant="ghost" size="sm" onClick={() => addSection(index)} title={t('outline.result.addTooltip')} aria-label={t('outline.result.addTooltip')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.ADD}</svg></Button>
                                             <Button variant="ghost" size="sm" onClick={() => deleteSection(section.id)} title={t('outline.result.deleteTooltip')} aria-label={t('outline.result.deleteTooltip')} className="text-red-500 hover:bg-red-500/10 dark:hover:bg-red-900/50"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">{ICONS.TRASH}</svg></Button>
                                         </div>
-                                    </CardHeader>
-                                    <CardContent><Textarea value={section.description} onChange={(e) => updateSection(section.id, { description: e.target.value })} className="bg-transparent border-[var(--border-primary)] p-2 min-h-[100px]"/></CardContent>
-                                </Card>
+                                    </div>
+                                    <div className="p-4">
+                                        <Textarea value={section.description} onChange={(e) => updateSection(section.id, { description: e.target.value })} className="bg-transparent border-[var(--border-primary)] p-2 min-h-[100px]"/>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="flex justify-center items-center h-full min-h-[300px]"><p className="text-[var(--foreground-muted)] text-center">{t('outline.result.placeholder')}</p></div>
+                    <div className="flex flex-col justify-center items-center h-full min-h-[400px] text-center p-8 opacity-70 border-2 border-dashed border-[var(--border-primary)] rounded-xl bg-[var(--background-secondary)]/30">
+                        <div className="p-4 rounded-full bg-[var(--background-tertiary)] mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-[var(--foreground-muted)]">
+                                {ICONS.OUTLINE}
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-[var(--foreground-primary)] mb-2">{t('outline.result.placeholder')}</h3>
+                        <p className="text-[var(--foreground-secondary)] max-w-sm">Fill out the form on the left and click Generate to see your story structure come to life here.</p>
+                    </div>
                 )}
                 {outline.length > 0 && <Button className="mt-6 w-full" onClick={handleApplyOutline}>{t('outline.result.applyButton')}</Button>}
             </CardContent>

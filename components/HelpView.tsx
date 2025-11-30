@@ -94,7 +94,7 @@ const ChatMessage: FC<{ role: 'user' | 'model'; text: string }> = React.memo(({ 
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-indigo-400">{ICONS.SPARKLES}</svg>
                 </div>
             )}
-            <div className={`max-w-xl p-3 rounded-lg prose ${theme === 'dark' ? 'prose-invert' : ''} prose-p:my-0 ${isUser ? 'bg-blue-600 text-white' : 'bg-[var(--background-tertiary)]'}`}>
+            <div className={`max-w-xl p-3 rounded-lg prose ${theme === 'dark' ? 'prose-invert' : ''} prose-p:my-0 ${isUser ? 'bg-[var(--background-interactive)] text-white shadow-lg' : 'bg-white/5 border border-[var(--border-primary)]'}`}>
                 {parsedText}
             </div>
         </div>
@@ -131,7 +131,7 @@ const AiAssistant: FC = () => {
                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-indigo-400">{ICONS.SPARKLES}</svg>
                             </div>
-                            <div className={`max-w-xl p-3 rounded-lg bg-[var(--background-tertiary)] flex space-x-2 items-center`}>
+                            <div className={`max-w-xl p-3 rounded-lg bg-white/5 border border-[var(--border-primary)] flex space-x-2 items-center`}>
                                 <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
                                 <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                                 <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>

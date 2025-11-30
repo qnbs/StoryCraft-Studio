@@ -1,4 +1,5 @@
-import React, { FC, useEffect } from 'react';
+
+import React, { FC, useEffect, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from './app/hooks';
 import { useApp } from './hooks/useApp';
 import { Header } from './components/Header';
@@ -22,6 +23,7 @@ import { selectProjectData } from './features/project/projectSelectors';
 import { projectActions } from './features/project/projectSlice';
 import { ToastProvider } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { CommandPalette } from './components/CommandPalette';
 
 interface AppProps {
     isNewUser: boolean;
@@ -34,6 +36,9 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     const project = useAppSelector(selectProjectData);
     const dispatch = useAppDispatch();
     const { t } = useTranslation();
+    
+    // Command Palette State
+    const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
     useEffect(() => {
         document.body.classList.remove('light-theme', 'dark-theme');
@@ -41,8 +46,6 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     }, [settings.theme]);
     
     useEffect(() => {
-        // This effect ensures that if the app loads with a fresh, empty project,
-        // it gets populated with the correct translated default title and logline.
         if (!isPortalActive && project && project.title === '' && project.manuscript.length === 0) {
              dispatch(projectActions.resetProject({
                 title: t('initialProject.title'),
@@ -52,12 +55,24 @@ const App: FC<AppProps> = ({ isNewUser }) => {
         }
     }, [project, isPortalActive, dispatch, t]);
 
+    // Handle Global Keyboard Shortcut for Palette
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsPaletteOpen(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const renderView = () => {
         switch (currentView) {
             case 'dashboard': return <Dashboard onNavigate={handleNavigate} />;
             case 'manuscript': return <ManuscriptView />;
             case 'writer': return <WriterView />;
-            case 'templates': return <TemplateView onNavigate={handleNavigate as any} />;
+            case 'templates': return <TemplateView onNavigate={handleNavigate} />;
             case 'outline': return <OutlineGeneratorView onNavigate={handleNavigate} />;
             case 'characters': return <CharacterView />;
             case 'world': return <WorldView />;
@@ -85,13 +100,23 @@ const App: FC<AppProps> = ({ isNewUser }) => {
             <div className="flex h-[100dvh] bg-[var(--background-primary)] text-[var(--foreground-primary)] overflow-hidden touch-none md:touch-auto">
                 <Sidebar currentView={currentView} onNavigate={handleNavigate} isSidebarOpen={appState.isSidebarOpen} setIsSidebarOpen={appState.setIsSidebarOpen} />
                 <div className="flex-1 flex flex-col h-full overflow-hidden pt-16 transition-all duration-300 ease-in-out md:ml-64">
-                    <Header currentView={currentView} setIsSidebarOpen={appState.setIsSidebarOpen} isSidebarOpen={appState.isSidebarOpen} />
+                    <Header 
+                        currentView={currentView} 
+                        setIsSidebarOpen={appState.setIsSidebarOpen} 
+                        isSidebarOpen={appState.isSidebarOpen} 
+                        onOpenPalette={() => setIsPaletteOpen(true)}
+                    />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth overscroll-none">
                         <ErrorBoundary>
                             {renderView()}
                         </ErrorBoundary>
                     </main>
                 </div>
+                <CommandPalette 
+                    isOpen={isPaletteOpen} 
+                    onClose={() => setIsPaletteOpen(false)} 
+                    onNavigate={handleNavigate} 
+                />
             </div>
         </AppContext.Provider>
     );

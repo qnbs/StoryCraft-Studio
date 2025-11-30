@@ -28,6 +28,8 @@
     "export.ai.synopsis": "Generate AI Synopsis",
     "export.ai.synopsisTitle": "Synopsis",
     "export.ai.generating": "Generating...",
+    "export.ai.generateButton": "Generate Synopsis",
+    "export.ai.synopsisPlaceholder": "The AI generated synopsis will appear here. You can edit it before exporting.",
     "export.format.title": "Formatting",
     "export.format.format": "Format",
     "export.format.md": "Markdown (.md)",

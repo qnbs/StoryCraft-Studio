@@ -5,6 +5,7 @@ import { selectProjectData } from '../features/project/projectSelectors';
 import { projectActions, personalizeTemplateThunk, generateCustomTemplateThunk } from '../features/project/projectSlice';
 import { Template, View, StorySection, OutlineSection } from '../types';
 import { STORY_TEMPLATES } from '../constants';
+import { useToast } from '../components/ui/Toast';
 
 interface UseTemplateViewProps {
   onNavigate: (view: 'manuscript') => void;
@@ -14,6 +15,7 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
   const { t, language } = useTranslation();
   const dispatch = useAppDispatch();
   const project = useAppSelector(selectProjectData);
+  const toast = useToast();
 
   const [filter, setFilter] = useState<'All' | 'Structure' | 'Genre'>('All');
   const [modalState, setModalState] = useState<'closed' | 'preview' | 'create'>('closed');
@@ -93,8 +95,9 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
       }));
       dispatch(projectActions.setManuscript(newManuscript));
       dispatch(projectActions.setOutline(newOutline));
+      toast.success(t('common.saved'), t('sidebar.manuscript'));
       onNavigate('manuscript');
-  }, [dispatch, onNavigate]);
+  }, [dispatch, onNavigate, toast, t]);
 
   const handleAiApply = useCallback(async () => {
     if (!selectedTemplate) return;
@@ -108,12 +111,12 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
     if (personalizeTemplateThunk.fulfilled.match(resultAction)) {
         applyToManuscript(resultAction.payload);
     } else {
-        alert(t('templates.error.personalizationFailed'));
+        toast.error(t('templates.error.personalizationFailed'));
         applyToManuscript(remixedSections); // Fallback to standard apply
     }
     setIsAiLoading(false);
     closeModal();
-  }, [selectedTemplate, dispatch, remixedSections, aiConcept, language, applyToManuscript, t, closeModal]);
+  }, [selectedTemplate, dispatch, remixedSections, aiConcept, language, applyToManuscript, t, closeModal, toast]);
 
   const handleStandardApply = useCallback(() => {
       applyToManuscript(remixedSections);
@@ -128,11 +131,11 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
        if (generateCustomTemplateThunk.fulfilled.match(resultAction)) {
           applyToManuscript(resultAction.payload);
       } else {
-          alert(t('templates.error.customGenerationFailed'));
+          toast.error(t('templates.error.customGenerationFailed'));
       }
       setIsAiLoading(false);
       closeModal();
-  }, [dispatch, customConcept, customElements, customNumSections, language, applyToManuscript, t, closeModal]);
+  }, [dispatch, customConcept, customElements, customNumSections, language, applyToManuscript, t, closeModal, toast]);
 
   return {
     t,

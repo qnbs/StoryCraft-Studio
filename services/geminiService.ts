@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, Type, GenerateContentResponse, Schema } from '@google/genai';
 import { AiCreativity, Character, World, OutlineSection, GeminiSchema, OutlineGenerationParams, CustomTemplateParams } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -13,7 +13,7 @@ const getModelForText = () => 'gemini-2.5-flash';
 const getModelForImage = () => 'gemini-2.5-flash-image';
 
 // --- PROMPT TYPES ---
-type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis';
+type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis' | 'proofread';
 
 type BasePromptParams = { lang: string };
 
@@ -24,11 +24,10 @@ type CharacterPortraitParams = BasePromptParams & { description: string };
 type WorldProfileParams = BasePromptParams & { concept: string };
 type RegenerateWorldFieldParams = BasePromptParams & { world: World; field: keyof World };
 type WorldImageParams = BasePromptParams & { description: string };
-// Use interface from types.ts for OutlineParams
 type RegenerateOutlineSectionParams = BasePromptParams & { allSections: OutlineSection[]; sectionToIndex: number; };
 type PersonalizeTemplateParams = BasePromptParams & { concept: string; sections: { title: string }[]; };
-// Use interface from types.ts for CustomTemplateParams
 type SynopsisParams = BasePromptParams & { project: { title: string; logline: string; manuscript: { title: string; content: string }[] } };
+type ProofreadParams = BasePromptParams & { text: string };
 
 type PromptParamsMap = {
     logline: LoglineParams;
@@ -43,6 +42,26 @@ type PromptParamsMap = {
     personalizeTemplate: PersonalizeTemplateParams;
     customTemplate: CustomTemplateParams;
     synopsis: SynopsisParams;
+    proofread: ProofreadParams;
+};
+
+// --- THINKING CONFIGURATION ---
+const getThinkingBudget = (type: PromptType): number => {
+    switch (type) {
+        case 'outline':
+        case 'customTemplate':
+            return 4096;
+        case 'characterProfile':
+        case 'worldProfile':
+        case 'regenerateOutlineSection':
+            return 2048;
+        case 'personalizeTemplate':
+        case 'synopsis':
+        case 'proofread':
+            return 1024;
+        default:
+            return 0;
+    }
 };
 
 
@@ -121,7 +140,8 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
                         },
                         required: ['title', 'description']
                     }
-                }
+                },
+                thinkingBudget: getThinkingBudget('outline')
             };
         }
         case 'regenerateOutlineSection': {
@@ -134,7 +154,8 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
                 The section to regenerate is: "${allSections[sectionToIndex].title}".
                 Provide a new, more interesting version of this section with a new "title" and "description".
                 ${langInstruction}`,
-                schema: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } }, required: ['title', 'description'] }
+                schema: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } }, required: ['title', 'description'] },
+                thinkingBudget: getThinkingBudget('regenerateOutlineSection')
             };
         }
         case 'personalizeTemplate': {
@@ -143,7 +164,8 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
                 prompt: `Personalize this story template for the concept: "${p.concept}". For each section title provided, create a short, inspiring "prompt" (a few sentences) to guide the writer.
                 Sections: ${JSON.stringify(p.sections.map(s => s.title))}
                 ${langInstruction}`,
-                schema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING } }, required: ['title', 'prompt'] } }
+                schema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING } }, required: ['title', 'prompt'] } },
+                thinkingBudget: getThinkingBudget('personalizeTemplate')
             };
         }
         case 'customTemplate': {
@@ -154,14 +176,42 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
                 Key Elements: ${p.customElements}
                 For each section, just provide a "title".
                 ${langInstruction}`,
-                schema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING } }, required: ['title'] } }
+                schema: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING } }, required: ['title'] } },
+                thinkingBudget: getThinkingBudget('customTemplate')
             };
         }
          case 'synopsis': {
             const p = params as SynopsisParams;
             return {
-                prompt: `Based on the following story details, write a concise, one-page synopsis (3-4 paragraphs).\nTitle: ${p.project.title}\nLogline: ${p.project.logline}\nManuscript: ${p.project.manuscript.map(s => `Title: ${s.title}\nContent: ${s.content.substring(0, 500)}...`).join('\n\n')}\n${langInstruction}`
+                prompt: `Based on the following story details, write a concise, one-page synopsis (3-4 paragraphs) suitable for a book proposal or query letter.\nTitle: ${p.project.title}\nLogline: ${p.project.logline}\nManuscript Text:\n${p.project.manuscript.map(s => `Chapter: ${s.title}\n${s.content}`).join('\n\n').substring(0, 10000)}...\n(Text truncated for length)${langInstruction}`,
+                thinkingBudget: getThinkingBudget('synopsis')
             };
+        }
+        case 'proofread': {
+            const p = params as ProofreadParams;
+            return {
+                prompt: `Act as a professional copy editor. Review the following text for spelling, grammar, punctuation, and flow errors.
+                Return a JSON list of issues found. For each issue, provide the 'original' text snippet, the 'suggestion' to fix it, and a brief 'explanation'.
+                If the text is perfect, return an empty array.
+                Text to review:
+                """
+                ${p.text}
+                """
+                ${langInstruction}`,
+                schema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            original: { type: Type.STRING },
+                            suggestion: { type: Type.STRING },
+                            explanation: { type: Type.STRING }
+                        },
+                        required: ['original', 'suggestion', 'explanation']
+                    }
+                },
+                thinkingBudget: getThinkingBudget('proofread')
+            }
         }
         default:
             throw new Error(`Unknown prompt type: ${type}`);
@@ -170,18 +220,24 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
 
 // --- API CALLS ---
 
-export const generateText = async (prompt: string, creativity: AiCreativity, signal?: AbortSignal): Promise<string> => {
+export const generateText = async (prompt: string, creativity: AiCreativity, signal?: AbortSignal, thinkingBudget?: number): Promise<string> => {
     try {
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
 
+        const config: any = {
+            temperature: creativityToTemperature[creativity],
+        };
+
+        if (thinkingBudget && thinkingBudget > 0) {
+            config.thinkingConfig = { thinkingBudget };
+        }
+
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: getModelForText(),
             contents: prompt,
-            config: {
-                temperature: creativityToTemperature[creativity],
-            },
+            config: config,
         });
         return response.text || '';
     } catch (error: unknown) {
@@ -194,27 +250,41 @@ export const generateText = async (prompt: string, creativity: AiCreativity, sig
     }
 };
 
-export const generateJson = async <T>(prompt: string, creativity: AiCreativity, schema: GeminiSchema, signal?: AbortSignal): Promise<T> => {
+export const generateJson = async <T>(prompt: string, creativity: AiCreativity, schema: GeminiSchema, signal?: AbortSignal, thinkingBudget?: number): Promise<T> => {
     try {
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
+        
+        const config: any = {
+            temperature: creativityToTemperature[creativity],
+            responseMimeType: 'application/json',
+            responseSchema: schema as Schema // Safely cast to SDK Schema type
+        };
+
+        if (thinkingBudget && thinkingBudget > 0) {
+            config.thinkingConfig = { thinkingBudget };
+        }
+
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: getModelForText(),
             contents: prompt,
-            config: {
-                temperature: creativityToTemperature[creativity],
-                responseMimeType: 'application/json',
-                responseSchema: schema as any // Cast to any as SDK type compatibility might vary slightly with our strict interface
-            },
+            config: config,
         });
         
         const rawText = response.text || '';
-        // CRITICAL FIX: Strip markdown code blocks if present to ensure parsing succeeds.
-        // LLMs often return ```json { ... } ``` even when responseMimeType is set.
-        const jsonText = rawText.replace(/```json\n?|```/g, '').trim();
+        // Robust cleaning: removes ```json or ``` at start, and ``` at end, handling optional newlines
+        let jsonText = rawText.trim();
+        if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '');
+        }
         
-        return JSON.parse(jsonText) as T;
+        try {
+            return JSON.parse(jsonText) as T;
+        } catch (e) {
+            console.error("Failed to parse JSON from model:", jsonText);
+            throw new Error("The AI response was not in a valid format. Please try again.");
+        }
     } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError' || signal?.aborted) {
              throw error;
