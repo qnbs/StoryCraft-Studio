@@ -5,6 +5,22 @@ import App from './App';
 import { setupStore } from './app/store';
 import { dbService } from './services/dbService';
 import { PersistedRootState } from './types';
+import './register-sw';
+
+// SPA Redirect Handler für GitHub Pages
+(() => {
+  const url = new URL(window.location.href);
+  const redirectPath = url.searchParams.get('p');
+  
+  if (redirectPath) {
+    // Entferne Query-Parameter und navigiere zur richtigen Route
+    const cleanPath = decodeURIComponent(redirectPath);
+    const base = import.meta.env.BASE_URL || '/';
+    const targetPath = cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath;
+    
+    window.history.replaceState(null, '', base + targetPath);
+  }
+})();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

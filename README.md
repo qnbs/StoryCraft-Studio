@@ -6,8 +6,23 @@
   <img src="https://img.shields.io/badge/Redux-Toolkit-764ABC?logo=redux" alt="Redux Toolkit">
   <img src="https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google" alt="Google Gemini">
   <img src="https://img.shields.io/badge/Storage-IndexedDB-orange" alt="IndexedDB">
+  <img src="https://img.shields.io/badge/PWA-Ready-green" alt="PWA Ready">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License MIT">
 </p>
+
+---
+
+## ⚠️ Legal Disclaimer
+
+> **Educational Use Only**: StoryCraft Studio is a creative writing tool for educational and entertainment purposes. It does not provide professional, medical, legal, or financial advice. Users are solely responsible for the content they create and must comply with all applicable local laws and platform policies.
+
+---
+
+## 🌐 Live Demo
+
+**[➡️ Launch StoryCraft Studio](https://qnbs.github.io/StoryCraft-Studio/)**
+
+---
 
 **StoryCraft Studio is a cutting-edge, AI-enhanced application meticulously engineered for authors, screenwriters, and creators. It transforms the daunting task of writing into a seamless, inspiring journey from a fleeting idea to a polished manuscript.** By integrating the power of Google's Gemini API with an intuitive, offline-first interface, StoryCraft Studio acts as your all-in-one creative co-pilot, empowering you to build, write, and refine your narrative universe without compromise.
 
@@ -108,11 +123,72 @@ The codebase is organized logically to promote scalability and maintainability:
 
 This application runs entirely in the browser. You do not need to install any dependencies. A modern web browser like Chrome, Firefox, or Safari is all that's required.
 
-### API Key Setup
+### 🔐 How to Set Your Gemini API Key
 
-StoryCraft Studio uses the Google Gemini API for its AI-powered features. To use these features, you must have a Google Gemini API key.
+StoryCraft Studio uses **client-side encryption** to securely store your API key:
 
-The application is configured to securely access your API key from the environment variable `process.env.API_KEY`. Please ensure this variable is set in the environment where you are running the application. **The application will not ask you to enter a key in the UI.**
+1. **Get your free API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. **Open Settings** in the app (gear icon in sidebar)
+3. **Enter your API key** in the "Gemini API Key" section
+4. **Click Save** - Your key is encrypted using AES-256-GCM and stored only in your browser's IndexedDB
+
+#### Security Best Practices
+
+- ✅ Your key never leaves your device
+- ✅ Key is encrypted at rest using Web Crypto API
+- ✅ No key in source code or build artifacts
+- 🔒 **Recommended**: Restrict your key to `*.github.io` in Google AI Studio console
+
+### 🚀 Deployment Instructions (GitHub Pages)
+
+1. **Fork this repository**
+2. **Enable GitHub Pages**:
+   - Go to Settings → Pages
+   - Source: **GitHub Actions**
+3. **Push to main branch** - Deployment happens automatically
+4. **Access your app** at `https://YOUR-USERNAME.github.io/StoryCraft-Studio/`
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/qnbs/StoryCraft-Studio.git
+cd StoryCraft-Studio
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### 🛠 Troubleshooting
+
+#### Blank Page After Deployment
+
+- ✅ Check that `base` in `vite.config.ts` matches your repository name
+- ✅ Verify GitHub Pages is set to "GitHub Actions" source
+- ✅ Clear browser cache and hard refresh
+
+#### Assets Not Loading (404)
+
+- ✅ Ensure `manifest.json` has correct `start_url` and `scope`
+- ✅ Check browser console for path errors
+- ✅ Verify `404.html` exists in `public/` folder
+
+#### SPA Routes Not Working
+
+- ✅ The `404.html` handles client-side routing redirects
+- ✅ Check that the redirect script uses the correct base path
+
+#### AI Features Not Working
+
+- ✅ Verify your API key is entered in Settings
+- ✅ Check that the key starts with "AIza"
+- ✅ Ensure you have API quota remaining
 
 ---
 
@@ -177,9 +253,21 @@ StoryCraft Studio ist eine hochmoderne, KI-gestützte Anwendung, die sorgfältig
 
 Ein moderner Webbrowser wie Chrome, Firefox oder Safari ist alles, was Sie benötigen.
 
-### API-Schlüssel-Einrichtung
+### 🔐 So richten Sie Ihren Gemini API-Schlüssel ein
 
-Sie benötigen einen Google Gemini API-Schlüssel. Die Anwendung greift sicher auf Ihren API-Schlüssel aus der Umgebungsvariable `process.env.API_KEY` zu. **Die Anwendung wird Sie nicht auffordern, einen Schlüssel in der Benutzeroberfläche einzugeben.**
+StoryCraft Studio verwendet **clientseitige Verschlüsselung** zur sicheren Speicherung Ihres API-Schlüssels:
+
+1. **Holen Sie sich Ihren kostenlosen API-Schlüssel** von [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. **Öffnen Sie die Einstellungen** in der App (Zahnrad-Symbol in der Seitenleiste)
+3. **Geben Sie Ihren API-Schlüssel** im Abschnitt "Gemini API-Schlüssel" ein
+4. **Klicken Sie auf Speichern** - Ihr Schlüssel wird mit AES-256-GCM verschlüsselt und nur in der IndexedDB Ihres Browsers gespeichert
+
+#### Sicherheits-Best-Practices
+
+- ✅ Ihr Schlüssel verlässt niemals Ihr Gerät
+- ✅ Der Schlüssel wird im Ruhezustand mit der Web Crypto API verschlüsselt
+- ✅ Kein Schlüssel im Quellcode oder in Build-Artefakten
+- 🔒 **Empfohlen**: Beschränken Sie Ihren Schlüssel auf `*.github.io` in der Google AI Studio-Konsole
 
 ## 🚀 Ein kreativer Arbeitsablauf
 

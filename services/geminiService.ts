@@ -1,7 +1,48 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Schema } from '@google/genai';
 import { AiCreativity, Character, World, OutlineSection, GeminiSchema, OutlineGenerationParams, CustomTemplateParams } from '../types';
+import { dbService } from './dbService';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// === DYNAMIC API KEY MANAGEMENT ===
+// KRITISCH: Kein hardcoded API key mehr!
+// Der Key wird verschlüsselt in IndexedDB gespeichert und bei Bedarf geladen.
+
+let cachedAiClient: GoogleGenAI | null = null;
+let cachedApiKeyHash: string | null = null;
+
+const hashApiKey = async (key: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+};
+
+const getAiClient = async (): Promise<GoogleGenAI> => {
+  const apiKey = await dbService.getGeminiApiKey();
+  
+  if (!apiKey) {
+    throw new Error(
+      'NO_API_KEY: Kein Gemini API-Key konfiguriert. ' +
+      'Bitte öffnen Sie die Einstellungen und fügen Sie Ihren API-Key hinzu.'
+    );
+  }
+
+  // Cache invalidation bei Key-Änderung
+  const currentHash = await hashApiKey(apiKey);
+  if (cachedAiClient && cachedApiKeyHash === currentHash) {
+    return cachedAiClient;
+  }
+
+  cachedAiClient = new GoogleGenAI({ apiKey });
+  cachedApiKeyHash = currentHash;
+  return cachedAiClient;
+};
+
+// Reset cache when key changes
+export const invalidateAiClientCache = (): void => {
+  cachedAiClient = null;
+  cachedApiKeyHash = null;
+};
 
 const creativityToTemperature: Record<AiCreativity, number> = {
     'Focused': 0.2,
@@ -226,6 +267,8 @@ export const generateText = async (prompt: string, creativity: AiCreativity, sig
             throw new DOMException('Aborted', 'AbortError');
         }
 
+        const ai = await getAiClient();
+
         const config: any = {
             temperature: creativityToTemperature[creativity],
         };
@@ -255,6 +298,8 @@ export const generateJson = async <T>(prompt: string, creativity: AiCreativity, 
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
+
+        const ai = await getAiClient();
         
         const config: any = {
             temperature: creativityToTemperature[creativity],
@@ -300,6 +345,9 @@ export const streamText = async (prompt: string, creativity: AiCreativity, onChu
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
+
+        const ai = await getAiClient();
+
         const responseStream = await ai.models.generateContentStream({
             model: getModelForText(),
             contents: prompt,
@@ -333,6 +381,9 @@ export const streamAiHelpResponse = async (question: string, onChunk: (chunk: st
          if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
+
+        const ai = await getAiClient();
+
         const prompt = `You are a helpful assistant for a creative writing app called StoryCraft Studio. Answer the user's question concisely and clearly. Format your answer using Markdown. Question: ${question}`;
         const responseStream = await ai.models.generateContentStream({
             model: getModelForText(),
@@ -365,6 +416,9 @@ export const generateImage = async (prompt: string, signal?: AbortSignal): Promi
          if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
+
+        const ai = await getAiClient();
+
         const response = await ai.models.generateContent({
             model: getModelForImage(),
             contents: {

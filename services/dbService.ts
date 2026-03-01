@@ -3,10 +3,14 @@ import { ProjectData } from '../features/project/projectSlice';
 import { Settings } from '../types';
 
 const DB_NAME = 'storycraft-db';
-const DB_VERSION = 3; 
+const DB_VERSION = 4; // Upgraded for API key encryption support
 const APP_DATA_STORE = 'app-data-store';
 const SNAPSHOTS_STORE = 'snapshots-store';
 const IMAGES_STORE = 'images-store';
+
+// Secure API Key Storage Records
+const GEMINI_API_KEY_RECORD = 'gemini_api_key_encrypted_v1';
+const GEMINI_API_KEY_IV_RECORD = 'gemini_api_key_iv_v1';
 
 // Define structure of state stored in DB
 interface PersistedProjectState {
@@ -25,6 +29,122 @@ class IndexedDBService {
   private lastAutoSnapshotTime = Date.now();
   private readonly AUTO_SNAPSHOT_INTERVAL = 30 * 60 * 1000; // 30 minutes
   private readonly MAX_AUTO_SNAPSHOTS = 20;
+
+  // === CRYPTO HELPERS für API Key Verschlüsselung ===
+  
+  private async getLocalCryptoKey(): Promise<CryptoKey> {
+    // Generiere einen geräte-spezifischen Schlüssel basierend auf Origin
+    const material = new TextEncoder().encode(
+      `${location.origin}|StoryCraftStudio|gemini-key-v1|${navigator.userAgent.slice(0, 50)}`
+    );
+    const hash = await crypto.subtle.digest('SHA-256', material);
+    return crypto.subtle.importKey(
+      'raw',
+      hash,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async saveGeminiApiKey(apiKey: string): Promise<void> {
+    if (!apiKey || apiKey.trim().length === 0) {
+      throw new Error('API key cannot be empty');
+    }
+
+    const cryptoKey = await this.getLocalCryptoKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encodedKey = new TextEncoder().encode(apiKey.trim());
+    
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encodedKey
+    );
+
+    const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+    
+    return new Promise((resolve, reject) => {
+      const encryptedArray = Array.from(new Uint8Array(encrypted));
+      const ivArray = Array.from(iv);
+      
+      const req1 = store.put(encryptedArray, GEMINI_API_KEY_RECORD);
+      const req2 = store.put(ivArray, GEMINI_API_KEY_IV_RECORD);
+      
+      let completed = 0;
+      const onSuccess = () => {
+        completed++;
+        if (completed === 2) resolve();
+      };
+      
+      req1.onsuccess = onSuccess;
+      req2.onsuccess = onSuccess;
+      req1.onerror = () => reject(req1.error);
+      req2.onerror = () => reject(req2.error);
+    });
+  }
+
+  async getGeminiApiKey(): Promise<string | null> {
+    try {
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
+      
+      const [encryptedArray, ivArray] = await Promise.all([
+        new Promise<number[] | undefined>((resolve, reject) => {
+          const req = store.get(GEMINI_API_KEY_RECORD);
+          req.onsuccess = () => resolve(req.result as number[] | undefined);
+          req.onerror = () => reject(req.error);
+        }),
+        new Promise<number[] | undefined>((resolve, reject) => {
+          const req = store.get(GEMINI_API_KEY_IV_RECORD);
+          req.onsuccess = () => resolve(req.result as number[] | undefined);
+          req.onerror = () => reject(req.error);
+        }),
+      ]);
+
+      if (!encryptedArray || !ivArray) {
+        return null;
+      }
+
+      const cryptoKey = await this.getLocalCryptoKey();
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: new Uint8Array(ivArray) },
+        cryptoKey,
+        new Uint8Array(encryptedArray)
+      );
+
+      return new TextDecoder().decode(decrypted);
+    } catch (error) {
+      console.warn('Failed to decrypt API key:', error);
+      return null;
+    }
+  }
+
+  async hasGeminiApiKey(): Promise<boolean> {
+    const key = await this.getGeminiApiKey();
+    return Boolean(key && key.length > 0);
+  }
+
+  async clearGeminiApiKey(): Promise<void> {
+    const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+    
+    return new Promise((resolve, reject) => {
+      const req1 = store.delete(GEMINI_API_KEY_RECORD);
+      const req2 = store.delete(GEMINI_API_KEY_IV_RECORD);
+      
+      let completed = 0;
+      const onSuccess = () => {
+        completed++;
+        if (completed === 2) resolve();
+      };
+      
+      req1.onsuccess = onSuccess;
+      req2.onsuccess = onSuccess;
+      req1.onerror = () => reject(req1.error);
+      req2.onerror = () => reject(req2.error);
+    });
+  }
+
+  // === EXISTING DB METHODS ===
 
   async initDB(): Promise<void> {
     return new Promise((resolve, reject) => {

@@ -8,6 +8,7 @@ import { Spinner } from './ui/Spinner';
 import { useSettingsView } from '../hooks/useSettingsView';
 import { SettingsViewContext, useSettingsViewContext } from '../contexts/SettingsViewContext';
 import { ICONS } from '../constants';
+import { ApiKeySection } from './ApiKeySection';
 
 // --- SUB-COMPONENTS ---
 
@@ -82,16 +83,19 @@ const SettingsViewUI: FC = () => {
                  </div>
                 );
             case 'ai': return (
-                <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.ai.title')}</h2></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <label htmlFor="ai-creativity-select" className="flex justify-between text-sm font-medium text-[var(--foreground-secondary)]"><span>{t('settings.ai.creativity')}</span><span className="font-bold text-[var(--foreground-primary)]">{settings.aiCreativity}</span></label>
-                            <p className="text-xs text-[var(--foreground-muted)] mb-2">{t('settings.ai.creativityDescription')}</p>
-                            <input id="ai-creativity-select" type="range" min="0" max="2" step="1" value={creativityMap[settings.aiCreativity]} onChange={e => handleSettingChange('aiCreativity', creativityReverseMap[Number(e.target.value)])} className="w-full" />
-                            <div className="flex justify-between text-xs text-[var(--foreground-muted)]"><span>{t('settings.creativity.focused')}</span><span>{t('settings.creativity.balanced')}</span><span>{t('settings.creativity.imaginative')}</span></div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.ai.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <label htmlFor="ai-creativity-select" className="flex justify-between text-sm font-medium text-[var(--foreground-secondary)]"><span>{t('settings.ai.creativity')}</span><span className="font-bold text-[var(--foreground-primary)]">{settings.aiCreativity}</span></label>
+                                <p className="text-xs text-[var(--foreground-muted)] mb-2">{t('settings.ai.creativityDescription')}</p>
+                                <input id="ai-creativity-select" type="range" min="0" max="2" step="1" value={creativityMap[settings.aiCreativity]} onChange={e => handleSettingChange('aiCreativity', creativityReverseMap[Number(e.target.value)])} className="w-full" />
+                                <div className="flex justify-between text-xs text-[var(--foreground-muted)]"><span>{t('settings.creativity.focused')}</span><span>{t('settings.creativity.balanced')}</span><span>{t('settings.creativity.imaginative')}</span></div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card><CardContent className="pt-6"><ApiKeySection /></CardContent></Card>
+                </div>
             );
             case 'data': return (
                 <div className="space-y-6">

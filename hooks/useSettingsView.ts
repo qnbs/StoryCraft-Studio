@@ -1,12 +1,12 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Theme, EditorFont, AiCreativity, StoryProject, ProjectSnapshot } from '../types';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { settingsActions } from '../features/settings/settingsSlice';
 import { projectActions, importProjectThunk, restoreSnapshotThunk } from '../features/project/projectSlice';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
 import { dbService } from '../services/dbService';
-import { RootState } from '../../app/store';
+import { RootState } from '../app/store';
 
 type ModalState = 'closed' | 'reset' | 'restore' | 'delete' | 'create';
 type ModalPayload = { id?: number; name?: string; date?: string; wordCount?: number; };

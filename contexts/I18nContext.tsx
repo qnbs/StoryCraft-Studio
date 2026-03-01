@@ -26,10 +26,13 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // KRITISCHER FIX: Verwende import.meta.env.BASE_URL für Subpath-Unterstützung
+    const base = import.meta.env.BASE_URL || '/';
+    
     const fetchTranslations = async (lang: Language) => {
       try {
         const promises = modules.map(module => 
-          fetch(`/locales/${lang}/${module}.json`).then(res => res.json())
+          fetch(`${base}locales/${lang}/${module}.json`).then(res => res.json())
         );
         const results = await Promise.all(promises);
         return results.reduce((acc, current) => ({...acc, ...current}), {});
