@@ -1,0 +1,22 @@
+# Custom Domain for GitHub Pages
+# ===============================
+# To use a custom domain:
+#
+# 1. Rename this file to 'CNAME' (remove .example)
+# 2. Replace the example domain below with your actual domain
+# 3. Configure DNS at your provider:
+#    - For apex domain (example.com): Add A records pointing to GitHub's IPs
+#    - For subdomain (app.example.com): Add CNAME record pointing to <username>.github.io
+#
+# GitHub's current IP addresses for A records:
+#   185.199.108.153
+#   185.199.109.153
+#   185.199.110.153
+#   185.199.111.153
+#
+# 4. Commit and push this file
+# 5. The build will automatically use '/' as base path instead of '/StoryCraft-Studio/'
+#
+# Documentation: https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site
+
+storycraft.example.com

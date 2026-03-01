@@ -165,6 +165,35 @@ npm run dev
 npm run build
 ```
 
+### 🌐 Custom Domain Setup
+
+To use your own domain (e.g., `storycraft.yourdomain.com`):
+
+1. **Create a CNAME file** in the `public/` folder:
+   ```bash
+   # Copy the template
+   cp public/CNAME.example public/CNAME
+   
+   # Edit with your domain
+   echo "storycraft.yourdomain.com" > public/CNAME
+   ```
+
+2. **Configure DNS** at your domain registrar:
+   - **For subdomain** (app.example.com): Add CNAME record → `your-username.github.io`
+   - **For apex domain** (example.com): Add A records pointing to GitHub's IPs:
+     ```
+     185.199.108.153
+     185.199.109.153
+     185.199.110.153
+     185.199.111.153
+     ```
+
+3. **Push changes** - The build automatically detects the CNAME and uses `/` as base path
+
+4. **Enable HTTPS** in GitHub Pages settings (takes a few minutes to provision)
+
+> ℹ️ **Note**: When CNAME is present, the app is served from root (`/`) instead of `/StoryCraft-Studio/`
+
 ### 🛠 Troubleshooting
 
 #### Blank Page After Deployment

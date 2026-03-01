@@ -43,6 +43,12 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     useEffect(() => {
         document.body.classList.remove('light-theme', 'dark-theme');
         document.body.classList.add(settings.theme === 'light' ? 'light-theme' : 'dark-theme');
+        
+        // Update meta theme-color for mobile browsers
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+            themeColorMeta.setAttribute('content', settings.theme === 'light' ? '#ffffff' : '#020617');
+        }
     }, [settings.theme]);
     
     useEffect(() => {

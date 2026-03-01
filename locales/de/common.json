@@ -27,5 +27,7 @@
     "palette.action.switchLanguageToDe": "Sprache zu Deutsch wechseln",
     "palette.action.switchLanguageToEn": "Sprache zu Englisch wechseln",
     "palette.footer.navigate": "Navigieren",
-    "palette.footer.select": "Auswählen"
+    "palette.footer.select": "Auswählen",
+    "palette.voice.start": "Sprachsuche starten",
+    "palette.voice.stop": "Sprachsuche beenden"
 }

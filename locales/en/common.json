@@ -27,5 +27,7 @@
     "palette.action.switchLanguageToDe": "Switch Language to German",
     "palette.action.switchLanguageToEn": "Switch Language to English",
     "palette.footer.navigate": "Navigate",
-    "palette.footer.select": "Select"
+    "palette.footer.select": "Select",
+    "palette.voice.start": "Start voice search",
+    "palette.voice.stop": "Stop voice search"
 }

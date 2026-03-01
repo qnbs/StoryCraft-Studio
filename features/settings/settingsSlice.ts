@@ -1,8 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Settings, Theme, EditorFont, AiCreativity } from '../../types';
 
+// Detect system preference for initial theme
+const getSystemThemePreference = (): Theme => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  return 'dark';
+};
+
 const defaultSettings: Settings = {
-    theme: 'dark',
+    theme: getSystemThemePreference(),
     editorFont: 'serif',
     fontSize: 16,
     lineSpacing: 1.6,

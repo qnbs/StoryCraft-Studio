@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { settingsActions } from '../features/settings/settingsSlice';
 import { projectActions } from '../features/project/projectSlice';
 import { selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -29,13 +30,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
   const settings = useAppSelector(state => state.settings);
   const characters = useAppSelector(selectAllCharacters);
   const worlds = useAppSelector(selectAllWorlds);
+  const { isListening, transcript, toggleListening, stopListening, setTranscript } = useSpeechRecognition();
   
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // --- Reset state when opened ---
+  // Sync voice transcript to query
+  useEffect(() => {
+    if (transcript && isOpen) {
+      setQuery(transcript);
+      setTranscript('');
+    }
+  }, [transcript, isOpen, setTranscript]);
+
+  // --- Reset state when opened/closed ---
   useEffect(() => {
     if (isOpen) {
       setQuery('');
@@ -45,6 +55,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      // Stop listening when closing
+      if (isListening) {
+        stopListening();
+      }
     }
   }, [isOpen]);
 
@@ -229,6 +243,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             // Prevent zooming on iOS
             style={{ fontSize: '16px' }} 
           />
+          {/* Voice Input Button */}
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`mr-2 p-2 rounded-lg transition-all duration-200 ${
+              isListening 
+                ? 'bg-red-500/20 text-red-400 animate-pulse ring-2 ring-red-500/50' 
+                : 'bg-[var(--background-tertiary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-interactive)]/20'
+            }`}
+            title={isListening ? t('palette.voice.stop') : t('palette.voice.start')}
+            aria-label={isListening ? t('palette.voice.stop') : t('palette.voice.start')}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              {isListening ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+              )}
+            </svg>
+          </button>
           <div className="hidden sm:flex items-center gap-1">
              <kbd className="px-2 py-1 text-xs font-semibold text-[var(--foreground-muted)] bg-[var(--background-tertiary)] rounded border border-[var(--border-primary)]">ESC</kbd>
           </div>
