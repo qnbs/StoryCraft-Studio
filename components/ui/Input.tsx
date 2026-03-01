@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const Input = React.memo(React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => {
@@ -7,6 +8,7 @@ export const Input = React.memo(React.forwardRef<HTMLInputElement, React.InputHT
     const inputRef = (ref as React.RefObject<HTMLInputElement>) || innerRef;
     
     const { isListening, transcript, toggleListening, setTranscript } = useSpeechRecognition();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (transcript && inputRef.current) {
@@ -53,8 +55,8 @@ export const Input = React.memo(React.forwardRef<HTMLInputElement, React.InputHT
                 ? 'text-red-500 bg-red-500/10 animate-pulse ring-1 ring-red-500/50' 
                 : 'text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-white/10'
             }`}
-            title="Dictate text"
-            aria-label={isListening ? "Stop dictation" : "Start dictation"}
+            title={t('common.dictation.title')}
+            aria-label={isListening ? t('common.dictation.stop') : t('common.dictation.start')}
           >
             {isListening ? (
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">

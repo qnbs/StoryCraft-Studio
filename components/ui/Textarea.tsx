@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useAppSelector } from '../../app/hooks';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const Textarea = React.memo(React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className, style, ...props }, ref) => {
@@ -8,6 +9,7 @@ export const Textarea = React.memo(React.forwardRef<HTMLTextAreaElement, React.T
     const innerRef = useRef<HTMLTextAreaElement>(null);
     const inputRef = (ref as React.RefObject<HTMLTextAreaElement>) || innerRef;
     const { isListening, transcript, toggleListening, setTranscript } = useSpeechRecognition();
+    const { t } = useTranslation();
 
     const fontMap = {
         'serif': 'Merriweather, serif',
@@ -69,8 +71,8 @@ export const Textarea = React.memo(React.forwardRef<HTMLTextAreaElement, React.T
                 ? 'text-red-500 bg-red-500/10 animate-pulse shadow-[0_0_0_4px_rgba(239,68,68,0.3)] scale-110' 
                 : 'text-[var(--foreground-muted)] bg-[var(--background-secondary)]/80 hover:text-[var(--foreground-primary)] hover:bg-white/10 shadow-sm border border-[var(--border-primary)]'
             }`}
-            title="Dictate text"
-            aria-label={isListening ? "Stop dictation" : "Start dictation"}
+            title={t('common.dictation.title')}
+            aria-label={isListening ? t('common.dictation.stop') : t('common.dictation.start')}
           >
              {isListening ? (
                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">

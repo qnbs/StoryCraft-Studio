@@ -121,7 +121,7 @@ const GoalTracker: FC = () => {
                  <div>
                      <div className="flex justify-between items-end mb-3">
                          <span className="text-4xl font-black text-[var(--foreground-primary)] tracking-tight tabular-nums">{wordCount.toLocaleString()}</span>
-                         <span className="text-sm font-medium text-[var(--foreground-muted)] mb-1">/ {project.projectGoals?.totalWordCount.toLocaleString()} words</span>
+                         <span className="text-sm font-medium text-[var(--foreground-muted)] mb-1">/ {project.projectGoals?.totalWordCount.toLocaleString()} {t('common.words')}</span>
                      </div>
                      <Progress value={wordCountProgress} className="h-4" />
                  </div>

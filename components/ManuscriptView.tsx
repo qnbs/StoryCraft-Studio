@@ -450,7 +450,7 @@ const ManuscriptEditor: FC<{ isFocusMode: boolean }> = React.memo(({ isFocusMode
                 </div>
             </div>
              <div className="absolute bottom-4 right-6 text-xs text-[var(--foreground-muted)] bg-[var(--background-secondary)]/90 border border-[var(--border-primary)] px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm shadow-sm transition-opacity duration-300">
-                {activeSectionStats.wordCount} words
+                {activeSectionStats.wordCount} {t('common.words')}
             </div>
             {mentions.length > 0 && (mentionPosition !== null || isMobile) && (
                 <div className={`absolute z-20 bg-[var(--background-secondary)] border border-[var(--border-primary)] shadow-2xl overflow-hidden flex flex-col ${!isMobile ? 'rounded-md w-64' : ''}`} style={mentionStyle}>
