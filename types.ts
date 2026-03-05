@@ -86,11 +86,125 @@ export interface OutlineSection {
 }
 
 // Settings Types
-export type Theme = 'dark' | 'light';
-export type EditorFont = 'serif' | 'sans-serif' | 'monospace';
+export type Theme = 'dark' | 'light' | 'auto';
+export type EditorFont = 'serif' | 'sans-serif' | 'monospace' | 'custom';
 export type AiCreativity = 'Focused' | 'Balanced' | 'Imaginative';
+export type AiModel = 'gemini-1.5-flash' | 'gemini-1.5-pro' | 'claude-3-haiku' | 'claude-3-sonnet' | 'gpt-4o-mini' | 'gpt-4o';
+export type NotificationFrequency = 'never' | 'daily' | 'weekly' | 'monthly';
+export type BackupFrequency = 'manual' | 'daily' | 'weekly' | 'monthly';
+export type SyncProvider = 'none' | 'google-drive' | 'dropbox' | 'onedrive' | 'icloud';
+
+export interface CustomFont {
+  name: string;
+  url: string;
+  format: 'woff' | 'woff2' | 'ttf' | 'otf';
+}
+
+export interface KeyboardShortcut {
+  id: string;
+  keys: string[];
+  action: string;
+}
+
+export interface WritingGoal {
+  type: 'words' | 'time' | 'sessions';
+  target: number;
+  period: 'daily' | 'weekly' | 'monthly';
+  enabled: boolean;
+}
+
+export interface AdvancedAiSettings {
+  model: AiModel;
+  temperature: number;
+  maxTokens: number;
+  topP: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  customPrompts: Record<string, string>;
+  rateLimit: number; // requests per minute
+}
+
+export interface AccessibilitySettings {
+  highContrast: boolean;
+  reducedMotion: boolean;
+  largeText: boolean;
+  screenReader: boolean;
+  focusIndicators: boolean;
+  colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+}
+
+export interface PrivacySettings {
+  analyticsEnabled: boolean;
+  crashReporting: boolean;
+  dataEncryption: boolean;
+  localStorageOnly: boolean;
+  shareUsageData: boolean;
+}
+
+export interface PerformanceSettings {
+  autoSaveInterval: number; // seconds
+  cacheSize: number; // MB
+  preloadContent: boolean;
+  lazyLoadImages: boolean;
+  offlineMode: boolean;
+}
+
+export interface NotificationSettings {
+  desktopNotifications: boolean;
+  emailNotifications: boolean;
+  writingReminders: NotificationFrequency;
+  goalAchievements: boolean;
+  collaborationUpdates: boolean;
+}
+
+export interface CollaborationSettings {
+  realTimeCollaboration: boolean;
+  publicSharing: boolean;
+  commentSystem: boolean;
+  versionHistory: boolean;
+}
+
+export interface IntegrationSettings {
+  syncProvider: SyncProvider;
+  evernoteSync: boolean;
+  notionSync: boolean;
+  scrivenerExport: boolean;
+  googleDocsImport: boolean;
+}
+
+export interface AdvancedEditorSettings {
+  autoComplete: boolean;
+  spellCheck: boolean;
+  grammarCheck: boolean;
+  wordCount: boolean;
+  readingTime: boolean;
+  distractionFree: boolean;
+  typewriterMode: boolean;
+  zenMode: boolean;
+  focusMode: boolean;
+  customDictionary: string[];
+  writingStats: boolean;
+}
+
+export interface BackupSettings {
+  autoBackup: boolean;
+  backupFrequency: BackupFrequency;
+  backupLocation: string;
+  maxBackups: number;
+  encryptBackups: boolean;
+}
+
+export interface ThemeCustomization {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  textColor: string;
+  customCss: string;
+}
 
 export interface Settings {
+    // Basic Settings
     theme: Theme;
     editorFont: EditorFont;
     fontSize: number;
@@ -98,6 +212,24 @@ export interface Settings {
     aiCreativity: AiCreativity;
     paragraphSpacing: number;
     indentFirstLine: boolean;
+
+    // Advanced Settings
+    customFont?: CustomFont;
+    keyboardShortcuts: KeyboardShortcut[];
+    writingGoals: WritingGoal[];
+    advancedAi: AdvancedAiSettings;
+    accessibility: AccessibilitySettings;
+    privacy: PrivacySettings;
+    performance: PerformanceSettings;
+    notifications: NotificationSettings;
+    collaboration: CollaborationSettings;
+    integrations: IntegrationSettings;
+    advancedEditor: AdvancedEditorSettings;
+    backup: BackupSettings;
+    themeCustomization: ThemeCustomization;
+
+    // Legacy support
+    language?: string;
 }
 
 // Help Types

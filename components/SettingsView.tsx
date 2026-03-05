@@ -42,7 +42,16 @@ const SettingsViewUI: FC = () => {
         { id: 'general', label: t('settings.categories.general'), icon: ICONS.SETTINGS },
         { id: 'appearance', label: t('settings.categories.appearance'), icon: <path d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" /> },
         { id: 'editor', label: t('settings.categories.editor'), icon: ICONS.WRITER },
+        { id: 'advanced-editor', label: t('settings.categories.advancedEditor'), icon: <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
         { id: 'ai', label: t('settings.categories.ai'), icon: ICONS.SPARKLES },
+        { id: 'advanced-ai', label: t('settings.categories.advancedAi'), icon: <path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /> },
+        { id: 'accessibility', label: t('settings.categories.accessibility'), icon: <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75M4.5 16.5v-.75a2.25 2.25 0 011.372-2.048l1.287-.513a.75.75 0 011.06.184l.867 1.302a.75.75 0 00.816.316l1.084-.27a.75.75 0 01.816.316l.867 1.302a.75.75 0 00.816.316l1.084-.27a.75.75 0 01.816.316l.867 1.302a.75.75 0 00.816.316l1.084-.27a.75.75 0 01.816.316l.867 1.302a.75.75 0 00.816.316l1.084-.27a.75.75 0 01.816.316l.867 1.302a.75.75 0 00.816.316l1.084-.27a.75.75 0 01.816.316l.867 1.302a.75.75 0 00.816.316l1.084-.27z" /> },
+        { id: 'privacy', label: t('settings.categories.privacy'), icon: <path d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /> },
+        { id: 'performance', label: t('settings.categories.performance'), icon: <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /> },
+        { id: 'notifications', label: t('settings.categories.notifications'), icon: <path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /> },
+        { id: 'collaboration', label: t('settings.categories.collaboration'), icon: <path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /> },
+        { id: 'integrations', label: t('settings.categories.integrations'), icon: <path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /> },
+        { id: 'backup', label: t('settings.categories.backup'), icon: <path d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0v-7.5A2.25 2.25 0 018.25 2.25h13.5A2.25 2.25 0 0124 4.5v7.5m-19.5 0v7.5a2.25 2.25 0 002.25 2.25h13.5a2.25 2.25 0 002.25-2.25v-7.5" /> },
         { id: 'data', label: t('settings.categories.data'), icon: <path d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125v-1.5c0-.621.504-1.125 1.125-1.125m17.25 0h.008v.008h-.008v-.008zm-17.25 0a1.125 1.125 0 00-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25 0h.008v.008h-.008v-.008zM6 16.5V9.75m6.75 6.75V9.75m6.75 6.75V9.75M9 9.75h.008v.008H9v-.008zm3.75 0h.008v.008h-.008v-.008zm3.75 0h.008v.008h-.008v-.008z" /> },
         { id: 'about', label: t('settings.categories.about'), icon: ICONS.HELP },
     ];
@@ -56,11 +65,43 @@ const SettingsViewUI: FC = () => {
                 <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.language.title')}</h2></CardHeader><CardContent><p className="text-sm text-[var(--foreground-secondary)] mb-2">{t('settings.language.description')}</p><Select id="language-select" value={language} onChange={handleLanguageChange}><option value="en">{t('settings.language.english')}</option><option value="de">{t('settings.language.german')}</option></Select></CardContent></Card>
             );
             case 'appearance': return (
-                <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.appearance.title')}</h2></CardHeader><CardContent className="space-y-4"><label className="text-sm font-medium text-[var(--foreground-secondary)]">{t('settings.appearance.theme')}</label><div className="grid grid-cols-2 gap-4"><Button variant={settings.theme === 'dark' ? 'primary' : 'secondary'} onClick={() => handleSettingChange('theme', 'dark')} className="text-center justify-center py-4">{t('settings.theme.dark')}</Button><Button variant={settings.theme === 'light' ? 'primary' : 'secondary'} onClick={() => handleSettingChange('theme', 'light')} className="text-center justify-center py-4">{t('settings.theme.light')}</Button></div></CardContent></Card>
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.appearance.title')}</h2></CardHeader><CardContent className="space-y-4"><label className="text-sm font-medium text-[var(--foreground-secondary)]">{t('settings.appearance.theme')}</label><div className="grid grid-cols-3 gap-4"><Button variant={settings.theme === 'dark' ? 'primary' : 'secondary'} onClick={() => handleSettingChange('theme', 'dark')} className="text-center justify-center py-4">{t('settings.theme.dark')}</Button><Button variant={settings.theme === 'light' ? 'primary' : 'secondary'} onClick={() => handleSettingChange('theme', 'light')} className="text-center justify-center py-4">{t('settings.theme.light')}</Button><Button variant={settings.theme === 'auto' ? 'primary' : 'secondary'} onClick={() => handleSettingChange('theme', 'auto')} className="text-center justify-center py-4">{t('settings.theme.auto')}</Button></div></CardContent></Card>
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.appearance.customization')}</h2></CardHeader><CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.appearance.primaryColor')}</label>
+                                <input type="color" value={settings.themeCustomization.primaryColor} onChange={e => handleSettingChange('themeCustomization', {...settings.themeCustomization, primaryColor: e.target.value})} className="w-full h-10 rounded border border-[var(--border-primary)]" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.appearance.secondaryColor')}</label>
+                                <input type="color" value={settings.themeCustomization.secondaryColor} onChange={e => handleSettingChange('themeCustomization', {...settings.themeCustomization, secondaryColor: e.target.value})} className="w-full h-10 rounded border border-[var(--border-primary)]" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.appearance.accentColor')}</label>
+                                <input type="color" value={settings.themeCustomization.accentColor} onChange={e => handleSettingChange('themeCustomization', {...settings.themeCustomization, accentColor: e.target.value})} className="w-full h-10 rounded border border-[var(--border-primary)]" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.appearance.backgroundColor')}</label>
+                                <input type="color" value={settings.themeCustomization.backgroundColor} onChange={e => handleSettingChange('themeCustomization', {...settings.themeCustomization, backgroundColor: e.target.value})} className="w-full h-10 rounded border border-[var(--border-primary)]" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.appearance.customCss')}</label>
+                            <textarea value={settings.themeCustomization.customCss} onChange={e => handleSettingChange('themeCustomization', {...settings.themeCustomization, customCss: e.target.value})} placeholder="/* Custom CSS */" className="w-full h-32 p-3 rounded border border-[var(--border-primary)] bg-[var(--background-primary)] text-[var(--foreground-primary)] font-mono text-sm" />
+                        </div>
+                    </CardContent></Card>
+                </div>
             );
             case 'editor':
+                const getFontFamily = () => {
+                    if (settings.editorFont === 'custom' && settings.customFont) {
+                        return settings.customFont.name;
+                    }
+                    return settings.editorFont;
+                };
                 const previewStyle = {
-                    fontFamily: settings.editorFont,
+                    fontFamily: getFontFamily(),
                     fontSize: `${settings.fontSize}px`,
                     lineHeight: settings.lineSpacing,
                     '--paragraph-spacing': `${settings.paragraphSpacing * 0.5}rem`,
@@ -70,7 +111,22 @@ const SettingsViewUI: FC = () => {
                  <div className="space-y-6">
                     <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.editor.title')}</h2></CardHeader>
                         <CardContent className="space-y-6">
-                            <div><label htmlFor="font-family-select" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('settings.editor.fontFamily')}</label><Select id="font-family-select" value={settings.editorFont} onChange={e => handleSettingChange('editorFont', e.target.value)}><option value="serif">{t('settings.font.serif')}</option><option value="sans-serif">{t('settings.font.sans')}</option><option value="monospace">{t('settings.font.mono')}</option></Select></div>
+                            <div><label htmlFor="font-family-select" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('settings.editor.fontFamily')}</label><Select id="font-family-select" value={settings.editorFont} onChange={e => handleSettingChange('editorFont', e.target.value)}><option value="serif">{t('settings.font.serif')}</option><option value="sans-serif">{t('settings.font.sans')}</option><option value="monospace">{t('settings.font.mono')}</option><option value="custom">{t('settings.font.custom')}</option></Select></div>
+                            {settings.editorFont === 'custom' && (
+                                <div className="space-y-4 p-4 border border-[var(--border-primary)] rounded-lg">
+                                    <h4 className="font-semibold text-[var(--foreground-primary)]">{t('settings.editor.customFont')}</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Input placeholder={t('settings.editor.customFontName')} value={settings.customFont?.name || ''} onChange={e => handleSettingChange('customFont', { name: e.target.value, url: settings.customFont?.url || '', format: settings.customFont?.format || 'woff2' })} />
+                                        <Select value={settings.customFont?.format || 'woff2'} onChange={e => handleSettingChange('customFont', { name: settings.customFont?.name || '', url: settings.customFont?.url || '', format: e.target.value as any })}>
+                                            <option value="woff">WOFF</option>
+                                            <option value="woff2">WOFF2</option>
+                                            <option value="ttf">TTF</option>
+                                            <option value="otf">OTF</option>
+                                        </Select>
+                                    </div>
+                                    <Input placeholder={t('settings.editor.customFontUrl')} value={settings.customFont?.url || ''} onChange={e => handleSettingChange('customFont', { name: settings.customFont?.name || '', url: e.target.value, format: settings.customFont?.format || 'woff2' })} />
+                                </div>
+                            )}
                             <div className="space-y-2"><label htmlFor="font-size-input" className="flex justify-between text-sm font-medium text-[var(--foreground-secondary)]"><span>{t('settings.editor.fontSize')}</span><span>{settings.fontSize}px</span></label><input id="font-size-input" type="range" min="12" max="24" value={settings.fontSize} onChange={e => handleSettingChange('fontSize', e.target.value)} className="w-full" /></div>
                             <div className="space-y-2"><label htmlFor="line-height-input" className="flex justify-between text-sm font-medium text-[var(--foreground-secondary)]"><span>{t('settings.editor.lineHeight')}</span><span>{settings.lineSpacing}</span></label><input id="line-height-input" type="range" min="1.2" max="2.2" step="0.1" value={settings.lineSpacing} onChange={e => handleSettingChange('lineSpacing', e.target.value)} className="w-full" /></div>
                             <div className="space-y-2"><label htmlFor="p-spacing-input" className="flex justify-between text-sm font-medium text-[var(--foreground-secondary)]"><span>{t('settings.editor.paragraphSpacing')}</span><span>{settings.paragraphSpacing.toFixed(1)}</span></label><input id="p-spacing-input" type="range" min="0.5" max="2" step="0.1" value={settings.paragraphSpacing} onChange={e => handleSettingChange('paragraphSpacing', e.target.value)} className="w-full" /></div>
@@ -143,6 +199,218 @@ const SettingsViewUI: FC = () => {
                                         <p className="text-sm font-medium text-[var(--foreground-primary)]">{t('settings.data.noSnapshots')}</p>
                                     </div>
                                 )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'advanced-editor': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.advancedEditor.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.advancedEditor.autoComplete')} checked={settings.advancedEditor.autoComplete} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, autoComplete: v})} />
+                                <ToggleSwitch label={t('settings.advancedEditor.spellCheck')} checked={settings.advancedEditor.spellCheck} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, spellCheck: v})} />
+                                <ToggleSwitch label={t('settings.advancedEditor.grammarCheck')} checked={settings.advancedEditor.grammarCheck} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, grammarCheck: v})} />
+                                <ToggleSwitch label={t('settings.advancedEditor.wordCount')} checked={settings.advancedEditor.wordCount} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, wordCount: v})} />
+                                <ToggleSwitch label={t('settings.advancedEditor.readingTime')} checked={settings.advancedEditor.readingTime} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, readingTime: v})} />
+                                <ToggleSwitch label={t('settings.advancedEditor.writingStats')} checked={settings.advancedEditor.writingStats} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, writingStats: v})} />
+                            </div>
+                            <div className="border-t border-[var(--border-primary)] pt-4">
+                                <h3 className="text-lg font-semibold text-[var(--foreground-primary)] mb-4">{t('settings.advancedEditor.focusModes')}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ToggleSwitch label={t('settings.advancedEditor.distractionFree')} checked={settings.advancedEditor.distractionFree} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, distractionFree: v})} />
+                                    <ToggleSwitch label={t('settings.advancedEditor.typewriterMode')} checked={settings.advancedEditor.typewriterMode} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, typewriterMode: v})} />
+                                    <ToggleSwitch label={t('settings.advancedEditor.zenMode')} checked={settings.advancedEditor.zenMode} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, zenMode: v})} />
+                                    <ToggleSwitch label={t('settings.advancedEditor.focusMode')} checked={settings.advancedEditor.focusMode} onChange={v => handleSettingChange('advancedEditor', {...settings.advancedEditor, focusMode: v})} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'advanced-ai': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.advancedAi.title')}</h2></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.advancedAi.model')}</label>
+                                <Select value={settings.advancedAi.model} onChange={e => handleSettingChange('advancedAi', {...settings.advancedAi, model: e.target.value})}>
+                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                    <option value="claude-3-haiku">Claude 3 Haiku</option>
+                                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    <option value="gpt-4o">GPT-4o</option>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.advancedAi.temperature')} ({settings.advancedAi.temperature})</label>
+                                    <input type="range" min="0" max="2" step="0.1" value={settings.advancedAi.temperature} onChange={e => handleSettingChange('advancedAi', {...settings.advancedAi, temperature: parseFloat(e.target.value)})} className="w-full" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.advancedAi.maxTokens')} ({settings.advancedAi.maxTokens})</label>
+                                    <input type="range" min="256" max="8192" step="256" value={settings.advancedAi.maxTokens} onChange={e => handleSettingChange('advancedAi', {...settings.advancedAi, maxTokens: parseInt(e.target.value)})} className="w-full" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.advancedAi.topP')} ({settings.advancedAi.topP})</label>
+                                    <input type="range" min="0" max="1" step="0.1" value={settings.advancedAi.topP} onChange={e => handleSettingChange('advancedAi', {...settings.advancedAi, topP: parseFloat(e.target.value)})} className="w-full" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.advancedAi.rateLimit')} ({settings.advancedAi.rateLimit}/min)</label>
+                                    <input type="range" min="10" max="120" step="10" value={settings.advancedAi.rateLimit} onChange={e => handleSettingChange('advancedAi', {...settings.advancedAi, rateLimit: parseInt(e.target.value)})} className="w-full" />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'accessibility': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.accessibility.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.accessibility.highContrast')} checked={settings.accessibility.highContrast} onChange={v => handleSettingChange('accessibility', {...settings.accessibility, highContrast: v})} />
+                                <ToggleSwitch label={t('settings.accessibility.reducedMotion')} checked={settings.accessibility.reducedMotion} onChange={v => handleSettingChange('accessibility', {...settings.accessibility, reducedMotion: v})} />
+                                <ToggleSwitch label={t('settings.accessibility.largeText')} checked={settings.accessibility.largeText} onChange={v => handleSettingChange('accessibility', {...settings.accessibility, largeText: v})} />
+                                <ToggleSwitch label={t('settings.accessibility.screenReader')} checked={settings.accessibility.screenReader} onChange={v => handleSettingChange('accessibility', {...settings.accessibility, screenReader: v})} />
+                                <ToggleSwitch label={t('settings.accessibility.focusIndicators')} checked={settings.accessibility.focusIndicators} onChange={v => handleSettingChange('accessibility', {...settings.accessibility, focusIndicators: v})} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.accessibility.colorBlindMode')}</label>
+                                <Select value={settings.accessibility.colorBlindMode} onChange={e => handleSettingChange('accessibility', {...settings.accessibility, colorBlindMode: e.target.value})}>
+                                    <option value="none">{t('settings.accessibility.colorBlind.none')}</option>
+                                    <option value="protanopia">{t('settings.accessibility.colorBlind.protanopia')}</option>
+                                    <option value="deuteranopia">{t('settings.accessibility.colorBlind.deuteranopia')}</option>
+                                    <option value="tritanopia">{t('settings.accessibility.colorBlind.tritanopia')}</option>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'privacy': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.privacy.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.privacy.analyticsEnabled')} checked={settings.privacy.analyticsEnabled} onChange={v => handleSettingChange('privacy', {...settings.privacy, analyticsEnabled: v})} />
+                                <ToggleSwitch label={t('settings.privacy.crashReporting')} checked={settings.privacy.crashReporting} onChange={v => handleSettingChange('privacy', {...settings.privacy, crashReporting: v})} />
+                                <ToggleSwitch label={t('settings.privacy.dataEncryption')} checked={settings.privacy.dataEncryption} onChange={v => handleSettingChange('privacy', {...settings.privacy, dataEncryption: v})} />
+                                <ToggleSwitch label={t('settings.privacy.localStorageOnly')} checked={settings.privacy.localStorageOnly} onChange={v => handleSettingChange('privacy', {...settings.privacy, localStorageOnly: v})} />
+                                <ToggleSwitch label={t('settings.privacy.shareUsageData')} checked={settings.privacy.shareUsageData} onChange={v => handleSettingChange('privacy', {...settings.privacy, shareUsageData: v})} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'performance': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.performance.title')}</h2></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.performance.autoSaveInterval')} ({settings.performance.autoSaveInterval}s)</label>
+                                <input type="range" min="10" max="300" step="10" value={settings.performance.autoSaveInterval} onChange={e => handleSettingChange('performance', {...settings.performance, autoSaveInterval: parseInt(e.target.value)})} className="w-full" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.performance.cacheSize')} ({settings.performance.cacheSize} MB)</label>
+                                <input type="range" min="50" max="500" step="50" value={settings.performance.cacheSize} onChange={e => handleSettingChange('performance', {...settings.performance, cacheSize: parseInt(e.target.value)})} className="w-full" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.performance.preloadContent')} checked={settings.performance.preloadContent} onChange={v => handleSettingChange('performance', {...settings.performance, preloadContent: v})} />
+                                <ToggleSwitch label={t('settings.performance.lazyLoadImages')} checked={settings.performance.lazyLoadImages} onChange={v => handleSettingChange('performance', {...settings.performance, lazyLoadImages: v})} />
+                                <ToggleSwitch label={t('settings.performance.offlineMode')} checked={settings.performance.offlineMode} onChange={v => handleSettingChange('performance', {...settings.performance, offlineMode: v})} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'notifications': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.notifications.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.notifications.desktopNotifications')} checked={settings.notifications.desktopNotifications} onChange={v => handleSettingChange('notifications', {...settings.notifications, desktopNotifications: v})} />
+                                <ToggleSwitch label={t('settings.notifications.emailNotifications')} checked={settings.notifications.emailNotifications} onChange={v => handleSettingChange('notifications', {...settings.notifications, emailNotifications: v})} />
+                                <ToggleSwitch label={t('settings.notifications.goalAchievements')} checked={settings.notifications.goalAchievements} onChange={v => handleSettingChange('notifications', {...settings.notifications, goalAchievements: v})} />
+                                <ToggleSwitch label={t('settings.notifications.collaborationUpdates')} checked={settings.notifications.collaborationUpdates} onChange={v => handleSettingChange('notifications', {...settings.notifications, collaborationUpdates: v})} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.notifications.writingReminders')}</label>
+                                <Select value={settings.notifications.writingReminders} onChange={e => handleSettingChange('notifications', {...settings.notifications, writingReminders: e.target.value})}>
+                                    <option value="never">{t('settings.notifications.frequency.never')}</option>
+                                    <option value="daily">{t('settings.notifications.frequency.daily')}</option>
+                                    <option value="weekly">{t('settings.notifications.frequency.weekly')}</option>
+                                    <option value="monthly">{t('settings.notifications.frequency.monthly')}</option>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'collaboration': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.collaboration.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.collaboration.realTimeCollaboration')} checked={settings.collaboration.realTimeCollaboration} onChange={v => handleSettingChange('collaboration', {...settings.collaboration, realTimeCollaboration: v})} />
+                                <ToggleSwitch label={t('settings.collaboration.publicSharing')} checked={settings.collaboration.publicSharing} onChange={v => handleSettingChange('collaboration', {...settings.collaboration, publicSharing: v})} />
+                                <ToggleSwitch label={t('settings.collaboration.commentSystem')} checked={settings.collaboration.commentSystem} onChange={v => handleSettingChange('collaboration', {...settings.collaboration, commentSystem: v})} />
+                                <ToggleSwitch label={t('settings.collaboration.versionHistory')} checked={settings.collaboration.versionHistory} onChange={v => handleSettingChange('collaboration', {...settings.collaboration, versionHistory: v})} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'integrations': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.integrations.title')}</h2></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.integrations.syncProvider')}</label>
+                                <Select value={settings.integrations.syncProvider} onChange={e => handleSettingChange('integrations', {...settings.integrations, syncProvider: e.target.value})}>
+                                    <option value="none">{t('settings.integrations.providers.none')}</option>
+                                    <option value="google-drive">{t('settings.integrations.providers.googleDrive')}</option>
+                                    <option value="dropbox">{t('settings.integrations.providers.dropbox')}</option>
+                                    <option value="onedrive">{t('settings.integrations.providers.onedrive')}</option>
+                                    <option value="icloud">{t('settings.integrations.providers.icloud')}</option>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.integrations.evernoteSync')} checked={settings.integrations.evernoteSync} onChange={v => handleSettingChange('integrations', {...settings.integrations, evernoteSync: v})} />
+                                <ToggleSwitch label={t('settings.integrations.notionSync')} checked={settings.integrations.notionSync} onChange={v => handleSettingChange('integrations', {...settings.integrations, notionSync: v})} />
+                                <ToggleSwitch label={t('settings.integrations.scrivenerExport')} checked={settings.integrations.scrivenerExport} onChange={v => handleSettingChange('integrations', {...settings.integrations, scrivenerExport: v})} />
+                                <ToggleSwitch label={t('settings.integrations.googleDocsImport')} checked={settings.integrations.googleDocsImport} onChange={v => handleSettingChange('integrations', {...settings.integrations, googleDocsImport: v})} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            );
+            case 'backup': return (
+                <div className="space-y-6">
+                    <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.backup.title')}</h2></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <ToggleSwitch label={t('settings.backup.autoBackup')} checked={settings.backup.autoBackup} onChange={v => handleSettingChange('backup', {...settings.backup, autoBackup: v})} />
+                                <ToggleSwitch label={t('settings.backup.encryptBackups')} checked={settings.backup.encryptBackups} onChange={v => handleSettingChange('backup', {...settings.backup, encryptBackups: v})} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.backup.backupFrequency')}</label>
+                                <Select value={settings.backup.backupFrequency} onChange={e => handleSettingChange('backup', {...settings.backup, backupFrequency: e.target.value})}>
+                                    <option value="manual">{t('settings.backup.frequency.manual')}</option>
+                                    <option value="daily">{t('settings.backup.frequency.daily')}</option>
+                                    <option value="weekly">{t('settings.backup.frequency.weekly')}</option>
+                                    <option value="monthly">{t('settings.backup.frequency.monthly')}</option>
+                                </Select>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.backup.maxBackups')} ({settings.backup.maxBackups})</label>
+                                <input type="range" min="5" max="50" step="5" value={settings.backup.maxBackups} onChange={e => handleSettingChange('backup', {...settings.backup, maxBackups: parseInt(e.target.value)})} className="w-full" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('settings.backup.backupLocation')}</label>
+                                <Input value={settings.backup.backupLocation} onChange={e => handleSettingChange('backup', {...settings.backup, backupLocation: e.target.value})} placeholder="./backups" />
                             </div>
                         </CardContent>
                     </Card>

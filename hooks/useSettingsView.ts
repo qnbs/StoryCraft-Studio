@@ -42,8 +42,9 @@ export const useSettingsView = () => {
     setLanguage(e.target.value as 'en' | 'de');
   }, [setLanguage]);
 
-  const handleSettingChange = useCallback((key: keyof typeof settings, value: string | number | boolean) => {
+  const handleSettingChange = useCallback((key: string, value: any) => {
     switch(key) {
+        // Basic Settings
         case 'theme': dispatch(settingsActions.setTheme(value as Theme)); break;
         case 'editorFont': dispatch(settingsActions.setEditorFont(value as EditorFont)); break;
         case 'fontSize': dispatch(settingsActions.setFontSize(Number(value))); break;
@@ -51,6 +52,23 @@ export const useSettingsView = () => {
         case 'aiCreativity': dispatch(settingsActions.setAiCreativity(value as AiCreativity)); break;
         case 'paragraphSpacing': dispatch(settingsActions.setParagraphSpacing(Number(value))); break;
         case 'indentFirstLine': dispatch(settingsActions.setIndentFirstLine(Boolean(value))); break;
+
+        // Advanced Settings
+        case 'customFont': dispatch(settingsActions.setCustomFont(value)); break;
+        case 'keyboardShortcuts': dispatch(settingsActions.setKeyboardShortcuts(value)); break;
+        case 'writingGoals': dispatch(settingsActions.setWritingGoals(value)); break;
+        case 'advancedAi': dispatch(settingsActions.setAdvancedAi(value)); break;
+        case 'accessibility': dispatch(settingsActions.setAccessibility(value)); break;
+        case 'privacy': dispatch(settingsActions.setPrivacy(value)); break;
+        case 'performance': dispatch(settingsActions.setPerformance(value)); break;
+        case 'notifications': dispatch(settingsActions.setNotifications(value)); break;
+        case 'collaboration': dispatch(settingsActions.setCollaboration(value)); break;
+        case 'integrations': dispatch(settingsActions.setIntegrations(value)); break;
+        case 'advancedEditor': dispatch(settingsActions.setAdvancedEditor(value)); break;
+        case 'backup': dispatch(settingsActions.setBackup(value)); break;
+        case 'themeCustomization': dispatch(settingsActions.setThemeCustomization(value)); break;
+
+        default: console.warn(`Unknown setting key: ${key}`); break;
     }
   }, [dispatch]);
 
