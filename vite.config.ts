@@ -48,8 +48,14 @@ export default defineConfig({
     minify: 'esbuild',
     sourcemap: false,
     cssCodeSplit: true,
-    
     rollupOptions: {
+      external: [
+        '@tauri-apps/api',
+        '@tauri-apps/api/core',
+        '@tauri-apps/api/dialog',
+        '@tauri-apps/api/fs',
+        '@tauri-apps/api/path'
+      ],
       output: {
         // Asset-Hashing für Cache-Busting
         entryFileNames: 'assets/[name]-[hash].js',
@@ -65,13 +71,5 @@ export default defineConfig({
         },
       },
     },
-  },
-  
-  // WICHTIG: Keine process.env API Key Injection mehr!
-  // Der Key wird sicher via UI → IndexedDB gehandhabt
-  define: {
-    // Nur Build-Zeit Metadaten
-    '__BUILD_TIME__': JSON.stringify(new Date().toISOString()),
-    '__VERSION__': JSON.stringify(process.env.npm_package_version || '1.0.0'),
   },
 });

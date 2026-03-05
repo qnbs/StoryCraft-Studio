@@ -1,7 +1,37 @@
-import { invoke } from '@tauri-apps/api/core';
-import { open, save } from '@tauri-apps/api/dialog';
-import { readTextFile, writeTextFile, createDir, exists, readDir, removeFile } from '@tauri-apps/api/fs';
-import { appDataDir, join } from '@tauri-apps/api/path';
+// Dynamic imports for Tauri APIs to avoid build issues
+let tauriApis: any = null;
+
+async function loadTauriApis() {
+  if (tauriApis) return tauriApis;
+
+  try {
+    const [core, dialog, fs, path] = await Promise.all([
+      import('@tauri-apps/api/core'),
+      import('@tauri-apps/api/dialog'),
+      import('@tauri-apps/api/fs'),
+      import('@tauri-apps/api/path')
+    ]);
+
+    tauriApis = {
+      invoke: core.invoke,
+      open: dialog.open,
+      save: dialog.save,
+      readTextFile: fs.readTextFile,
+      writeTextFile: fs.writeTextFile,
+      createDir: fs.createDir,
+      exists: fs.exists,
+      readDir: fs.readDir,
+      removeFile: fs.removeFile,
+      appDataDir: path.appDataDir,
+      join: path.join
+    };
+  } catch (error) {
+    throw new Error('Tauri APIs not available in this environment');
+  }
+
+  return tauriApis;
+}
+
 import { StoryProject, Character, World, Template, Settings } from '../types';
 import { StorageBackend } from './storageService';
 
@@ -10,7 +40,8 @@ class FileSystemService implements StorageBackend {
 
   async initialize(): Promise<void> {
     try {
-      this.appDataPath = await appDataDir();
+      const apis = await loadTauriApis();
+      this.appDataPath = await apis.appDataDir();
     } catch (error) {
       console.error('Failed to get app data directory:', error);
       throw error;
@@ -22,416 +53,38 @@ class FileSystemService implements StorageBackend {
       await this.initialize();
     }
     return this.appDataPath!;
+  }
 
+  private async getApis() {
+    return await loadTauriApis();
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export const fileSystemService = new FileSystemService();}  }    };      }        }          temperature: 0.7          model: 'gemini-1.5-flash',        advancedAi: {        aiModel: 'gemini-1.5-flash',        aiCreativity: 'Balanced',        editorFont: 'serif',        theme: 'dark',      settings: {      templates: [],      manuscript: manuscript.trim(),      worlds: [],      characters: [],      updatedAt: new Date().toISOString(),      createdAt: new Date().toISOString(),      description,      author,      title,      id: Date.now().toString(),    return {    }      }        manuscript += line + '\n';      } else if (inManuscript) {        inManuscript = false;      } else if (inManuscript && line.startsWith('## ')) {        inManuscript = true;      } else if (line.startsWith('## Manuscript')) {        }          description = line.split(':')[1].trim().replace(/"/g, '');        } else if (line.startsWith('description:')) {          author = line.split(':')[1].trim().replace(/"/g, '');        } else if (line.startsWith('author:')) {          title = line.split(':')[1].trim().replace(/"/g, '');        if (line.startsWith('title:')) {      if (inFrontmatter) {      }        continue;        inFrontmatter = !inFrontmatter;      if (line.trim() === '---') {    for (const line of lines) {    let inManuscript = false;    let inFrontmatter = false;    let manuscript = '';    let author = '';    let description = '';    let title = 'Imported Project';    const lines = content.split('\n');    // Simple markdown parser - in a real implementation, you'd use a proper markdown parser  private parseMarkdownProject(content: string): StoryProject {  }    return markdown;`;${project.manuscript || 'No manuscript content yet.'}## Manuscript`).join('\n')}**Atmosphere:** ${world.atmosphere || ''}**Setting:** ${world.setting || ''}${world.description || ''}${project.worlds.map(world => `### ${world.name}## Worlds`).join('\n')}**Appearance:** ${char.appearance || ''}**Motivation:** ${char.motivation || ''}**Personality:** ${char.personalityTraits || ''}${char.backstory || ''}${project.characters.map(char => `### ${char.name}## Characters${project.description || ''}# ${project.title}---updated: "${project.updatedAt}"created: "${project.createdAt}"description: "${project.description || ''}"author: "${project.author || ''}"title: "${project.title}"    let markdown = `---  private convertToMarkdown(project: StoryProject): string {  }    throw new Error('Unsupported file format');    }      return this.parseMarkdownProject(content);    } else if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {      return JSON.parse(content);    if (filePath.endsWith('.json')) {    const content = await readTextFile(filePath);    }      return null;    if (!filePath || Array.isArray(filePath)) {    });      ]        { name: 'All Files', extensions: ['*'] }        { name: 'Markdown', extensions: ['md', 'markdown'] },        { name: 'JSON', extensions: ['json'] },      filters: [      multiple: false,    const filePath = await open({  async importProject(): Promise<StoryProject | null> {  }    }      await writeTextFile(filePath, content);    if (filePath) {    });      }]        extensions: [extension]        name: format.toUpperCase(),      filters: [{      defaultPath: `${fileName}.${extension}`,    const filePath = await save({    }        throw new Error(`Unsupported export format: ${format}`);      default:        break;        extension = 'md';        content = this.convertToMarkdown(project);        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;        // For docx, we'll save as markdown for now and handle conversion later      case 'docx':        break;        extension = 'md';        content = this.convertToMarkdown(project);        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;      case 'markdown':        break;        extension = 'json';        content = JSON.stringify(project, null, 2);        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;      case 'json':    switch (format) {    let extension: string;    let content: string;    let fileName: string;  async exportProject(project: StoryProject, format: 'json' | 'markdown' | 'docx' = 'json'): Promise<void> {  // Import/Export functionality  }    }      console.error('Failed to delete snapshot:', error);    } catch (error) {      }        await removeFile(snapshotFile);      if (await exists(snapshotFile)) {      const snapshotFile = await join(appDataPath, 'snapshots', `${snapshotId}.json`);      const appDataPath = await this.ensureAppDataPath();    try {  async deleteSnapshot(snapshotId: string): Promise<void> {  }    }      return [];      console.error('Failed to list snapshots:', error);    } catch (error) {        .map(entry => entry.name.replace('.json', ''));        .filter(entry => entry.name.endsWith('.json'))      return entries      const entries = await readDir(snapshotsPath);      }        return [];      if (!(await exists(snapshotsPath))) {      const snapshotsPath = await join(appDataPath, 'snapshots');      const appDataPath = await this.ensureAppDataPath();    try {  async listSnapshots(): Promise<string[]> {  }    }      return null;      console.error('Failed to load snapshot:', error);    } catch (error) {      return JSON.parse(content);      const content = await readTextFile(snapshotFile);      }        return null;      if (!(await exists(snapshotFile))) {      const snapshotFile = await join(appDataPath, 'snapshots', `${snapshotId}.json`);      const appDataPath = await this.ensureAppDataPath();    try {  async getSnapshotData(snapshotId: string): Promise<any> {  }    await writeTextFile(snapshotFile, JSON.stringify(data, null, 2));    const snapshotFile = await join(snapshotsPath, `${snapshotId}.json`);    }      await createDir(snapshotsPath, { recursive: true });    if (!(await exists(snapshotsPath))) {    const snapshotsPath = await join(appDataPath, 'snapshots');    const appDataPath = await this.ensureAppDataPath();  async saveSnapshot(snapshotId: string, data: any): Promise<void> {  // Snapshot operations  }    }      return null;      console.error('Failed to load Gemini API key:', error);    } catch (error) {      return await readTextFile(keyFile);      }        return null;      if (!(await exists(keyFile))) {      const keyFile = await join(appDataPath, 'config', 'gemini_key.txt');      const appDataPath = await this.ensureAppDataPath();    try {  async getGeminiApiKey(): Promise<string | null> {  }    await writeTextFile(keyFile, apiKey);    const keyFile = await join(configPath, 'gemini_key.txt');    }      await createDir(configPath, { recursive: true });    if (!(await exists(configPath))) {    const configPath = await join(appDataPath, 'config');    const appDataPath = await this.ensureAppDataPath();  async saveGeminiApiKey(apiKey: string): Promise<void> {  // Gemini API key storage  }    }      return null;      console.error('Failed to load settings:', error);    } catch (error) {      return JSON.parse(content);      const content = await readTextFile(settingsFile);      }        return null;      if (!(await exists(settingsFile))) {      const settingsFile = await join(appDataPath, 'config', 'settings.json');      const appDataPath = await this.ensureAppDataPath();    try {  async loadSettings(): Promise<Settings | null> {  }    await writeTextFile(settingsFile, JSON.stringify(settings, null, 2));    const settingsFile = await join(configPath, 'settings.json');    }      await createDir(configPath, { recursive: true });    if (!(await exists(configPath))) {    const configPath = await join(appDataPath, 'config');    const appDataPath = await this.ensureAppDataPath();  async saveSettings(settings: Settings): Promise<void> {  // Settings operations  }    }      return null;      console.error('Failed to load image:', error);    } catch (error) {      return `data:image/png;base64,${base64Data}`;      const base64Data = await readTextFile(imageFile);      }        return null;      if (!(await exists(imageFile))) {      const imageFile = await join(appDataPath, 'images', `${id}.png`);      const appDataPath = await this.ensureAppDataPath();    try {  async getImage(id: string): Promise<string | null> {  }    await writeTextFile(imageFile, cleanBase64);    const cleanBase64 = base64Data.replace(/^data:image\/png;base64,/, '');    // Remove data URL prefix if present    const imageFile = await join(imagesPath, `${id}.png`);    }      await createDir(imagesPath, { recursive: true });    if (!(await exists(imagesPath))) {    const imagesPath = await join(appDataPath, 'images');    const appDataPath = await this.ensureAppDataPath();  async saveImage(id: string, base64Data: string): Promise<void> {  // Image operations  }    }      await removeFile(projectFile);    if (await exists(projectFile)) {    const projectFile = await join(projectPath, 'project.json');    // In a full implementation, you'd want to remove the entire directory    // For simplicity, we'll just remove the project.json file    const projectPath = await join(appDataPath, 'projects', projectId);    const appDataPath = await this.ensureAppDataPath();  async deleteProject(projectId: string): Promise<void> {  }    }      return [];      console.error('Failed to list projects:', error);    } catch (error) {      return entries.filter(entry => entry.isDirectory).map(entry => entry.name);      const entries = await readDir(projectsPath);      }        return [];      if (!(await exists(projectsPath))) {      const projectsPath = await join(appDataPath, 'projects');      const appDataPath = await this.ensureAppDataPath();    try {  async listProjects(): Promise<string[]> {  }    }      return null;      console.error('Failed to load project:', error);    } catch (error) {      return JSON.parse(content);      const content = await readTextFile(projectFile);      }        return null;      if (!(await exists(projectFile))) {      const projectFile = await join(appDataPath, 'projects', projectId, 'project.json');      const appDataPath = await this.ensureAppDataPath();    try {  async loadProject(projectId: string): Promise<StoryProject | null> {  }    await writeTextFile(projectFile, JSON.stringify(project, null, 2));    const projectFile = await join(projectPath, 'project.json');    }      await createDir(projectPath, { recursive: true });    if (!(await exists(projectPath))) {    // Ensure project directory exists    const projectPath = await join(appDataPath, 'projects', project.id);    const appDataPath = await this.ensureAppDataPath();  async saveProject(project: StoryProject): Promise<void> {  // Project management  }
   // Project management
   async saveProject(project: StoryProject): Promise<void> {
+    const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const projectPath = await join(appDataPath, 'projects', project.id);
+    const projectPath = await apis.join(appDataPath, 'projects', project.id);
 
     // Ensure project directory exists
-    if (!(await exists(projectPath))) {
-      await createDir(projectPath, { recursive: true });
+    if (!(await apis.exists(projectPath))) {
+      await apis.createDir(projectPath, { recursive: true });
     }
 
-    const projectFile = await join(projectPath, 'project.json');
-    await writeTextFile(projectFile, JSON.stringify(project, null, 2));
+    const projectFile = await apis.join(projectPath, 'project.json');
+    await apis.writeTextFile(projectFile, JSON.stringify(project, null, 2));
   }
 
   async loadProject(projectId: string): Promise<StoryProject | null> {
     try {
+      const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const projectFile = await join(appDataPath, 'projects', projectId, 'project.json');
+      const projectFile = await apis.join(appDataPath, 'projects', projectId, 'project.json');
 
-      if (!(await exists(projectFile))) {
+      if (!(await apis.exists(projectFile))) {
         return null;
       }
 
-      const content = await readTextFile(projectFile);
+      const content = await apis.readTextFile(projectFile);
       return JSON.parse(content);
     } catch (error) {
       console.error('Failed to load project:', error);
@@ -441,14 +94,15 @@ export const fileSystemService = new FileSystemService();}  }    };      }      
 
   async listProjects(): Promise<string[]> {
     try {
+      const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const projectsPath = await join(appDataPath, 'projects');
+      const projectsPath = await apis.join(appDataPath, 'projects');
 
-      if (!(await exists(projectsPath))) {
+      if (!(await apis.exists(projectsPath))) {
         return [];
       }
 
-      const entries = await readDir(projectsPath);
+      const entries = await apis.readDir(projectsPath);
       return entries.filter(entry => entry.isDirectory).map(entry => entry.name);
     } catch (error) {
       console.error('Failed to list projects:', error);
@@ -457,80 +111,183 @@ export const fileSystemService = new FileSystemService();}  }    };      }      
   }
 
   async deleteProject(projectId: string): Promise<void> {
+    const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const projectPath = await join(appDataPath, 'projects', projectId);
+    const projectPath = await apis.join(appDataPath, 'projects', projectId);
 
     // For simplicity, we'll just remove the project.json file
-    // In a full implementation, you'd want to remove the entire directory
-    const projectFile = await join(projectPath, 'project.json');
-    if (await exists(projectFile)) {
-      await removeFile(projectFile);
+    const projectFile = await apis.join(projectPath, 'project.json');
+    if (await apis.exists(projectFile)) {
+      await apis.removeFile(projectFile);
     }
   }
 
-  // Character images (replacing IndexedDB blob storage)
-  async saveCharacterImage(characterId: string, imageData: string): Promise<void> {
+  // Image operations
+  async saveImage(id: string, base64Data: string): Promise<void> {
+    const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const imagesPath = await join(appDataPath, 'images', 'characters');
+    const imagesPath = await apis.join(appDataPath, 'images');
 
-    if (!(await exists(imagesPath))) {
-      await createDir(imagesPath, { recursive: true });
+    if (!(await apis.exists(imagesPath))) {
+      await apis.createDir(imagesPath, { recursive: true });
     }
 
-    const imageFile = await join(imagesPath, `${characterId}.png`);
+    const imageFile = await apis.join(imagesPath, `${id}.png`);
     // Remove data URL prefix if present
-    const base64Data = imageData.replace(/^data:image\/png;base64,/, '');
-    await writeTextFile(imageFile, base64Data);
+    const cleanBase64 = base64Data.replace(/^data:image\/png;base64,/, '');
+    await apis.writeTextFile(imageFile, cleanBase64);
   }
 
-  async loadCharacterImage(characterId: string): Promise<string | null> {
+  async getImage(id: string): Promise<string | null> {
     try {
+      const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const imageFile = await join(appDataPath, 'images', 'characters', `${characterId}.png`);
+      const imageFile = await apis.join(appDataPath, 'images', `${id}.png`);
 
-      if (!(await exists(imageFile))) {
+      if (!(await apis.exists(imageFile))) {
         return null;
       }
 
-      const base64Data = await readTextFile(imageFile);
+      const base64Data = await apis.readTextFile(imageFile);
       return `data:image/png;base64,${base64Data}`;
     } catch (error) {
-      console.error('Failed to load character image:', error);
+      console.error('Failed to load image:', error);
+      return null;
+    }
+  }
+
+  // Settings operations
+  async saveSettings(settings: Settings): Promise<void> {
+    const apis = await this.getApis();
+    const appDataPath = await this.ensureAppDataPath();
+    const configPath = await apis.join(appDataPath, 'config');
+
+    if (!(await apis.exists(configPath))) {
+      await apis.createDir(configPath, { recursive: true });
+    }
+
+    const settingsFile = await apis.join(configPath, 'settings.json');
+    await apis.writeTextFile(settingsFile, JSON.stringify(settings, null, 2));
+  }
+
+  async loadSettings(): Promise<Settings | null> {
+    try {
+      const apis = await this.getApis();
+      const appDataPath = await this.ensureAppDataPath();
+      const settingsFile = await apis.join(appDataPath, 'config', 'settings.json');
+
+      if (!(await apis.exists(settingsFile))) {
+        return null;
+      }
+
+      const content = await apis.readTextFile(settingsFile);
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
       return null;
     }
   }
 
   // Gemini API key storage
   async saveGeminiApiKey(apiKey: string): Promise<void> {
+    const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const configPath = await join(appDataPath, 'config');
+    const configPath = await apis.join(appDataPath, 'config');
 
-    if (!(await exists(configPath))) {
-      await createDir(configPath, { recursive: true });
+    if (!(await apis.exists(configPath))) {
+      await apis.createDir(configPath, { recursive: true });
     }
 
-    const keyFile = await join(configPath, 'gemini_key.txt');
-    await writeTextFile(keyFile, apiKey);
+    const keyFile = await apis.join(configPath, 'gemini_key.txt');
+    await apis.writeTextFile(keyFile, apiKey);
   }
 
-  async loadGeminiApiKey(): Promise<string | null> {
+  async getGeminiApiKey(): Promise<string | null> {
     try {
+      const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const keyFile = await join(appDataPath, 'config', 'gemini_key.txt');
+      const keyFile = await apis.join(appDataPath, 'config', 'gemini_key.txt');
 
-      if (!(await exists(keyFile))) {
+      if (!(await apis.exists(keyFile))) {
         return null;
       }
 
-      return await readTextFile(keyFile);
+      return await apis.readTextFile(keyFile);
     } catch (error) {
       console.error('Failed to load Gemini API key:', error);
       return null;
     }
   }
 
+  // Snapshot operations
+  async saveSnapshot(snapshotId: string, data: any): Promise<void> {
+    const apis = await this.getApis();
+    const appDataPath = await this.ensureAppDataPath();
+    const snapshotsPath = await apis.join(appDataPath, 'snapshots');
+
+    if (!(await apis.exists(snapshotsPath))) {
+      await apis.createDir(snapshotsPath, { recursive: true });
+    }
+
+    const snapshotFile = await apis.join(snapshotsPath, `${snapshotId}.json`);
+    await apis.writeTextFile(snapshotFile, JSON.stringify(data, null, 2));
+  }
+
+  async getSnapshotData(snapshotId: string): Promise<any> {
+    try {
+      const apis = await this.getApis();
+      const appDataPath = await this.ensureAppDataPath();
+      const snapshotFile = await apis.join(appDataPath, 'snapshots', `${snapshotId}.json`);
+
+      if (!(await apis.exists(snapshotFile))) {
+        return null;
+      }
+
+      const content = await apis.readTextFile(snapshotFile);
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to load snapshot:', error);
+      return null;
+    }
+  }
+
+  async listSnapshots(): Promise<string[]> {
+    try {
+      const apis = await this.getApis();
+      const appDataPath = await this.ensureAppDataPath();
+      const snapshotsPath = await apis.join(appDataPath, 'snapshots');
+
+      if (!(await apis.exists(snapshotsPath))) {
+        return [];
+      }
+
+      const entries = await apis.readDir(snapshotsPath);
+      return entries
+        .filter(entry => entry.name.endsWith('.json'))
+        .map(entry => entry.name.replace('.json', ''));
+    } catch (error) {
+      console.error('Failed to list snapshots:', error);
+      return [];
+    }
+  }
+
+  async deleteSnapshot(snapshotId: string): Promise<void> {
+    try {
+      const apis = await this.getApis();
+      const appDataPath = await this.ensureAppDataPath();
+      const snapshotFile = await apis.join(appDataPath, 'snapshots', `${snapshotId}.json`);
+
+      if (await apis.exists(snapshotFile)) {
+        await apis.removeFile(snapshotFile);
+      }
+    } catch (error) {
+      console.error('Failed to delete snapshot:', error);
+    }
+  }
+
   // Import/Export functionality
   async exportProject(project: StoryProject, format: 'json' | 'markdown' | 'docx' = 'json'): Promise<void> {
+    const apis = await this.getApis();
     let fileName: string;
     let content: string;
     let extension: string;
@@ -556,7 +313,7 @@ export const fileSystemService = new FileSystemService();}  }    };      }      
         throw new Error(`Unsupported export format: ${format}`);
     }
 
-    const filePath = await save({
+    const filePath = await apis.save({
       defaultPath: `${fileName}.${extension}`,
       filters: [{
         name: format.toUpperCase(),
@@ -565,12 +322,13 @@ export const fileSystemService = new FileSystemService();}  }    };      }      
     });
 
     if (filePath) {
-      await writeTextFile(filePath, content);
+      await apis.writeTextFile(filePath, content);
     }
   }
 
   async importProject(): Promise<StoryProject | null> {
-    const filePath = await open({
+    const apis = await this.getApis();
+    const filePath = await apis.open({
       multiple: false,
       filters: [
         { name: 'JSON', extensions: ['json'] },
@@ -583,7 +341,7 @@ export const fileSystemService = new FileSystemService();}  }    };      }      
       return null;
     }
 
-    const content = await readTextFile(filePath);
+    const content = await apis.readTextFile(filePath);
 
     if (filePath.endsWith('.json')) {
       return JSON.parse(content);
