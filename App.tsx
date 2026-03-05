@@ -26,6 +26,7 @@ import { projectActions } from './features/project/projectSlice';
 import { ToastProvider } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CommandPalette } from './components/CommandPalette';
+import { PWAInstallBanner, PWAUpdateToast, OfflineIndicator } from './components/ui/PWAComponents';
 
 interface AppProps {
     isNewUser: boolean;
@@ -129,6 +130,9 @@ const App: FC<AppProps> = ({ isNewUser }) => {
                     onClose={() => setIsPaletteOpen(false)} 
                     onNavigate={handleNavigate} 
                 />
+                <PWAUpdateToast />
+                <PWAInstallBanner />
+                <OfflineIndicator />
             </div>
         </AppContext.Provider>
     );

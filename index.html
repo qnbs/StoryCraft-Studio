@@ -2,15 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- ── Manifest & Icons ───────────────────────────────── -->
+    <link rel="manifest" href="/StoryCraft-Studio/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/StoryCraft-Studio/favicon.svg" />
+    <link rel="apple-touch-icon" href="/StoryCraft-Studio/favicon.svg" />
+
+    <!-- ── Viewport & Theme ──────────────────────────────── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    
-    <!-- PWA / Mobile Capable -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- ── SEO & Social ───────────────────────────────────── -->
+    <meta name="description" content="AI-Powered Creative Writing Studio — craft entire novels, characters & worlds with Gemini AI. Works offline." />
+    <meta name="keywords" content="creative writing, AI writing assistant, novel writer, story generator, character builder, world building" />
+    <meta name="author" content="StoryCraft Studio" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:site_name"   content="StoryCraft Studio" />
+    <meta property="og:title"       content="StoryCraft Studio — AI Creative Writing" />
+    <meta property="og:description" content="Craft entire novels, characters & worlds with Gemini AI. Works offline as a PWA." />
+    <meta property="og:url"         content="https://storycraft-studio.app/StoryCraft-Studio/" />
+    <meta property="og:image"       content="/StoryCraft-Studio/favicon.svg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary" />
+    <meta name="twitter:title"       content="StoryCraft Studio" />
+    <meta name="twitter:description" content="AI-Powered Creative Writing Studio — Gemini AI, offline-ready PWA." />
+    <meta name="twitter:image"       content="/StoryCraft-Studio/favicon.svg" />
+
+    <!-- ── PWA / Mobile Capable ──────────────────────────── -->
+    <meta name="mobile-web-app-capable"            content="yes" />
+    <meta name="apple-mobile-web-app-capable"      content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="StoryCraft" />
+    <meta name="apple-mobile-web-app-title"        content="StoryCraft" />
+    <meta name="msapplication-TileColor"           content="#020617" />
+    <meta name="msapplication-tap-highlight"       content="no" />
+    <meta name="application-name"                  content="StoryCraft Studio" />
+
+    <!-- ── Performance: Preconnect to external origins ───── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.gstatic.com"    crossorigin="anonymous" />
+    <link rel="preconnect" href="https://cdn.tailwindcss.com"  crossorigin="anonymous" />
 
     <title>StoryCraft Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>

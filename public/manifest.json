@@ -1,23 +1,92 @@
 {
   "name": "StoryCraft Studio",
   "short_name": "StoryCraft",
-  "description": "AI-Powered Creative Writing Studio",
-  "start_url": "/StoryCraft-Studio/",
+  "description": "AI-Powered Creative Writing Studio — Craft entire novels, characters & worlds with Gemini AI.",
+  "start_url": "/StoryCraft-Studio/?source=pwa",
   "scope": "/StoryCraft-Studio/",
+  "id": "/StoryCraft-Studio/",
+
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
+
   "background_color": "#020617",
   "theme_color": "#020617",
+
   "icons": [
     {
       "src": "favicon.svg",
-      "sizes": "192x192 512x512 any",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
+
+  "shortcuts": [
+    {
+      "name": "New Story",
+      "short_name": "New Story",
+      "description": "Start a fresh project from a template",
+      "url": "/StoryCraft-Studio/?view=templates&source=shortcut",
+      "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "My Manuscript",
+      "short_name": "Manuscript",
+      "description": "Open your manuscript view",
+      "url": "/StoryCraft-Studio/?view=manuscript&source=shortcut",
+      "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Characters",
+      "short_name": "Characters",
+      "description": "Manage your characters",
+      "url": "/StoryCraft-Studio/?view=characters&source=shortcut",
+      "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "AI Writer",
+      "short_name": "Writer",
+      "description": "Open the AI writing studio",
+      "url": "/StoryCraft-Studio/?view=writer&source=shortcut",
+      "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
+
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+
+  "share_target": {
+    "action": "/StoryCraft-Studio/",
+    "method": "GET",
+    "params": {
+      "title": "share_title",
+      "text":  "share_text",
+      "url":   "share_url"
+    }
+  },
+
+  "protocol_handlers": [
+    {
+      "protocol": "web+storycraft",
+      "url": "/StoryCraft-Studio/?protocol=%s"
+    }
+  ],
+
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+
+  "categories": ["productivity", "utilities", "entertainment", "education"],
   "lang": "en",
   "dir": "ltr",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "iarc_rating_id": ""
 }
