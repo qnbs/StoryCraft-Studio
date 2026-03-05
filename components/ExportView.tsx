@@ -147,11 +147,16 @@ const ExportPreview: FC = () => {
 };
 
 const ExportViewUI: FC = () => {
-    const { t, project } = useExportViewContext();
+    const { t, project, errorMessage } = useExportViewContext();
     if (!project) return <div className="flex h-[80vh] w-full items-center justify-center"><Spinner className="w-16 h-16" /></div>;
 
     return (
         <div className="h-full">
+            {errorMessage && (
+                <div className="mb-4 p-3 rounded bg-red-500/10 text-red-600 border border-red-500/30 text-sm">
+                    {errorMessage}
+                </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
                 <div className="lg:col-span-1 h-full overflow-y-auto"><ExportControls /></div>
                 <div className="lg:col-span-2 h-full min-h-[500px]"><ExportPreview /></div>

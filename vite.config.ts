@@ -27,8 +27,8 @@ function getBasePath(): string {
 }
 
 export default defineConfig({
-  // KRITISCH: Base-Pfad dynamisch für Custom Domain oder GitHub Pages
-  base: getBasePath(),
+  // Fix: Statischer Base-Pfad fr GitHub Pages
+  base: '/StoryCraft-Studio/',
   
   server: {
     port: 3000,

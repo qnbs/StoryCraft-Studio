@@ -36,24 +36,21 @@ export const ApiKeySection: FC = () => {
       setMessage({ type: 'error', text: t('settings.apiKey.errorEmpty') });
       return;
     }
-
     if (!apiKey.trim().startsWith('AIza')) {
       setMessage({ type: 'error', text: t('settings.apiKey.errorInvalid') });
       return;
     }
-
     setIsSaving(true);
     setMessage(null);
-
     try {
       await dbService.saveGeminiApiKey(apiKey.trim());
       invalidateAiClientCache();
       setApiKey('');
       setHasKey(true);
       setMessage({ type: 'success', text: t('settings.apiKey.saved') });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save API key:', error);
-      setMessage({ type: 'error', text: t('settings.apiKey.errorSave') });
+      setMessage({ type: 'error', text: error?.message || t('settings.apiKey.errorSave') });
     } finally {
       setIsSaving(false);
     }
@@ -62,15 +59,14 @@ export const ApiKeySection: FC = () => {
   const handleRemoveKey = async () => {
     setIsSaving(true);
     setMessage(null);
-
     try {
       await dbService.clearGeminiApiKey();
       invalidateAiClientCache();
       setHasKey(false);
       setMessage({ type: 'success', text: t('settings.apiKey.removed') });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to remove API key:', error);
-      setMessage({ type: 'error', text: t('settings.apiKey.errorRemove') });
+      setMessage({ type: 'error', text: error?.message || t('settings.apiKey.errorRemove') });
     } finally {
       setIsSaving(false);
     }

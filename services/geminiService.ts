@@ -53,6 +53,40 @@ const creativityToTemperature: Record<AiCreativity, number> = {
 const getModelForText = () => 'gemini-2.5-flash';
 const getModelForImage = () => 'gemini-2.5-flash-image';
 
+// --- Hilfsfunktion für Retry ---
+async function retry<T>(fn: () => Promise<T>, retries = 2, delayMs = 600): Promise<T> {
+    let lastError: any;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            // Nur bei Netzwerkfehlern oder temporären Fehlern erneut versuchen
+            if (err instanceof DOMException && err.name === 'AbortError') throw err;
+            if (attempt < retries) await new Promise(res => setTimeout(res, delayMs));
+        }
+    }
+    throw lastError;
+}
+
+function getUserFriendlyGeminiError(error: any): string {
+    if (error instanceof Error) {
+        if (error.message.includes('NO_API_KEY')) {
+            return 'Gemini API-Key fehlt. Bitte in den Einstellungen hinterlegen.';
+        }
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            return 'Netzwerkfehler: Die Verbindung zum Gemini-Server ist fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+        }
+        if (error.message.includes('quota') || error.message.includes('limit')) {
+            return 'Das Nutzungslimit für die Gemini-API wurde erreicht. Bitte warten Sie etwas und versuchen Sie es später erneut.';
+        }
+        if (error.message.includes('format')) {
+            return 'Die Antwort des KI-Modells war ungültig. Bitte versuchen Sie es erneut.';
+        }
+        return error.message;
+    }
+    return 'Unbekannter Fehler bei der Gemini-API.';
+}
 // --- PROMPT TYPES ---
 type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis' | 'proofread';
 
@@ -144,6 +178,7 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
             const p = params as WorldProfileParams;
             return {
                 prompt: `Generate a detailed world profile based on this concept: "${p.concept}". The profile should include 'name', 'description', 'geography', 'magicSystem', and 'culture'.${langInstruction}`,
+
                 schema: {
                     type: Type.OBJECT, properties: {
                         name: { type: Type.STRING }, description: { type: Type.STRING }, geography: { type: Type.STRING },

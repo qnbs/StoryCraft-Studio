@@ -17,12 +17,11 @@ import { Input } from './ui/Input';
 // --- SUB-COMPONENTS ---
 
 const ContextPanel: FC = React.memo(() => {
-    const { t } = useTranslation();
+    const { t, errorMessage } = useTranslation();
     const { project, selectedSectionId, handleContentChange, writerState, dispatch } = useWriterViewContext();
     const { selection, activeTool } = writerState;
     const selectedSection = project.manuscript.find(s => s.id === selectedSectionId);
     const selectedSectionIndex = project.manuscript.findIndex(s => s.id === selectedSectionId);
-    
     const settings = useAppSelector((state) => state.settings);
     const fontMap = {
         'serif': 'serif',
@@ -34,18 +33,20 @@ const ContextPanel: FC = React.memo(() => {
         fontSize: `${settings.fontSize}px`,
         lineHeight: settings.lineSpacing,
     };
-
     const handleSelectionEvents = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
         const target = e.currentTarget;
         const { selectionStart, selectionEnd, value } = target;
         dispatch(writerActions.setSelection({ start: selectionStart, end: selectionEnd, text: value.substring(selectionStart, selectionEnd) }));
     };
-    
     const shouldHighlightSelection = (activeTool === 'improve' || activeTool === 'changeTone') && selection.text.length > 0;
     const shouldShowInsertionPoint = (activeTool === 'continue' || activeTool === 'dialogue' || activeTool === 'brainstorm') && selection.start === selection.end;
-
     return (
         <div className="h-full flex flex-col">
+            {errorMessage && (
+                <div className="mb-4 p-3 rounded bg-red-500/10 text-red-600 border border-red-500/30 text-sm">
+                    {errorMessage}
+                </div>
+            )}
             <Card className="h-full flex flex-col border-0 sm:border">
                 <CardHeader className="hidden lg:block">
                      <h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('writer.studio.context.title')}</h2>

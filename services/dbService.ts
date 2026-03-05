@@ -24,6 +24,38 @@ interface PersistedState {
     settings?: Settings;
 }
 
+// Hilfsfunktion für Retry bei IndexedDB
+async function retryDb<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      // Nur bei temporären Fehlern erneut versuchen
+      if (err?.name === 'QuotaExceededError' || err?.name === 'InvalidStateError' || err?.name === 'AbortError' || err?.name === 'TransactionInactiveError') {
+        if (attempt < retries) await new Promise(res => setTimeout(res, delayMs));
+      } else {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
+function getUserFriendlyDbError(error: any): string {
+  if (error?.name === 'QuotaExceededError') {
+    return 'Speicherplatz im Browser ist erschöpft. Bitte löschen Sie alte Projekte oder Snapshots.';
+  }
+  if (error?.name === 'InvalidStateError' || error?.name === 'TransactionInactiveError') {
+    return 'Interner Fehler beim Zugriff auf die Datenbank. Bitte Seite neu laden.';
+  }
+  if (error?.name === 'AbortError') {
+    return 'Datenbankoperation wurde abgebrochen.';
+  }
+  return error?.message || 'Unbekannter Fehler beim Zugriff auf die Datenbank.';
+}
+
 class IndexedDBService {
   private db: IDBDatabase | null = null;
   private lastAutoSnapshotTime = Date.now();
@@ -31,7 +63,6 @@ class IndexedDBService {
   private readonly MAX_AUTO_SNAPSHOTS = 20;
 
   // === CRYPTO HELPERS für API Key Verschlüsselung ===
-  
   private async getLocalCryptoKey(): Promise<CryptoKey> {
     // Generiere einen geräte-spezifischen Schlüssel basierend auf Origin
     const material = new TextEncoder().encode(
@@ -51,72 +82,65 @@ class IndexedDBService {
     if (!apiKey || apiKey.trim().length === 0) {
       throw new Error('API key cannot be empty');
     }
-
-    const cryptoKey = await this.getLocalCryptoKey();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encodedKey = new TextEncoder().encode(apiKey.trim());
-    
-    const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      cryptoKey,
-      encodedKey
-    );
-
-    const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
-    
-    return new Promise((resolve, reject) => {
-      const encryptedArray = Array.from(new Uint8Array(encrypted));
-      const ivArray = Array.from(iv);
-      
-      const req1 = store.put(encryptedArray, GEMINI_API_KEY_RECORD);
-      const req2 = store.put(ivArray, GEMINI_API_KEY_IV_RECORD);
-      
-      let completed = 0;
-      const onSuccess = () => {
-        completed++;
-        if (completed === 2) resolve();
-      };
-      
-      req1.onsuccess = onSuccess;
-      req2.onsuccess = onSuccess;
-      req1.onerror = () => reject(req1.error);
-      req2.onerror = () => reject(req2.error);
+    return retryDb(async () => {
+      const cryptoKey = await this.getLocalCryptoKey();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encodedKey = new TextEncoder().encode(apiKey.trim());
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        cryptoKey,
+        encodedKey
+      );
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+      return new Promise((resolve, reject) => {
+        const encryptedArray = Array.from(new Uint8Array(encrypted));
+        const ivArray = Array.from(iv);
+        const req1 = store.put(encryptedArray, GEMINI_API_KEY_RECORD);
+        const req2 = store.put(ivArray, GEMINI_API_KEY_IV_RECORD);
+        let completed = 0;
+        const onSuccess = () => {
+          completed++;
+          if (completed === 2) resolve();
+        };
+        req1.onsuccess = onSuccess;
+        req2.onsuccess = onSuccess;
+        req1.onerror = () => reject(getUserFriendlyDbError(req1.error));
+        req2.onerror = () => reject(getUserFriendlyDbError(req2.error));
+      });
     });
   }
 
   async getGeminiApiKey(): Promise<string | null> {
-    try {
-      const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
-      
-      const [encryptedArray, ivArray] = await Promise.all([
-        new Promise<number[] | undefined>((resolve, reject) => {
-          const req = store.get(GEMINI_API_KEY_RECORD);
-          req.onsuccess = () => resolve(req.result as number[] | undefined);
-          req.onerror = () => reject(req.error);
-        }),
-        new Promise<number[] | undefined>((resolve, reject) => {
-          const req = store.get(GEMINI_API_KEY_IV_RECORD);
-          req.onsuccess = () => resolve(req.result as number[] | undefined);
-          req.onerror = () => reject(req.error);
-        }),
-      ]);
-
-      if (!encryptedArray || !ivArray) {
+    return retryDb(async () => {
+      try {
+        const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
+        const [encryptedArray, ivArray] = await Promise.all([
+          new Promise<number[] | undefined>((resolve, reject) => {
+            const req = store.get(GEMINI_API_KEY_RECORD);
+            req.onsuccess = () => resolve(req.result as number[] | undefined);
+            req.onerror = () => reject(getUserFriendlyDbError(req.error));
+          }),
+          new Promise<number[] | undefined>((resolve, reject) => {
+            const req = store.get(GEMINI_API_KEY_IV_RECORD);
+            req.onsuccess = () => resolve(req.result as number[] | undefined);
+            req.onerror = () => reject(getUserFriendlyDbError(req.error));
+          }),
+        ]);
+        if (!encryptedArray || !ivArray) {
+          return null;
+        }
+        const cryptoKey = await this.getLocalCryptoKey();
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: new Uint8Array(ivArray) },
+          cryptoKey,
+          new Uint8Array(encryptedArray)
+        );
+        return new TextDecoder().decode(decrypted);
+      } catch (error) {
+        console.warn('Failed to decrypt API key:', error);
         return null;
       }
-
-      const cryptoKey = await this.getLocalCryptoKey();
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(ivArray) },
-        cryptoKey,
-        new Uint8Array(encryptedArray)
-      );
-
-      return new TextDecoder().decode(decrypted);
-    } catch (error) {
-      console.warn('Failed to decrypt API key:', error);
-      return null;
-    }
+    });
   }
 
   async hasGeminiApiKey(): Promise<boolean> {
@@ -125,22 +149,21 @@ class IndexedDBService {
   }
 
   async clearGeminiApiKey(): Promise<void> {
-    const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
-    
-    return new Promise((resolve, reject) => {
-      const req1 = store.delete(GEMINI_API_KEY_RECORD);
-      const req2 = store.delete(GEMINI_API_KEY_IV_RECORD);
-      
-      let completed = 0;
-      const onSuccess = () => {
-        completed++;
-        if (completed === 2) resolve();
-      };
-      
-      req1.onsuccess = onSuccess;
-      req2.onsuccess = onSuccess;
-      req1.onerror = () => reject(req1.error);
-      req2.onerror = () => reject(req2.error);
+    return retryDb(async () => {
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+      return new Promise((resolve, reject) => {
+        const req1 = store.delete(GEMINI_API_KEY_RECORD);
+        const req2 = store.delete(GEMINI_API_KEY_IV_RECORD);
+        let completed = 0;
+        const onSuccess = () => {
+          completed++;
+          if (completed === 2) resolve();
+        };
+        req1.onsuccess = onSuccess;
+        req2.onsuccess = onSuccess;
+        req1.onerror = () => reject(getUserFriendlyDbError(req1.error));
+        req2.onerror = () => reject(getUserFriendlyDbError(req2.error));
+      });
     });
   }
 

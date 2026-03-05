@@ -69,7 +69,7 @@ const DetailField: FC<DetailFieldProps> = React.memo(({ label, field, value }) =
 });
 
 const CharacterDossier: FC = () => {
-    const { t, selectedCharacter, handleFieldChange, isGeneratingProfile, handleGeneratePortrait, isGeneratingPortrait, handleRefinePortrait, isRefiningPortrait, refinementPrompt, setRefinementPrompt, setIsDossierOpen, handleDelete } = useCharacterViewContext();
+    const { t, selectedCharacter, handleFieldChange, isGeneratingProfile, handleGeneratePortrait, isGeneratingPortrait, handleRefinePortrait, isRefiningPortrait, refinementPrompt, setRefinementPrompt, setIsDossierOpen, handleDelete, errorMessage } = useCharacterViewContext();
     const [activeTab, setActiveTab] = useState('profile');
     const imageUrl = useStoredImage(selectedCharacter?.id, selectedCharacter?.hasAvatar);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,9 +82,11 @@ const CharacterDossier: FC = () => {
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0] && selectedCharacter) {
             const file = event.target.files[0];
-            await dispatch(uploadCharacterImageThunk({ characterId: selectedCharacter.id, file }));
-            // Trigger local refresh (handled by useStoredImage via prop update from parent re-render or explicit state update if needed,
-            // but redux state update should propagate)
+            try {
+                await dispatch(uploadCharacterImageThunk({ characterId: selectedCharacter.id, file }));
+            } catch (err: any) {
+                // Fehler anzeigen (Toast oder im Modal)
+            }
         }
     };
 
@@ -92,12 +94,16 @@ const CharacterDossier: FC = () => {
 
     return (
         <Modal isOpen={true} onClose={() => setIsDossierOpen(false)} title={t('characters.dossier.title', { name: selectedCharacter.name })} size="xl">
+            {errorMessage && (
+                <div className="mb-4 p-3 rounded bg-red-500/10 text-red-600 border border-red-500/30 text-sm">
+                    {errorMessage}
+                </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1 space-y-4">
                     <div className="relative aspect-square w-full rounded-lg bg-[var(--background-tertiary)]/50 flex items-center justify-center overflow-hidden border border-[var(--border-primary)] group">
                         {selectedCharacter.hasAvatar && imageUrl ? <img src={imageUrl} alt={selectedCharacter.name} className="w-full h-full object-cover" /> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-24 h-24 text-[var(--foreground-muted)]">{ICONS.CHARACTERS}</svg>}
                         {(isGeneratingPortrait || isRefiningPortrait) && <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-[var(--foreground-primary)]"><Spinner className="w-8 h-8"/> <p className="mt-2 text-sm">{t('characters.edit.portrait.generating')}</p></div>}
-                        
                         {/* Hidden File Input */}
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                     </div>
@@ -110,7 +116,6 @@ const CharacterDossier: FC = () => {
                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                         </Button>
                     </div>
-
                     {selectedCharacter.hasAvatar && (
                         <div className="space-y-2">
                            <label htmlFor="refine-prompt" className="text-sm font-medium text-[var(--foreground-secondary)]">{t('characters.dossier.refineLabel')}</label>

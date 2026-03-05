@@ -10,16 +10,13 @@
     (function() {
       var base = '/StoryCraft-Studio/';
       var path = window.location.pathname;
-      
       // Entferne Base-Pfad
       var relativePath = path.replace(base, '');
-      
-      // Wenn wir nicht auf der Startseite sind, redirect mit Query-Parameter
+      // SPA-Redirect: Nur weiterleiten, wenn nicht auf der Startseite
       if (relativePath && relativePath !== '' && relativePath !== 'index.html') {
         var target = base + '?p=' + encodeURIComponent('/' + relativePath + window.location.search + window.location.hash);
         window.location.replace(target);
       } else {
-        // Fallback zur Hauptseite
         window.location.replace(base);
       }
     })();
