@@ -46,16 +46,18 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
     const base = import.meta.env.BASE_URL || '/';
     
     const fetchTranslations = async (lang: Language) => {
-      try {
-        const promises = modules.map(module => 
-          fetch(`${base}locales/${lang}/${module}.json`).then(res => res.json())
-        );
-        const results = await Promise.all(promises);
-        return results.reduce((acc, current) => ({...acc, ...current}), {});
-      } catch (error) {
-        console.error(`Failed to load translation files for ${lang}`, error);
-        return {};
-      }
+      const settled = await Promise.allSettled(
+        modules.map(module =>
+          fetch(`${base}locales/${lang}/${module}.json`).then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+        )
+      );
+      return settled.reduce((acc, result) => {
+        if (result.status === 'fulfilled') return { ...acc, ...result.value };
+        return acc;
+      }, {} as Record<string, any>);
     };
     
     const loadAllLanguages = async () => {
