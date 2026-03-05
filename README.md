@@ -1,20 +1,22 @@
 # ✨ StoryCraft Studio: Your AI-Powered Narrative Universe ✨
 
-[//]: # (Simulated Badges)
 <p align="center">
-  <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19">
-  <img src="https://img.shields.io/badge/Redux-Toolkit-764ABC?logo=redux" alt="Redux Toolkit">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19">
+  <img src="https://img.shields.io/badge/Redux_Toolkit-6.x-764ABC?logo=redux" alt="Redux Toolkit">
+  <img src="https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white" alt="Vite 6">
+  <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5">
   <img src="https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google" alt="Google Gemini">
-  <img src="https://img.shields.io/badge/Storage-IndexedDB-orange" alt="IndexedDB">
-  <img src="https://img.shields.io/badge/PWA-Ready-green" alt="PWA Ready">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License MIT">
+  <img src="https://img.shields.io/badge/Storage-IndexedDB-F59E0B" alt="IndexedDB">
+  <img src="https://img.shields.io/badge/PWA-v3.0-5BB974?logo=pwa" alt="PWA v3.0">
+  <img src="https://img.shields.io/badge/i18n-DE_|_EN-0EA5E9" alt="i18n DE EN">
+  <img src="https://img.shields.io/badge/License-MIT-22C55E" alt="License MIT">
 </p>
 
 ---
 
 ## ⚠️ Legal Disclaimer
 
-> **Educational Use Only**: StoryCraft Studio is a creative writing tool for educational and entertainment purposes. It does not provide professional, medical, legal, or financial advice. Users are solely responsible for the content they create and must comply with all applicable local laws and platform policies.
+> **Educational & Personal Use**: StoryCraft Studio is a creative writing tool for educational and personal use. It does not provide professional, medical, legal, or financial advice. Users are solely responsible for the content they create and must comply with all applicable local laws and platform policies.
 
 ---
 
@@ -22,118 +24,169 @@
 
 **🚀 [Launch StoryCraft Studio in your Browser!](https://qnbs.github.io/StoryCraft-Studio/) 🚀**
 
-✨ *Try it right now, no installation required! All data is saved securely in your browser's IndexedDB.* ✨
+✨ *Try it right now — no installation, no account required. All data is saved securely in your browser's IndexedDB.* ✨
 
 ---
 
-**StoryCraft Studio is a cutting-edge, AI-enhanced application meticulously engineered for authors, screenwriters, and creators. It transforms the daunting task of writing into a seamless, inspiring journey from a fleeting idea to a polished manuscript.** By integrating the power of Google's Gemini API with an intuitive, offline-first interface, StoryCraft Studio acts as your all-in-one creative co-pilot, empowering you to build, write, and refine your narrative universe without compromise.
+**StoryCraft Studio is a cutting-edge, AI-enhanced application meticulously engineered for authors, screenwriters, and creators.** It transforms the daunting task of writing into a seamless, inspiring journey from a fleeting idea to a polished manuscript. By integrating the power of Google's Gemini API with an intuitive, offline-first interface, StoryCraft Studio acts as your all-in-one creative co-pilot — empowering you to build, write, and refine your narrative universe without compromise.
 
 ---
 
 ## 📖 Table of Contents
 
 - [Why StoryCraft Studio?](#-why-storycraft-studio)
-- [🚀 Features: A Comprehensive Creative Suite](#-features-a-comprehensive-creative-suite)
-- [💡 Our Philosophy](#-our-philosophy)
-- [🛠️ Technology Deep Dive](#-technology-deep-dive)
-- [📂 Project Structure](#-project-structure)
+- [Features: A Comprehensive Creative Suite](#-features-a-comprehensive-creative-suite)
+- [Technology Deep Dive](#️-technology-deep-dive)
+- [Project Structure](#-project-structure)
 - [Getting Started](#getting-started)
-- [🚀 A Creative Workflow](#-a-creative-workflow)
-- [🤝 Contributing](#-contributing)
+- [A Creative Workflow](#-a-creative-workflow)
+- [Contributing](#-contributing)
 - [Deutsche Version (German)](#-storycraft-studio-deutsch)
-- [Fehlerverhalten & Hinweise](#-fehlerverhalten-&-hinweise)
 
 ---
 
 ## 🤔 Why StoryCraft Studio?
 
-In a world of generic text editors and complex writing software, StoryCraft Studio carves its own niche by focusing on a holistic, AI-augmented narrative design process.
+In a world of generic text editors and bloated writing software, StoryCraft Studio carves its own niche by focusing on a holistic, AI-augmented narrative design process.
 
--   **✍️ From Macro to Micro:** Most tools focus only on writing. We focus on the *entire* creative lifecycle: from the high-level plot structure and world-building down to the sentence-by-sentence prose.
--   **🧠 Intelligent Partnership:** Our AI is not a ghostwriter. It's a Socratic partner, a tireless brainstormer, and a creative muse, designed to break blocks and expand your own creative potential, not replace it.
--   **🔒 Ultimate Privacy & Ownership:** Your story is your most valuable asset. By leveraging a 100% local, offline-first architecture with IndexedDB, your data never leaves your machine. No clouds, no accounts, no compromises.
+- **✍️ From Macro to Micro:** Most tools focus only on writing. We cover the *entire* creative lifecycle — from high-level plot structure and world-building down to sentence-by-sentence prose refinement.
+- **🧠 Intelligent Partnership:** The AI is not a ghostwriter — it's a Socratic partner, a tireless brainstormer, and a creative muse. It's designed to break blocks and expand your own potential, not replace it.
+- **🔒 Ultimate Privacy & Ownership:** Your story is your most valuable asset. A 100% local, offline-first architecture with IndexedDB means your data never leaves your machine. No clouds, no accounts, no compromises.
+- **🔬 Built-in Quality Tools:** Go beyond writing with the AI Critic, Plot-Hole Detector, and RAG Consistency Checker — tools that help you catch narrative weaknesses before your readers do.
 
 ---
+
 ## 🚀 Features: A Comprehensive Creative Suite
 
-StoryCraft Studio is packed with state-of-the-art tools designed to support every stage of the writing process.
+### 📊 Dynamic Project Dashboard
+Your mission control. Track word counts against custom goals, visualize project statistics, manage your title and logline with AI assistance, and access all views from a single hub.
 
--   **📊 Dynamic Project Dashboard**: Your mission control. Get a dynamic, at-a-glance overview of your project's vitals. Track word counts against your goals, see character and world statistics, and manage your project's title and logline with AI assistance.
+### ✍️ Three-Panel Manuscript Editor
+A focused, distraction-free writing environment. The central editor is flanked by a draggable chapter **Navigator** and a project **Inspector**. An advanced overlay provides real-time highlighting and linking for `@character` and `#world` mentions, turning your manuscript into a living document.
 
--   **✍️ Three-Panel Manuscript Editor**: A dedicated, distraction-free writing environment. The central editor is flanked by a draggable chapter **Navigator** and a project **Inspector**. An advanced overlay provides real-time highlighting for `@character` and `#world` mentions.
+### 🎬 Scene Board *(Visual Story Planning)*
+A kanban-style drag-and-drop board for visual story planning. Organize your scenes across custom lanes, see your plot structure at a glance, and rearrange sections to check pacing and narrative flow without touching the manuscript.
 
--   **📚 Intelligent Story Templates**: Jumpstart your creativity with a library of classic narrative structures (Three-Act, Hero's Journey) and genre templates. **Remix any template** by dragging, editing, or adding sections, then **personalize it with AI** to generate chapter-specific prompts based on your unique story concept.
+### 🕸️ Character Relationship Graph *(Interactive Visualization)*
+An interactive, force-directed graph that visualizes all relationships between your characters. See at a glance who knows whom, who is in conflict, and how your cast interconnects — invaluable for complex multi-POV narratives.
 
--   **🤖 Sophisticated Outline Generator**: The ultimate cure for the blank page. Provide a simple concept and let our AI architect a detailed, chapter-by-chapter outline. Utilize advanced controls to specify genre, pacing, and even mandate a stunning plot twist. The result is a fully interactive and editable structure.
+### 📚 Intelligent Story Template Library
+Jumpstart your creativity with a library of classic structures (Three-Act, Hero's Journey, Save the Cat! Beat Sheet, Fichtean Curve) and genre templates (Fantasy, Thriller, Horror, Romance, Space Opera, and more). **Remix any template** by dragging, editing, or adding sections. **Personalize with AI** to generate chapter-specific prompts based on your unique concept.
 
--   **👥 Advanced Character Dossiers**: Breathe life into your cast. Use the **AI Profile Generator** to flesh out a compelling backstory, motivation, and personality from a single concept. Then, generate a unique, AI-powered **character portrait** and refine it with textual prompts.
+### 🤖 AI Outline Generator
+The ultimate cure for the blank page. Provide a concept and let the AI architect a detailed, chapter-by-chapter outline. Advanced controls let you specify genre, pacing, key characters, setting, and even mandate a specific plot twist. The result is a fully interactive, editable structure you can apply to your manuscript with one click.
 
--   **🌍 Expansive World-Building Atlas**: Construct the universe of your story. Define your world's lore, then create interactive timelines and location lists. Let the **AI World Generation** feature build out rich, consistent lore, and create a vivid, atmospheric **ambiance image** to capture your world's mood.
+### 👥 Advanced Character Dossiers
+Breathe life into your cast. Use the **AI Profile Generator** to create compelling backstories, motivations, and personality traits from a single concept. Generate a unique **AI character portrait** in a choice of styles (realistic, anime, cartoon, comic book). Manage relationships and character arcs with dedicated fields.
 
--   **✨ AI Writing Studio**: Your tireless creative partner.
-    -   **Continue Writing**: Seamlessly continue from your last sentence.
-    -   **Improve & Change Tone**: Select any passage and ask the AI to rewrite it.
-    -   **Generate Dialogue**: Create authentic, in-character conversations.
-    -   **Brainstorm Ideas**: Get creative plot points for what could happen next.
-    -   **Summarize**: Generate a concise synopsis of any section.
+### 🌍 Expansive World-Building Atlas
+Construct the universe of your story. Define your world's history and lore, create interactive timelines and location lists, and let the **AI World Generation** feature write rich, consistent world-building content. Generate an atmospheric **ambiance image** to capture your world's visual identity.
 
--   **🎨 Highly Customizable Workspace**: Tailor your environment to your preferences with **Dark/Light Modes**, adjustable editor fonts, sizes, and spacing, and a tunable AI creativity level.
+### ✨ AI Writing Studio *(10 Specialized AI Tools)*
+Your tireless creative co-pilot, available at every stage:
 
--   **💾 Robust Offline-First Data Management**: Your work is safe, private, and portable. All data is saved automatically in your browser's **IndexedDB**. A powerful **Snapshot system** automatically and manually saves project versions, allowing you to restore your work to any previous point in time.
+| Tool | What it does |
+|---|---|
+| **Continue Writing** | Seamlessly continues from your last sentence in your voice |
+| **Improve Writing** | Rewrites selected prose for clarity, flow, and impact |
+| **Change Tone** | Shifts the register of any passage (darker, funnier, more formal, …) |
+| **Generate Dialogue** | Creates authentic, in-character conversations |
+| **Brainstorm Ideas** | Generates creative plot possibilities for what comes next |
+| **Generate Synopsis** | Creates a concise, polished summary of any section |
+| **Grammar & Style Check** | Catches errors and suggests stylistic improvements |
+| **AI Critic** | Delivers an honest, structured literary critique of your prose |
+| **Plot-Hole Detector** | Analyzes your manuscript for logical inconsistencies and continuity errors |
+| **Consistency Checker** | Cross-references your text against your character and world data via RAG |
 
--   **📤 Polished Exporting Suite**: Go from draft to document in seconds. Export your project as Markdown, Plain Text, or a professionally formatted **PDF** with a title page. Selectively include content and even generate a one-page **AI Synopsis** of your entire manuscript.
+### 🔍 RAG Consistency Checker *(Advanced)*
+A dedicated view using **Retrieval-Augmented Generation (RAG)** to give the AI deep, contextualized knowledge of your *entire* project. It cross-checks your manuscript against character profiles and world-building notes to surface subtle inconsistencies and continuity errors that a read-through would miss.
 
--   **🌐 Full Multi-language Support**: Fully localized UI available in **English** and **German**.
+### 🗣️ Voice Dictation
+Built-in speech-to-text via the browser's Web Speech API. Dictate scenes hands-free directly into the manuscript editor.
 
--   **## EPUB-Export**
+### ⌨️ Command Palette
+A keyboard-first command palette (⌘K / Ctrl+K) for instant navigation, AI actions, and project management — all without leaving the keyboard.
 
-    Der EPUB-Export erfolgt serverseitig über ein Node.js-Backend (Express + epub-gen).
+### 🎨 Highly Customizable Workspace
+- **Dark / Light** themes
+- Adjustable **font family, size, line height**, and **paragraph spacing**
+- **Indent first line** toggle for traditional novel formatting
+- Tunable **AI Creativity Level** (Focused → Balanced → Imaginative)
+- Full **Accessibility settings** (high contrast, reduced motion, color-blind modes)
 
-    **API:**
-    - POST `/api/export/epub` mit Storydaten (JSON)
-    - Response: EPUB-Datei als Download
+### 💾 Robust Offline-First Data Management
+- **Auto-save** to IndexedDB on every change (debounced, non-blocking)
+- **Snapshot system** — automatic and manual project backups, restorable to any point
+- **Import / Export** project files as JSON backups
+- **Undo / Redo** with a 100-step history (Redux-Undo)
 
-    **Backend-Beispiel:**
-    Siehe `backend/epubExport.js` für eine einfache Express-API.
+### 📤 Polished Export Suite
+- **Markdown** (`.md`), **Plain Text** (`.txt`), **PDF** (with titlepage, configurable font and spacing)
+- **AI Synopsis** — generate a one-page synopsis before exporting
+- Selective content inclusion (title & logline, characters, worlds, manuscript)
 
-    **Frontend:**
-    Im Export-Dialog wird der EPUB-Export-Button angezeigt. Die Datei wird nach erfolgreichem Export automatisch heruntergeladen.
+### 📱 Progressive Web App (PWA) v3.0
+- **Offline-first** — all assets cached via Service Worker
+- **Installable** on desktop and mobile (iOS & Android)
+- **App shortcuts** for quick access from the home screen icon
+- Update notifications and background sync support
 
-    **Hinweis:**
-    Das Backend muss separat gestartet werden (z.B. mit `node backend/epubExport.js`).
+### 🌐 Full Multi-Language Support
+Fully localized to:
+- 🇩🇪 **German** (Deutsch) — complete
+- 🇬🇧 **English** — complete
+- 🇫🇷 French, 🇪🇸 Spanish, 🇮🇹 Italian *(in progress)*
+
+Language selection persists across sessions via `localStorage`.
 
 ---
 
 ## 💡 Our Philosophy
 
--   **Privacy First**: Your story is yours. All data is stored locally on your machine. We never see it, and there are no accounts or cloud services to worry about.
--   **AI as a Partner, Not a Replacement**: StoryCraft Studio's AI is designed to augment your creativity, not replace it. It's a tool for brainstorming, overcoming blocks, and exploring possibilities, leaving you in full creative control.
--   **Seamless Workflow**: We believe in tools that get out of the way. From outlining to writing to exporting, the experience is designed to be intuitive and frictionless, keeping you in your creative flow.
+- **Privacy First** — All data stays local. No accounts, no cloud, no tracking.
+- **AI as a Partner, Not a Replacement** — The AI augments your creativity; you remain the author.
+- **Seamless Workflow** — Tools that get out of the way and keep you in your creative flow.
+- **Quality Over Quantity** — Each AI tool has a single, specific purpose crafted for a real creative need.
 
 ---
 
 ## 🛠️ Technology Deep Dive
 
-StoryCraft Studio is built with a modern, robust technology stack to ensure a fast, reliable, and powerful user experience:
-
--   **Frontend**: **React 19** with Hooks for a cutting-edge, performant UI.
--   **State Management**: **Redux Toolkit** for predictable and scalable state management, augmented with **Redux-Undo** for a robust undo/redo history.
--   **Styling**: **Tailwind CSS** for a utility-first, highly customizable design system.
--   **AI Integration**: The **Google Gemini API** provides the state-of-the-art generative capabilities that power the studio's creative tools.
--   **Offline Storage**: **IndexedDB** was chosen for its large storage capacity and asynchronous API, enabling a true offline-first architecture that prioritizes user privacy and data ownership. All text and generated images are stored securely on the user's machine.
--   **PDF Generation**: **jsPDF** for client-side generation of professionally formatted PDF documents.
+| Layer | Technology | Purpose |
+|---|---|---|
+| **UI Framework** | React 19 + TypeScript | Component-based, fully type-safe UI |
+| **Build Tool** | Vite 6 | Instant dev server, optimized production builds with manual chunking |
+| **State Management** | Redux Toolkit + Redux-Undo | Predictable global state with 100-step undo history |
+| **Styling** | Tailwind CSS + CSS Variables | Utility-first design with theme-aware custom properties |
+| **AI Integration** | Google Gemini API (`@google/genai`) | Multimodal generative AI for all creative features |
+| **Storage** | IndexedDB (custom `dbService`) | Large-capacity, async, offline-first local persistence |
+| **Encryption** | Web Crypto API (AES-256-GCM) | Client-side API key encryption before IndexedDB storage |
+| **PDF Export** | jsPDF | Client-side, configurable PDF document generation |
+| **Document Export** | docx + jszip | Word-compatible `.docx` generation |
+| **PWA** | Service Worker + Web App Manifest v3 | Offline support, installability, app shortcuts |
+| **i18n** | Custom React Context system | JSON locale files, EN fallback, `localStorage` persistence |
+| **Visualization** | Force-directed graph | Interactive character relationship network |
 
 ---
 
 ## 📂 Project Structure
-The codebase is organized logically to promote scalability and maintainability:
 
--   `components/`: Contains all UI components, further subdivided into `ui/` for generic, reusable elements.
--   `features/`: Redux Toolkit slices, organized by application feature (e.g., `project`, `settings`).
--   `hooks/`: Custom React hooks that encapsulate complex business logic for each view (e.g., `useDashboard.ts`, `useWriterView.ts`).
--   `contexts/`: React Context providers for sharing hook logic and state within specific views.
--   `services/`: Modules for interacting with external APIs or browser storage (e.g., `geminiService.ts`, `dbService.ts`).
--   `locales/`: Contains all internationalization (i18n) JSON files, separated by language and feature.
+```
+StoryCraft-Studio/
+├── components/           # All UI view components
+│   └── ui/               # Reusable generic components (Button, Modal, Toast, …)
+├── features/             # Redux Toolkit slices (project, settings, status, writer)
+├── hooks/                # Custom hooks with all view business logic
+├── contexts/             # React Context providers (i18n, per-view state sharing)
+├── services/             # External API & storage adapters (gemini, db, storage)
+├── locales/              # i18n source files (per language × per module)
+├── public/
+│   ├── locales/          # i18n runtime files (copied from locales/ at build)
+│   ├── sw.js             # PWA Service Worker
+│   └── manifest.json     # PWA Web App Manifest
+├── app/                  # Redux store, listener middleware, utilities
+└── types.ts              # Shared TypeScript interfaces and types
+```
 
 ---
 
@@ -141,34 +194,31 @@ The codebase is organized logically to promote scalability and maintainability:
 
 ### Prerequisites
 
-This application runs entirely in the browser. You do not need to install any dependencies. A modern web browser like Chrome, Firefox, or Safari is all that's required.
+A modern browser (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+) is all you need — no installation required.
 
-### 🔐 How to Set Your Gemini API Key
+### 🔐 Setting Up Your Gemini API Key
 
-StoryCraft Studio uses **client-side encryption** to securely store your API key:
+All AI features require a free Google Gemini API key.
 
-1. **Get your free API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. **Open Settings** in the app (gear icon in sidebar)
-3. **Enter your API key** in the "Gemini API Key" section
-4. **Click Save** - Your key is encrypted using AES-256-GCM and stored only in your browser's IndexedDB
+1. **Get your key** at [Google AI Studio](https://aistudio.google.com/app/apikey) — it's free
+2. **Open Settings** in the app (gear icon in the sidebar)
+3. **Enter your API key** under "Gemini API Key"
+4. **Click Save** — the key is encrypted with AES-256-GCM and stored only in your browser's IndexedDB
 
-#### Security Best Practices
-
+**Security best practices:**
 - ✅ Your key never leaves your device
-- ✅ Key is encrypted at rest using Web Crypto API
-- ✅ No key in source code or build artifacts
-- 🔒 **Recommended**: Restrict your key to `*.github.io` in Google AI Studio console
+- ✅ Encrypted at rest via the Web Crypto API
+- ✅ No key is ever stored in source code or build artifacts
+- 🔒 **Recommended:** Restrict your key to `*.github.io` in Google AI Studio
 
-### 🚀 Deployment Instructions (GitHub Pages)
+### 🚀 Deploying to GitHub Pages
 
-1. **Fork this repository**
-2. **Enable GitHub Pages**:
-   - Go to Settings → Pages
-   - Source: **GitHub Actions**
-3. **Push to main branch** - Deployment happens automatically
+1. **Fork** this repository
+2. **Enable GitHub Pages:** Settings → Pages → Source: **GitHub Actions**
+3. **Push to `main`** — deployment runs automatically via GitHub Actions
 4. **Access your app** at `https://YOUR-USERNAME.github.io/StoryCraft-Studio/`
 
-### Local Development
+### 💻 Local Development
 
 ```bash
 # Clone the repository
@@ -178,162 +228,188 @@ cd StoryCraft-Studio
 # Install dependencies
 npm install
 
-# Start development server
+# Start the development server (http://localhost:3000)
 npm run dev
 
 # Build for production
 npm run build
+
+# Preview the production build locally
+npm run preview
 ```
 
 ### 🌐 Custom Domain Setup
 
-To use your own domain (e.g., `storycraft.yourdomain.com`):
-
-1. **Create a CNAME file** in the `public/` folder:
+1. Create a `CNAME` file in `public/` with your domain:
    ```bash
-   # Copy the template
-   cp public/CNAME.example public/CNAME
-   
-   # Edit with your domain
    echo "storycraft.yourdomain.com" > public/CNAME
    ```
-
-2. **Configure DNS** at your domain registrar:
-   - **For subdomain** (app.example.com): Add CNAME record → `your-username.github.io`
-   - **For apex domain** (example.com): Add A records pointing to GitHub's IPs:
-     ```
-     185.199.108.153
-     185.199.109.153
-     185.199.110.153
-     185.199.111.153
-     ```
-
-3. **Push changes** - The build automatically detects the CNAME and uses `/` as base path
-
-4. **Enable HTTPS** in GitHub Pages settings (takes a few minutes to provision)
-
-> ℹ️ **Note**: When CNAME is present, the app is served from root (`/`) instead of `/StoryCraft-Studio/`
+2. Configure DNS at your registrar:
+   - **Subdomain** → CNAME → `your-username.github.io`
+   - **Apex domain** → A records to `185.199.108.153` – `185.199.111.153`
+3. Push changes — the build auto-detects `CNAME` and switches the base path to `/`
+4. Enable HTTPS in GitHub Pages settings
 
 ### 🛠 Troubleshooting
 
-#### Blank Page After Deployment
-
-- ✅ Check that `base` in `vite.config.ts` matches your repository name
-- ✅ Verify GitHub Pages is set to "GitHub Actions" source
-- ✅ Clear browser cache and hard refresh
-
-#### Assets Not Loading (404)
-
-- ✅ Ensure `manifest.json` has correct `start_url` and `scope`
-- ✅ Check browser console for path errors
-- ✅ Verify `404.html` exists in `public/` folder
-
-#### SPA Routes Not Working
-
-- ✅ The `404.html` handles client-side routing redirects
-- ✅ Check that the redirect script uses the correct base path
-
-#### AI Features Not Working
-
-- ✅ Verify your API key is entered in Settings
-- ✅ Check that the key starts with "AIza"
-- ✅ Ensure you have API quota remaining
+| Problem | Solution |
+|---|---|
+| Blank page after deploy | Verify `base` in `vite.config.ts` matches your repo name |
+| Assets not loading (404) | Check `manifest.json` `start_url`; verify `404.html` is in `public/` |
+| AI features not working | Check API key in Settings; verify it starts with `AIza` and has quota |
+| Language resets on reload | Clear site data and re-select — should now persist via `localStorage` |
 
 ---
 
 ## 🚀 A Creative Workflow
 
-1.  **Conceive**: Start in the **Welcome Portal**. Choose to begin with a structured **Template**, generate a bespoke plot with the **AI Outline Generator**, or start from a **Blank Manuscript**.
-2.  **Build**: Navigate to the **Characters** and **World Building** views. Use the AI features to turn simple ideas into detailed profiles and generate inspiring concept art.
-3.  **Outline**: Fine-tune your plot in the **Outline Generator**. Drag-and-drop sections, regenerate ideas, and apply it to your manuscript with a single click.
-4.  **Write**: Immerse yourself in the three-panel **Manuscript** editor. Use `@mentions` to link your characters and worlds directly in the text. Progress is saved automatically.
-5.  **Enhance**: When you hit a wall, visit the **AI Writing Studio**. Let it continue a scene, improve your prose, or brainstorm what happens next.
-6.  **Review & Refine**: Use the **Snapshot** system in Settings to save a version of your project before making major revisions. You can restore to any snapshot at any time.
-7.  **Publish**: When ready, the **Export** view lets you compile your work into a clean Markdown file, a simple text document, or a formatted PDF, complete with an AI-generated synopsis.
+1. **Conceive** — Start in the **Welcome Portal** with a Template, the AI Outline Generator, or a blank manuscript.
+2. **Build** — Create **Characters** and **Worlds** with AI. Visualize your cast in the **Character Relationship Graph**.
+3. **Structure** — Refine your plot in the **Outline Generator** or arrange scenes visually on the **Scene Board**.
+4. **Write** — Immerse yourself in the **Manuscript** editor. `@mentions` link characters and worlds. Progress is saved automatically.
+5. **Enhance** — Use the **AI Writing Studio** to continue, improve, generate dialogue, or brainstorm.
+6. **Review** — Run the **AI Critic** for literary feedback, the **Plot-Hole Detector** for logic issues, and the **Consistency Checker** for continuity.
+7. **Snapshot** — Save a project version in Settings before major revisions. Restore anytime.
+8. **Publish** — Export as Markdown, plain text, or a formatted **PDF** with an AI-generated synopsis.
 
 ---
 
 ## 🤝 Contributing
 
-While this is a showcase project, we welcome feedback and ideas! The best way to contribute is by:
-
-1.  **Reporting Bugs:** If you find something that isn't working as expected, please open an issue.
-2.  **Suggesting Features:** Have a great idea for a new tool? Let us know!
-3.  **Providing Feedback:** General feedback on the user experience is always valuable.
+- **🐛 Report Bugs** — Open a GitHub Issue with details and reproduction steps
+- **💡 Suggest Features** — Open a Discussion or Issue
+- **🌍 Improve Translations** — `locales/` contains all i18n JSON files; PRs for FR/ES/IT are especially welcome
 
 ---
 
 # 📖 StoryCraft Studio (Deutsch)
 
-StoryCraft Studio ist eine hochmoderne, KI-gestützte Anwendung, die sorgfältig für Autoren, Drehbuchautoren und Kreative entwickelt wurde. Sie verwandelt die anspruchsvolle Aufgabe des Schreibens in eine nahtlose, inspirierende Reise von einer flüchtigen Idee bis zum fertigen Manuskript. Durch die Integration der Leistungsfähigkeit der Google Gemini API mit einer intuitiven, offline-fähigen Benutzeroberfläche fungiert StoryCraft Studio als Ihr kreativer All-in-One-Copilot und befähigt Sie, Ihr narratives Universum ohne Kompromisse zu erschaffen, zu schreiben und zu verfeinern.
+StoryCraft Studio ist eine hochmoderne, KI-gestützte Anwendung für Autoren, Drehbuchautoren und Kreative. Sie verwandelt das Schreiben in eine nahtlose, inspirierende Reise — von der ersten Idee bis zum fertigen Manuskript. Durch die Integration der Google Gemini API mit einer intuitiven, offline-fähigen Benutzeroberfläche ist StoryCraft Studio Ihr kreativer All-in-One-Copilot.
 
-## 🚀 Funktionen: Eine umfassende Kreativ-Suite
+## 🚀 Funktionen
 
--   **📊 Dynamisches Projekt-Dashboard**: Ihre Kommandozentrale. Erhalten Sie einen dynamischen Überblick über die wichtigsten Daten Ihres Projekts, verfolgen Sie Wortziele und verwalten Sie Titel und Logline mit KI-Unterstützung.
--   **✍️ Drei-Fenster-Manuskript-Editor**: Eine dedizierte, ablenkungsfreie Schreibumgebung mit einem Kapitel-**Navigator** und einem Projekt-**Inspektor**. Ein Overlay bietet Echtzeit-Hervorhebung für `@charakter`- und `#welt`-Erwähnungen.
--   **📚 Intelligente Story-Vorlagen**: Starten Sie mit klassischen Erzählstrukturen. **Passen Sie jede Vorlage an** und **personalisieren Sie sie mit KI**, um kapitelspezifische Anregungen basierend auf Ihrer einzigartigen Story-Idee zu generieren.
--   **🤖 Hochentwickelter Gliederungsgenerator**: Das ultimative Mittel gegen die leere Seite. Lassen Sie die KI eine detaillierte, interaktive Gliederung aus Ihrer Idee erstellen, komplett mit erweiterten Steuerelementen für Tempo und Wendungen.
--   **👥 Detaillierte Charakter-Dossiers**: Hauchen Sie Ihren Figuren Leben ein. Nutzen Sie den **KI-Profilgenerator** für tiefgründige Hintergrundgeschichten und generieren Sie einzigartige **Charakterporträts**.
--   **🌍 Expansiver Weltenbau-Atlas**: Erschaffen Sie das Universum Ihrer Geschichte. Definieren Sie die Geschichte Ihrer Welt, erstellen Sie Zeitachsen und Orte, und generieren Sie atmosphärische **Stimmungsbilder** mit KI.
--   **✨ KI-Schreibstudio**: Ihr unermüdlicher kreativer Partner, der Text fortsetzt, verbessert, Dialoge schreibt, Ideen entwickelt und Abschnitte zusammenfasst.
--   **🎨 Hochgradig anpassbarer Arbeitsbereich**: Passen Sie Ihre Umgebung mit **Hell-/Dunkel-Modi**, anpassbaren Editor-Schriftarten und einer abstimmbaren KI-Kreativität an.
--   **💾 Robuste Offline-First-Datenverwaltung**: Ihre Arbeit ist sicher. Alle Daten werden in **IndexedDB** in Ihrem Browser gespeichert. Ein leistungsstarkes **Snapshot-System** speichert automatisch und manuell Projektversionen, sodass Sie jederzeit zu einem früheren Stand zurückkehren können.
--   **📤 Elegante Export-Suite**: Exportieren Sie Ihr Projekt als Markdown, reinen Text oder professionell formatiertes **PDF**. Fügen Sie selektiv Inhalte hinzu und generieren Sie eine **KI-Synopse** Ihres gesamten Manuskripts.
--   **🌐 Vollständige Mehrsprachigkeit**: Vollständig lokalisierte Benutzeroberfläche in **Englisch** und **Deutsch** verfügbar.
+### 📊 Dynamisches Projekt-Dashboard
+Ihre Kommandozentrale. Wortziele verfolgen, Projektstatistiken einsehen, Titel und Logline mit KI verwalten — alles auf einen Blick.
+
+### ✍️ Drei-Fenster-Manuskript-Editor
+Ablenkungsfreie Schreibumgebung mit Kapitel-**Navigator** und Projekt-**Inspektor**. Echtzeit-Hervorhebung für `@Charakter`- und `#Welt`-Erwähnungen.
+
+### 🎬 Szenen-Board *(Visuelle Story-Planung)*
+Kanban-Board zum Drag-and-Drop-Anordnen von Szenen. Tempo und Struktur visuell erkunden.
+
+### 🕸️ Charakter-Beziehungsgraph *(Interaktive Visualisierung)*
+Kräftebasierter Graph aller Charakter-Beziehungen — unverzichtbar für komplexe Mehrfach-Handlungsstränge.
+
+### 📚 Intelligente Story-Vorlagen
+Klassische Strukturen (Drei-Akt, Heldenreise, Save the Cat!, Fichtean-Kurve) und Genre-Vorlagen. Anpassen und mit KI personalisieren.
+
+### 🤖 KI-Gliederungsgenerator
+Detaillierte, interaktive Kapitelgliederung aus einer Idee — mit Genre, Tempo, Wendungen.
+
+### 👥 Charakter-Dossiers
+KI-Profilgenerator, `@Beziehungen, Charakterentwicklung, KI-generierte Porträts in verschiedenen Stilen.
+
+### 🌍 Weltenbau-Atlas
+KI-generierte Lore, Zeitachsen, Orte, atmosphärische Stimmungsbilder.
+
+### ✨ KI-Schreibstudio *(10 spezialisierte Werkzeuge)*
+
+| Werkzeug | Funktion |
+|---|---|
+| **Weiterschreiben** | Nahtlose Fortsetzung in Ihrem Stil |
+| **Verbessern** | Klarheit, Fluss und Wirkung verbessern |
+| **Ton ändern** | Stimmung und Register anpassen |
+| **Dialog generieren** | Figurengerechte Gespräche |
+| **Ideen brainstormen** | Kreative Plot-Möglichkeiten |
+| **Synopse generieren** | Präzise Zusammenfassung |
+| **Grammatik & Stil** | Fehler erkennen und stilistisch verbessern |
+| **KI-Kritiker** | Strukturierte literarische Kritik |
+| **Handlungsloch-Detektor** | Logische Widersprüche aufdecken |
+| **Konsistenz-Prüfer (RAG)** | Manuskript gegen Charakter- und Weltdaten abgleichen |
+
+### 🔍 RAG-Konsistenz-Prüfer
+Nutzt **Retrieval-Augmented Generation** für tiefgehende Konsistenzprüfung über das gesamte Projekt.
+
+### 📱 Progressive Web App (PWA) v3.0
+Installierbar auf Desktop und Smartphone. Offline-fähig. App-Shortcuts vom Home-Bildschirm.
+
+### 🌐 Mehrsprachigkeit
+- 🇩🇪 **Deutsch** — vollständig
+- 🇬🇧 **Englisch** — vollständig
+- 🇫🇷 Französisch, 🇪🇸 Spanisch, 🇮🇹 Italienisch *(in Bearbeitung)*
+
+Sprachauswahl dauerhaft in `localStorage` gespeichert.
+
+---
 
 ## 💡 Unsere Philosophie
 
--   **Datenschutz an erster Stelle**: Ihre Geschichte gehört Ihnen. Alle Daten werden lokal auf Ihrem Gerät gespeichert.
--   **KI als Partner, nicht als Ersatz**: Die KI von StoryCraft Studio soll Ihre Kreativität erweitern, nicht ersetzen.
--   **Nahtloser Arbeitsablauf**: Wir glauben an Werkzeuge, die nicht im Weg stehen und Sie im kreativen Fluss halten.
+- **Datenschutz an erster Stelle** — Alle Daten bleiben lokal; keine Konten, keine Cloud.
+- **KI als Partner** — Die KI erweitert Ihre Kreativität, ersetzt Sie nicht.
+- **Nahtloser Workflow** — Werkzeuge, die nicht im Weg stehen.
+- **Qualität vor Quantität** — Jedes KI-Werkzeug hat eine klare, spezifische Aufgabe.
 
-## 🛠️ Modernste Technologie
+---
 
--   **Frontend**: **React 19** mit Hooks.
--   **Zustandsverwaltung**: **Redux Toolkit** & **Redux-Undo**.
--   **Styling**: **Tailwind CSS**.
--   **KI-Integration**: **Google Gemini API**.
--   **Offline-Speicher**: **IndexedDB** für Datenschutz und Leistung.
--   **PDF-Generierung**: **jsPDF**.
+## 🛠️ Technologie-Stack
+
+| Schicht | Technologie |
+|---|---|
+| UI-Framework | React 19 + TypeScript |
+| Build | Vite 6 |
+| Zustandsverwaltung | Redux Toolkit + Redux-Undo |
+| Styling | Tailwind CSS + CSS-Variablen |
+| KI | Google Gemini API |
+| Speicher | IndexedDB (eigener dbService) |
+| Verschlüsselung | Web Crypto API (AES-256-GCM) |
+| PDF-Export | jsPDF |
+| PWA | Service Worker + Manifest v3 |
+| i18n | Eigenes Context-System mit localStorage-Persistenz |
+
+---
 
 ## Erste Schritte
 
-### Voraussetzungen
+### 🔐 Gemini API-Schlüssel einrichten
 
-Ein moderner Webbrowser wie Chrome, Firefox oder Safari ist alles, was Sie benötigen.
+1. Kostenlosen Schlüssel bei [Google AI Studio](https://aistudio.google.com/app/apikey) holen
+2. Einstellungen → Gemini API-Schlüssel → Eingeben und Speichern
 
-### 🔐 So richten Sie Ihren Gemini API-Schlüssel ein
+### 💻 Lokale Entwicklung
 
-StoryCraft Studio verwendet **clientseitige Verschlüsselung** zur sicheren Speicherung Ihres API-Schlüssels:
+```bash
+git clone https://github.com/qnbs/StoryCraft-Studio.git
+cd StoryCraft-Studio
+npm install
+npm run dev
+```
 
-1. **Holen Sie sich Ihren kostenlosen API-Schlüssel** von [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. **Öffnen Sie die Einstellungen** in der App (Zahnrad-Symbol in der Seitenleiste)
-3. **Geben Sie Ihren API-Schlüssel** im Abschnitt "Gemini API-Schlüssel" ein
-4. **Klicken Sie auf Speichern** - Ihr Schlüssel wird mit AES-256-GCM verschlüsselt und nur in der IndexedDB Ihres Browsers gespeichert
+---
 
-#### Sicherheits-Best-Practices
+## 🚀 Kreativer Arbeitsablauf
 
-- ✅ Ihr Schlüssel verlässt niemals Ihr Gerät
-- ✅ Der Schlüssel wird im Ruhezustand mit der Web Crypto API verschlüsselt
-- ✅ Kein Schlüssel im Quellcode oder in Build-Artefakten
-- 🔒 **Empfohlen**: Beschränken Sie Ihren Schlüssel auf `*.github.io` in der Google AI Studio-Konsole
+1. **Konzipieren** — Willkommensportal: Template, KI-Gliederung oder leeres Manuskript
+2. **Erschaffen** — Charaktere, Welten und Beziehungen mit KI aufbauen
+3. **Strukturieren** — Gliederungsgenerator oder Szenen-Board
+4. **Schreiben** — Manuskript-Editor mit `@Erwähnungen` und Auto-Speichern
+5. **Verbessern** — KI-Schreibstudio für alle kreativen Aufgaben
+6. **Prüfen** — KI-Kritiker, Handlungsloch-Detektor, Konsistenz-Prüfer
+7. **Sichern** — Snapshot erstellen vor großen Änderungen
+8. **Exportieren** — Markdown, Text oder PDF
 
-## 🚀 Ein kreativer Arbeitsablauf
+---
 
-1.  **Konzipieren**: Starten Sie im **Willkommensportal**. Wählen Sie eine **Vorlage**, den **KI-Gliederungsgenerator** oder ein **leeres Manuskript**.
-2.  **Erschaffen**: Erstellen Sie Ihre **Charaktere** und **Welten** mit KI-Unterstützung, um Ideen schnell in detaillierte Profile und Konzeptkunst umzuwandeln.
-3.  **Gliedern**: Verfeinern Sie Ihre Handlung im **Gliederungsgenerator** und wenden Sie sie mit einem Klick auf Ihr Manuskript an.
-4.  **Schreiben**: Tauchen Sie in den **Manuskript**-Editor ein. Verwenden Sie `@Erwähnungen`, um Ihre Inhalte zu verknüpfen.
-5.  **Verbessern**: Nutzen Sie das **KI-Schreibstudio**, um Schreibblockaden zu überwinden.
-6.  **Überprüfen & Sichern**: Verwenden Sie das **Snapshot**-System in den Einstellungen, um Versionen Ihres Projekts vor größeren Änderungen zu speichern.
-7.  **Veröffentlichen**: Exportieren Sie Ihr Werk als Markdown, Textdatei oder formatiertes **PDF**, komplett mit einer KI-generierten Synopse.
+## 🤝 Mitwirken
+
+- **🐛 Fehler melden** — GitHub Issue mit Beschreibung
+- **💡 Features vorschlagen** — GitHub Issue oder Discussion
+- **🌍 Übersetzungen verbessern** — `locales/`-Ordner; PRs für FR/ES/IT willkommen
+
+---
 
 ## Fehlerverhalten & Hinweise
 
-- Alle KI-Funktionen zeigen Fehlertexte bei API- oder Netzwerkproblemen.
-- Die ErrorBoundary fängt globale Fehler ab und zeigt eine verständliche Meldung.
-- Bei Gemini- oder IndexedDB-Ausfällen werden automatisch Retry-Versuche unternommen.
-- Nutzer erhalten klare Hinweise, falls der Export, die KI oder die Speicherung fehlschlägt.
-- Die Grammatik- und Stilprüfung erkennt automatisch Deutsch/Englisch und liefert passende Korrekturen.
-
-Siehe auch die Hilfeseite im Menü für weitere Tipps zur Fehlerbehandlung.
+- Alle KI-Funktionen zeigen klare Fehlermeldungen bei API- oder Netzwerkproblemen.
+- Die `ErrorBoundary` fängt globale Fehler ab und zeigt eine verständliche Meldung.
+- Nutzer erhalten klare Hinweise, falls Export, KI oder Speicherung fehlschlägt.
+- Die Sprachauswahl wird dauerhaft in `localStorage` gespeichert und beim nächsten Öffnen wiederhergestellt.

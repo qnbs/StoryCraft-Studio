@@ -20,10 +20,26 @@ interface I18nProviderProps {
 
 const modules = ['common', 'sidebar', 'portal', 'dashboard', 'manuscript', 'writer', 'templates', 'tags', 'outline', 'characters', 'worlds', 'export', 'settings', 'help'];
 
+const LANG_KEY = 'storycraft-language';
+const VALID_LANGS: Language[] = ['en', 'de', 'fr', 'es', 'it'];
+
+const getInitialLanguage = (): Language => {
+  try {
+    const saved = localStorage.getItem(LANG_KEY) as Language;
+    if (saved && VALID_LANGS.includes(saved)) return saved;
+  } catch {}
+  return 'de';
+};
+
 export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('de');
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
   const [translations, setTranslations] = useState<Record<string, Record<string, any>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    try { localStorage.setItem(LANG_KEY, lang); } catch {}
+  }, []);
 
   useEffect(() => {
     // KRITISCHER FIX: Verwende import.meta.env.BASE_URL für Subpath-Unterstützung
@@ -66,7 +82,8 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
     if (!translations) {
       return key;
     }
-    const value = translations[language]?.[key] || key;
+    // Fallback auf EN wenn die aktuelle Sprache den Key nicht hat
+    const value = translations[language]?.[key] ?? translations['en']?.[key] ?? key;
 
     if (typeof value !== 'string') {
         return value; // For objects/arrays like help categories

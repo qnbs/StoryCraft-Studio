@@ -40,7 +40,7 @@ export const useSettingsView = () => {
   }, [activeCategory, refreshSnapshots]);
   
   const handleLanguageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLanguage(e.target.value as 'en' | 'de');
+    setLanguage(e.target.value as 'en' | 'de' | 'fr' | 'es' | 'it');
   }, [setLanguage]);
 
   const handleSettingChange = useCallback((key: string, value: any) => {

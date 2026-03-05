@@ -70,14 +70,14 @@
     "templates.saveTheCat.sections.6": "Übergang zu Akt 2",
     "templates.saveTheCat.sections.7": "B-Story",
     "templates.saveTheCat.sections.8": "Spaß und Spiele",
-    "templates.saveTheCat.sections.9": "Midpoint",
+    "templates.saveTheCat.sections.9": "Wendepunkt (Midpoint)",
     "templates.saveTheCat.sections.10": "Die Bösen rücken näher",
     "templates.saveTheCat.sections.11": "Alles ist verloren",
     "templates.saveTheCat.sections.12": "Die dunkle Nacht der Seele",
     "templates.saveTheCat.sections.13": "Übergang zu Akt 3",
     "templates.saveTheCat.sections.14": "Finale",
     "templates.saveTheCat.sections.15": "Schlussbild",
-    "templates.fichteanCurve.name": "Fichtean Curve",
+    "templates.fichteanCurve.name": "Fichtean-Kurve",
     "templates.fichteanCurve.description": "Eine Serie von Krisen, die die Spannung bis zum Höhepunkt treiben.",
     "templates.fichteanCurve.arc": "Sofortiger Einstieg ins Geschehen, Spannung durch Eskalation.",
     "templates.fichteanCurve.sections.1": "Steigende Handlung",
@@ -136,7 +136,6 @@
     "templates.romance.sections.6": "Die Trennung",
     "templates.romance.sections.7": "Die große Geste",
     "templates.romance.sections.8": "Happy End",
-
     "templates.thriller.name": "Thriller",
     "templates.thriller.description": "Spannung, Gefahr und überraschende Wendungen.",
     "templates.thriller.arc": "Bedrohung, Eskalation, Showdown.",
@@ -147,7 +146,6 @@
     "templates.thriller.sections.5": "Wendepunkt",
     "templates.thriller.sections.6": "Showdown",
     "templates.thriller.sections.7": "Nachspiel",
-
     "templates.fantasy.name": "Fantasy",
     "templates.fantasy.description": "Magische Welten, Quests und Heldenreisen.",
     "templates.fantasy.arc": "Aufbruch, Prüfung, Sieg über das Böse.",
@@ -159,7 +157,6 @@
     "templates.fantasy.sections.6": "Der Verrat",
     "templates.fantasy.sections.7": "Der Endkampf",
     "templates.fantasy.sections.8": "Heimkehr",
-
     "templates.horror.name": "Horror",
     "templates.horror.description": "Angst, Übernatürliches und Überleben.",
     "templates.horror.arc": "Bedrohung, Flucht, Konfrontation.",
@@ -170,7 +167,6 @@
     "templates.horror.sections.5": "Flucht oder Kampf",
     "templates.horror.sections.6": "Showdown mit dem Monster",
     "templates.horror.sections.7": "Epilog",
-
     "templates.historical.name": "Historischer Roman",
     "templates.historical.description": "Vergangene Epochen, große Konflikte.",
     "templates.historical.arc": "Einzelne Schicksale im Strom der Geschichte.",
@@ -180,8 +176,7 @@
     "templates.historical.sections.4": "Konflikt und Wandel",
     "templates.historical.sections.5": "Die Entscheidung",
     "templates.historical.sections.6": "Neuanfang",
-
-    "templates.comingOfAge.name": "Coming-of-Age",
+    "templates.comingOfAge.name": "Erwachsenwerden",
     "templates.comingOfAge.description": "Erwachsenwerden, Selbstfindung.",
     "templates.comingOfAge.arc": "Wachstum, Krise, Reife.",
     "templates.comingOfAge.sections.1": "Kindheit und Umfeld",
@@ -190,7 +185,6 @@
     "templates.comingOfAge.sections.4": "Die große Herausforderung",
     "templates.comingOfAge.sections.5": "Scheitern und Erkenntnis",
     "templates.comingOfAge.sections.6": "Neuer Lebensabschnitt",
-
     "templates.adventure.name": "Abenteuer",
     "templates.adventure.description": "Gefahr, Entdeckung, Mut.",
     "templates.adventure.arc": "Reise, Hindernisse, Triumph.",
@@ -200,7 +194,6 @@
     "templates.adventure.sections.4": "Die Rettung",
     "templates.adventure.sections.5": "Der Schatz",
     "templates.adventure.sections.6": "Heimkehr",
-
     "templates.mystery.name": "Mystery",
     "templates.mystery.description": "Geheimnisse, Rätsel, Enthüllungen.",
     "templates.mystery.arc": "Spurensuche, falsche Fährten, Lösung.",
