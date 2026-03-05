@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Schema } from '@google/genai';
 import { AiCreativity, Character, World, OutlineSection, GeminiSchema, OutlineGenerationParams, CustomTemplateParams } from '../types';
 import { dbService } from './dbService';
+import { storageService } from './storageService';
 
 // === DYNAMIC API KEY MANAGEMENT ===
 // KRITISCH: Kein hardcoded API key mehr!
@@ -18,7 +19,7 @@ const hashApiKey = async (key: string): Promise<string> => {
 };
 
 const getAiClient = async (): Promise<GoogleGenAI> => {
-  const apiKey = await dbService.getGeminiApiKey();
+  const apiKey = await storageService.getGeminiApiKey();
   
   if (!apiKey) {
     throw new Error(

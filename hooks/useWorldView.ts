@@ -6,6 +6,7 @@ import { projectActions, generateWorldProfileThunk, regenerateWorldFieldThunk, g
 import { World, WorldTimelineEvent, WorldLocation } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { dbService } from '../services/dbService';
+import { storageService } from '../services/storageService';
 import { useToast } from '../components/ui/Toast';
 
 export const useWorldView = () => {
@@ -138,7 +139,7 @@ export const useWorldView = () => {
 
     const confirmDelete = useCallback(async () => {
         if (worldToDelete) {
-            await dbService.deleteImage(worldToDelete.id);
+            await storageService.saveImage(worldToDelete.id, ''); // Empty string to delete
             dispatch(projectActions.deleteWorld(worldToDelete.id));
             setWorldToDelete(null);
             setIsAtlasOpen(false);

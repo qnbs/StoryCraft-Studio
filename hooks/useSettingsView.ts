@@ -6,6 +6,7 @@ import { settingsActions } from '../features/settings/settingsSlice';
 import { projectActions, importProjectThunk, restoreSnapshotThunk } from '../features/project/projectSlice';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
 import { dbService } from '../services/dbService';
+import { storageService } from '../services/storageService';
 import { RootState } from '../app/store';
 
 type ModalState = 'closed' | 'reset' | 'restore' | 'delete' | 'create';
@@ -28,7 +29,7 @@ export const useSettingsView = () => {
   const [snapshotName, setSnapshotName] = useState('');
 
   const refreshSnapshots = useCallback(async () => {
-    const snaps = await dbService.listSnapshots();
+    const snaps = await storageService.listSnapshots();
     setSnapshots(snaps);
   }, []);
 
@@ -117,7 +118,7 @@ export const useSettingsView = () => {
   }, [dispatch, t]);
   
   const handleCreateSnapshot = useCallback(async () => {
-      await dbService.createSnapshot(project, snapshotName);
+      await storageService.saveSnapshot(snapshotName, project);
       setSnapshotName('');
       setModal({ state: 'closed', payload: {} });
       refreshSnapshots();
@@ -132,7 +133,7 @@ export const useSettingsView = () => {
 
   const handleDeleteSnapshot = useCallback(async () => {
     if (modal.payload.id) {
-        await dbService.deleteSnapshot(modal.payload.id);
+        await storageService.deleteSnapshot(modal.payload.id);
         setModal({ state: 'closed', payload: {} });
         refreshSnapshots();
     }

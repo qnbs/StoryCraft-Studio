@@ -62,7 +62,7 @@ const SettingsViewUI: FC = () => {
     const renderContent = () => {
         switch (activeCategory) {
             case 'general': return (
-                <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.language.title')}</h2></CardHeader><CardContent><p className="text-sm text-[var(--foreground-secondary)] mb-2">{t('settings.language.description')}</p><Select id="language-select" value={language} onChange={handleLanguageChange}><option value="en">{t('settings.language.english')}</option><option value="de">{t('settings.language.german')}</option></Select></CardContent></Card>
+                <Card><CardHeader><h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('settings.language.title')}</h2></CardHeader><CardContent><p className="text-sm text-[var(--foreground-secondary)] mb-2">{t('settings.language.description')}</p><Select id="language-select" value={language} onChange={handleLanguageChange}><option value="en">{t('settings.language.english')}</option><option value="de">{t('settings.language.german')}</option><option value="fr">{t('settings.language.french')}</option><option value="es">{t('settings.language.spanish')}</option><option value="it">{t('settings.language.italian')}</option></Select></CardContent></Card>
             );
             case 'appearance': return (
                 <div className="space-y-6">

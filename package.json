@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -17,6 +20,7 @@
     "@google/genai": "^1.10.0",
     "@reduxjs/toolkit": "^2.2.6",
     "@tailwindcss/postcss": "^4.2.1",
+    "@tauri-apps/api": "^2.10.1",
     "autoprefixer": "^10.4.27",
     "docx": "^8.5.0",
     "epub-gen": "^0.1.0",
@@ -24,8 +28,10 @@
     "jszip": "^3.10.1",
     "konva": "^10.2.0",
     "leaflet": "^1.9.4",
+    "mammoth": "^1.11.0",
     "postcss": "^8.5.8",
     "react": "^19.1.0",
+    "react-diff-viewer": "^3.1.1",
     "react-dom": "^19.1.0",
     "react-flow": "^1.0.3",
     "react-hotkeys-hook": "^5.2.4",
@@ -39,6 +45,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1",
     "@types/epub-gen": "^0.1.2",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",

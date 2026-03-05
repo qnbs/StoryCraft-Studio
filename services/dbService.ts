@@ -56,7 +56,11 @@ function getUserFriendlyDbError(error: any): string {
   return error?.message || 'Unbekannter Fehler beim Zugriff auf die Datenbank.';
 }
 
-class IndexedDBService {
+import { StoryProject, Settings } from '../types';
+import { StorageBackend } from './storageService';
+
+// Extend IndexedDBService to implement StorageBackend
+class IndexedDBService implements StorageBackend {
   private db: IDBDatabase | null = null;
   private lastAutoSnapshotTime = Date.now();
   private readonly AUTO_SNAPSHOT_INTERVAL = 30 * 60 * 1000; // 30 minutes
@@ -425,5 +429,45 @@ class IndexedDBService {
     }
   }
 }
+
+// StorageBackend interface implementation
+// These methods provide the interface expected by storageService
+export interface StorageBackendMethods {
+  saveProject(project: StoryProject): Promise<void>;
+  loadProject(projectId: string): Promise<StoryProject | null>;
+  listProjects(): Promise<string[]>;
+  deleteProject(projectId: string): Promise<void>;
+  saveImage(id: string, base64Data: string): Promise<void>;
+  getImage(id: string): Promise<string | null>;
+  saveSettings(settings: Settings): Promise<void>;
+  loadSettings(): Promise<Settings | null>;
+  saveGeminiApiKey(apiKey: string): Promise<void>;
+  getGeminiApiKey(): Promise<string | null>;
+  saveSnapshot(snapshotId: string, data: any): Promise<void>;
+  getSnapshotData(snapshotId: string): Promise<any>;
+  listSnapshots(): Promise<string[]>;
+  deleteSnapshot(snapshotId: string): Promise<void>;
+}
+
+// Add StorageBackend implementation to IndexedDBService
+declare module './dbService' {
+  interface IndexedDBService extends StorageBackendMethods {}
+}
+
+// Implement the methods
+IndexedDBService.prototype.saveProject = IndexedDBService.prototype.saveProject;
+IndexedDBService.prototype.loadProject = IndexedDBService.prototype.loadProject;
+IndexedDBService.prototype.listProjects = IndexedDBService.prototype.listProjects;
+IndexedDBService.prototype.deleteProject = IndexedDBService.prototype.deleteProject;
+IndexedDBService.prototype.saveImage = IndexedDBService.prototype.saveImage;
+IndexedDBService.prototype.getImage = IndexedDBService.prototype.getImage;
+IndexedDBService.prototype.saveSettings = IndexedDBService.prototype.saveSettings;
+IndexedDBService.prototype.loadSettings = IndexedDBService.prototype.loadSettings;
+IndexedDBService.prototype.saveGeminiApiKey = IndexedDBService.prototype.saveGeminiApiKey;
+IndexedDBService.prototype.getGeminiApiKey = IndexedDBService.prototype.getGeminiApiKey;
+IndexedDBService.prototype.saveSnapshot = IndexedDBService.prototype.createSnapshot;
+IndexedDBService.prototype.getSnapshotData = IndexedDBService.prototype.getSnapshotData;
+IndexedDBService.prototype.listSnapshots = IndexedDBService.prototype.listSnapshots;
+IndexedDBService.prototype.deleteSnapshot = IndexedDBService.prototype.deleteSnapshot;
 
 export const dbService = new IndexedDBService();

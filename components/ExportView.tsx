@@ -10,6 +10,7 @@ import { ExportViewContext, useExportViewContext } from '../contexts/ExportViewC
 import { useAppSelector } from '../app/hooks';
 import { Textarea } from './ui/Textarea';
 import { Checkbox } from './ui/Checkbox';
+import { AdvancedImportExport } from './AdvancedImportExport';
 
 // --- SUB-COMPONENTS ---
 
@@ -192,6 +193,12 @@ const ExportViewUI: FC = () => {
                     {errorMessage}
                 </div>
             )}
+
+            {/* Advanced Import/Export */}
+            <div className="mb-6">
+                <AdvancedImportExport />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
                 <div className="lg:col-span-1 h-full overflow-y-auto"><ExportControls /></div>
                 <div className="lg:col-span-2 h-full min-h-[500px]"><ExportPreview /></div>

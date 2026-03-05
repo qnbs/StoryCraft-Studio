@@ -1,6 +1,7 @@
 import { createListenerMiddleware, isAnyOf, isRejected, addListener, TypedStartListening } from '@reduxjs/toolkit';
 import type { RootState, AppDispatch } from './store';
 import { dbService } from '../services/dbService';
+import { storageService } from '../services/storageService';
 import { statusActions } from '../features/status/statusSlice';
 import { projectActions } from '../features/project/projectSlice';
 import { settingsActions } from '../features/settings/settingsSlice';
@@ -43,8 +44,8 @@ listenerMiddleware.startListening({
 
       // We are saving a structure that matches { data: ProjectData } essentially, stripping history.
       // Casting to PersistedRootState['project'] (which is `PersistedProjectState`) satisfies the service.
-      promises.push(dbService.saveProject(projectDataToSave as NonNullable<PersistedRootState['project']>));
-      promises.push(dbService.saveSettings(state.settings));
+      promises.push(storageService.saveProject(projectDataToSave as NonNullable<PersistedRootState['project']>));
+      promises.push(storageService.saveSettings(state.settings));
 
       await Promise.all(promises);
 

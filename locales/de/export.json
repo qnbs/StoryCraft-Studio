@@ -42,5 +42,17 @@
     "export.format.double": "Doppelt",
     "export.format.single": "Einfach",
     "export.format.titlePage": "Titelseite einfügen",
-    "export.toggleSection": "Sichtbarkeit für {{title}} umschalten"
+    "export.toggleSection": "Sichtbarkeit für {{title}} umschalten",
+    "export.importProject": "Projekt importieren",
+    "export.exportProject": "Projekt exportieren",
+    "export.importModalTitle": "Projekt importieren",
+    "export.exportModalTitle": "Projekt exportieren",
+    "export.importFormat": "Import-Format",
+    "export.exportFormat": "Export-Format",
+    "export.import": "Importieren",
+    "export.export": "Exportieren",
+    "export.importSuccess": "Projekt erfolgreich importiert",
+    "export.exportSuccess": "Projekt erfolgreich exportiert",
+    "export.importFailed": "Import fehlgeschlagen",
+    "export.importFailed": "Export fehlgeschlagen"
 }

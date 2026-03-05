@@ -5,6 +5,7 @@ import { selectAllCharacters } from '../features/project/projectSelectors';
 import { projectActions, generateCharacterProfileThunk, regenerateCharacterFieldThunk, generateCharacterPortraitThunk } from '../features/project/projectSlice';
 import { Character } from '../types';
 import { dbService } from '../services/dbService';
+import { storageService } from '../services/storageService';
 import { useToast } from '../components/ui/Toast';
 
 export const useCharacterView = () => {
@@ -111,7 +112,7 @@ export const useCharacterView = () => {
 
     const confirmDelete = useCallback(async () => {
         if (characterToDelete) {
-            await dbService.deleteImage(characterToDelete.id);
+            await storageService.saveImage(characterToDelete.id, ''); // Empty string to delete
             dispatch(projectActions.deleteCharacter(characterToDelete.id));
             setCharacterToDelete(null);
             setIsDossierOpen(false);

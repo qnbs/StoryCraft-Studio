@@ -42,5 +42,17 @@
     "export.format.double": "Double",
     "export.format.single": "Single",
     "export.format.titlePage": "Include Title Page",
-    "export.toggleSection": "Toggle visibility for {{title}}"
+    "export.toggleSection": "Toggle visibility for {{title}}",
+    "export.importProject": "Import Project",
+    "export.exportProject": "Export Project",
+    "export.importModalTitle": "Import Project",
+    "export.exportModalTitle": "Export Project",
+    "export.importFormat": "Import Format",
+    "export.exportFormat": "Export Format",
+    "export.import": "Import",
+    "export.export": "Export",
+    "export.importSuccess": "Project imported successfully",
+    "export.exportSuccess": "Project exported successfully",
+    "export.importFailed": "Import failed",
+    "export.exportFailed": "Export failed"
 }

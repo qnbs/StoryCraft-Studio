@@ -1,6 +1,6 @@
 import React, { createContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
-type Language = 'en' | 'de';
+type Language = 'en' | 'de' | 'fr' | 'es' | 'it';
 
 interface I18nContextType {
   language: Language;
@@ -45,11 +45,14 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
     const loadAllLanguages = async () => {
         setIsLoading(true);
         try {
-            const [enData, deData] = await Promise.all([
+            const [enData, deData, frData, esData, itData] = await Promise.all([
                 fetchTranslations('en'),
-                fetchTranslations('de')
+                fetchTranslations('de'),
+                fetchTranslations('fr'),
+                fetchTranslations('es'),
+                fetchTranslations('it')
             ]);
-            setTranslations({ en: enData, de: deData });
+            setTranslations({ en: enData, de: deData, fr: frData, es: esData, it: itData });
         } catch (error) {
             console.error("Failed to load all translation files", error);
         } finally {

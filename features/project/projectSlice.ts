@@ -4,6 +4,7 @@ import { getPrompts, generateText, generateJson, generateImage, streamText } fro
 import { RootState } from '../../app/store';
 import { Character, World, StorySection, OutlineSection, OutlineGenerationParams, CustomTemplateParams, CharacterRelationship } from '../../types';
 import { dbService } from '../../services/dbService';
+import { storageService } from '../../services/storageService';
 
 // --- Entity Adapters ---
 export const charactersAdapter = createEntityAdapter<Character>({
@@ -101,7 +102,7 @@ export const importProjectThunk = createAsyncThunk(
         for(const char of characterArray) {
             const newChar = { ...char };
             if (newChar.avatarBase64) {
-                await dbService.saveImage(newChar.id, newChar.avatarBase64);
+                await storageService.saveImage(newChar.id, newChar.avatarBase64);
                 newChar.hasAvatar = true;
                 delete newChar.avatarBase64;
             }
@@ -120,7 +121,7 @@ export const importProjectThunk = createAsyncThunk(
         for(const world of worldArray) {
             const newWorld = { ...world };
             if (newWorld.ambianceImageBase64) {
-                await dbService.saveImage(newWorld.id, newWorld.ambianceImageBase64);
+                await storageService.saveImage(newWorld.id, newWorld.ambianceImageBase64);
                 newWorld.hasAmbianceImage = true;
                 delete newWorld.ambianceImageBase64;
             }
@@ -144,7 +145,7 @@ export const importProjectThunk = createAsyncThunk(
 export const restoreSnapshotThunk = createAsyncThunk(
     'project/restoreSnapshot',
     async (snapshotId: number) => {
-        const data = await dbService.getSnapshotData(snapshotId);
+        const data = await storageService.getSnapshotData(snapshotId);
         return data;
     }
 );
@@ -175,7 +176,7 @@ export const generateCharacterPortraitThunk = createAsyncThunk(
         const fullDescription = style ? `${description}. Style: ${style}` : description;
         const { prompt } = getPrompts('characterPortrait', { description: fullDescription, lang });
         const base64 = await generateImage(prompt);
-        await dbService.saveImage(characterId, base64);
+        await storageService.saveImage(characterId, base64);
         return { characterId };
     }
 );
@@ -187,7 +188,7 @@ export const uploadCharacterImageThunk = createAsyncThunk(
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
-                await dbService.saveImage(characterId, base64);
+                await storageService.saveImage(characterId, base64);
                 resolve({ characterId });
             };
             reader.onerror = reject;
@@ -220,7 +221,7 @@ export const generateWorldImageThunk = createAsyncThunk(
     async ({ worldId, description, lang }: { worldId: string, description: string, lang: string }) => {
         const { prompt } = getPrompts('worldImage', { description, lang });
         const base64 = await generateImage(prompt);
-        await dbService.saveImage(worldId, base64);
+        await storageService.saveImage(worldId, base64);
         return { worldId };
     }
 );
@@ -232,7 +233,7 @@ export const uploadWorldImageThunk = createAsyncThunk(
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
-                await dbService.saveImage(worldId, base64);
+                await storageService.saveImage(worldId, base64);
                 resolve({ worldId });
             };
             reader.onerror = reject;
