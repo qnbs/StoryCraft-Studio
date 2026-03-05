@@ -79,9 +79,46 @@ export const useWriterView = () => {
             case 'grammarCheck':
                 // Deutsch/Englisch automatisch, Prompt für Korrektur und Stilverbesserung
                 return `Korrigiere Grammatik, Stil und Wiederholungen im folgenden Text. Behalte die Sprache des Originals (Deutsch/Englisch) bei. Liefere nur den verbesserten Text ohne weitere Erklärungen.\n\nText:\n"""\n${selection.text || content}\n"""\n`;
+            
+            case 'critic':
+                return `Act as a professional literary critic and editor. Analyze the following text for writing quality, character development, pacing, dialogue, and overall effectiveness. Give specific feedback.
+
+Text to analyze:
+"""
+${content}
+"""
+`;
+            
+            case 'plotholes':
+                return `Act as a detail-oriented story editor. Carefully analyze the following text for any logical inconsistencies, plot holes, continuity errors, or unresolved narrative threads. Be specific.
+
+Text to analyze:
+"""
+${content}
+"""
+`;
+            
+            case 'consistency':
+                // RAG context building 
+                const dChars = JSON.stringify(project.characters || []).substring(0, 50000);
+                const dWorlds = JSON.stringify(project.worlds || []).substring(0, 50000);
+                return `Prüfe auf Widersprüche zum bisherigen Wissen. Hier ist das Universe-Lore:
+
+Characters:
+${dChars}
+
+Worlds:
+${dWorlds}
+
+Prüfe diesen Text:
+"""
+${content}
+"""
+`;
+            
             default: return '';
         }
-    }, [manuscript, selectedSectionId, activeTool, selection, style, tone, dialogueCharacters, scenario, brainstormContext]);
+    }, [manuscript, selectedSectionId, activeTool, selection, style, tone, dialogueCharacters, scenario, brainstormContext, project]);
 
     const handleGenerate = useCallback(() => {
         // If already loading, checking explicitly to act as a "Stop" toggle

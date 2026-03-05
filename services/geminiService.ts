@@ -96,7 +96,7 @@ type BasePromptParams = { lang: string };
 type LoglineParams = BasePromptParams & { project: { title: string; outline: { title: string }[] } };
 type CharacterProfileParams = BasePromptParams & { concept: string };
 type RegenerateCharacterFieldParams = BasePromptParams & { character: Character; field: keyof Character };
-type CharacterPortraitParams = BasePromptParams & { description: string };
+type CharacterPortraitParams = BasePromptParams & { description: string, style?: string };
 type WorldProfileParams = BasePromptParams & { concept: string };
 type RegenerateWorldFieldParams = BasePromptParams & { world: World; field: keyof World };
 type WorldImageParams = BasePromptParams & { description: string };
@@ -106,7 +106,7 @@ type SynopsisParams = BasePromptParams & { project: { title: string; logline: st
 type ProofreadParams = BasePromptParams & { text: string };
 type ConsistencyCheckParams = BasePromptParams & { characterId: string; characters: Character[]; worlds: World[]; manuscript: { title: string; content: string }[]; relationships?: any[] };
 type CriticAnalysisParams = BasePromptParams & { text: string; context?: string };
-type PlotHoleDetectionParams = BasePromptParams & { project: { title: string; logline: string; manuscript: { title: string; content: string }[]; characters: Character[]; worlds: World[] } };
+type PlotHoleDetectionParams = BasePromptParams & { text: string };
 
 type PromptParamsMap = {
     logline: LoglineParams;
@@ -179,7 +179,7 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
         }
         case 'characterPortrait': {
              const p = params as CharacterPortraitParams;
-             return { prompt: `Create a vivid, artistic, digital painting style portrait of a character based on this description: "${p.description}". The portrait should be centered, showing the character from the chest up. The background should be simple and atmospheric, complementing the character's description. Focus on capturing the character's key features and mood. Do not include any text or watermarks.${langInstruction}` };
+             return { prompt: `Generate portrait of ${p.description} in style of ${p.style || 'vivid, artistic, digital painting'}. The portrait should be centered, showing the character from the chest up. The background should be simple and atmospheric. Focus on capturing the character's key features and mood. Do not include any text or watermarks.${langInstruction}` };
         }
         case 'worldProfile': {
             const p = params as WorldProfileParams;
@@ -337,22 +337,8 @@ ${langInstruction}`,
         }
         case 'plotHoleDetection': {
             const p = params as PlotHoleDetectionParams;
-            const context = `
-Title: ${p.project.title}
-Logline: ${p.project.logline}
-Characters: ${JSON.stringify(p.project.characters)}
-Worlds: ${JSON.stringify(p.project.worlds)}
-Manuscript: ${p.project.manuscript.map(s => `${s.title}: ${s.content}`).join('\n\n').substring(0, 50000)}
-            `;
             return {
-                prompt: `You are a plot hole detector for stories. Analyze the entire story for logical inconsistencies, plot holes, character inconsistencies, timeline issues, and unresolved threads.
-
-Full Context: ${context}
-
-List any plot holes, inconsistencies, or issues you find. For each issue, explain what the problem is and suggest how to fix it. If the story is consistent, state that clearly.
-
-${langInstruction}`,
-                thinkingBudget: getThinkingBudget('plotHoleDetection')
+                prompt: `Analyze the following text for any logical inconsistencies, plot holes, or unresolved narrative threads.\n\nText: ${p.text}\n${langInstruction}`
             };
         }
         default:
@@ -441,8 +427,8 @@ export const generateJson = async <T>(prompt: string, creativity: AiCreativity, 
     }
 }
 
-export const checkConsistency = async (characterId: string, creativity: AiCreativity, lang: string): Promise<string> => {
-    const { prompt } = getPrompts('consistencyCheck', { characterId, lang });
+export const checkConsistency = async (characterId: string, characters: Character[], worlds: World[], manuscript: {title: string, content: string}[], relationships: any[], creativity: AiCreativity, lang: string): Promise<string> => {
+    const { prompt } = getPrompts('consistencyCheck', { characterId, characters, worlds, manuscript, relationships, lang });
     return await generateText(prompt, creativity);
 };
 
