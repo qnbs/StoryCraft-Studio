@@ -88,7 +88,7 @@ function getUserFriendlyGeminiError(error: any): string {
     return 'Unbekannter Fehler bei der Gemini-API.';
 }
 // --- PROMPT TYPES ---
-type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis' | 'proofread';
+type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis' | 'proofread' | 'consistencyCheck' | 'criticAnalysis' | 'plotHoleDetection';
 
 type BasePromptParams = { lang: string };
 
@@ -103,6 +103,9 @@ type RegenerateOutlineSectionParams = BasePromptParams & { allSections: OutlineS
 type PersonalizeTemplateParams = BasePromptParams & { concept: string; sections: { title: string }[]; };
 type SynopsisParams = BasePromptParams & { project: { title: string; logline: string; manuscript: { title: string; content: string }[] } };
 type ProofreadParams = BasePromptParams & { text: string };
+type ConsistencyCheckParams = BasePromptParams & { characterId: string; characters: Character[]; worlds: World[]; manuscript: { title: string; content: string }[]; relationships?: any[] };
+type CriticAnalysisParams = BasePromptParams & { text: string; context?: string };
+type PlotHoleDetectionParams = BasePromptParams & { project: { title: string; logline: string; manuscript: { title: string; content: string }[]; characters: Character[]; worlds: World[] } };
 
 type PromptParamsMap = {
     logline: LoglineParams;
@@ -118,6 +121,9 @@ type PromptParamsMap = {
     customTemplate: CustomTemplateParams;
     synopsis: SynopsisParams;
     proofread: ProofreadParams;
+    consistencyCheck: ConsistencyCheckParams;
+    criticAnalysis: CriticAnalysisParams;
+    plotHoleDetection: PlotHoleDetectionParams;
 };
 
 // --- THINKING CONFIGURATION ---
@@ -289,6 +295,65 @@ export const getPrompts = <T extends PromptType>(type: T, params: PromptParamsMa
                 thinkingBudget: getThinkingBudget('proofread')
             }
         }
+        case 'consistencyCheck': {
+            const p = params as ConsistencyCheckParams;
+            const character = p.characters.find(c => c.id === p.characterId);
+            if (!character) throw new Error('Character not found');
+            const context = `
+Characters: ${JSON.stringify(p.characters)}
+Worlds: ${JSON.stringify(p.worlds)}
+Relationships: ${JSON.stringify(p.relationships || [])}
+Manuscript: ${p.manuscript.map(s => `${s.title}: ${s.content}`).join('\n\n').substring(0, 50000)}
+            `;
+            return {
+                prompt: `You are a consistency checker for a story universe. Analyze the character "${character.name}" for any contradictions or inconsistencies with the established lore, other characters, world-building, and the written manuscript.
+
+Character Details: ${JSON.stringify(character)}
+Full Context: ${context}
+
+Identify any inconsistencies, plot holes, or contradictions related to this character. Be thorough but concise. If there are no issues, state that clearly.
+
+${langInstruction}`,
+                thinkingBudget: getThinkingBudget('consistencyCheck')
+            };
+        }
+        case 'criticAnalysis': {
+            const p = params as CriticAnalysisParams;
+            return {
+                prompt: `Act as a professional literary critic and editor. Analyze the following text for writing quality, character development, pacing, dialogue, and overall effectiveness.
+
+Text to analyze:
+"""
+${p.text}
+"""
+${p.context ? `Context: ${p.context}` : ''}
+
+Provide constructive feedback on strengths and weaknesses. Suggest specific improvements.
+
+${langInstruction}`,
+                thinkingBudget: getThinkingBudget('criticAnalysis')
+            };
+        }
+        case 'plotHoleDetection': {
+            const p = params as PlotHoleDetectionParams;
+            const context = `
+Title: ${p.project.title}
+Logline: ${p.project.logline}
+Characters: ${JSON.stringify(p.project.characters)}
+Worlds: ${JSON.stringify(p.project.worlds)}
+Manuscript: ${p.project.manuscript.map(s => `${s.title}: ${s.content}`).join('\n\n').substring(0, 50000)}
+            `;
+            return {
+                prompt: `You are a plot hole detector for stories. Analyze the entire story for logical inconsistencies, plot holes, character inconsistencies, timeline issues, and unresolved threads.
+
+Full Context: ${context}
+
+List any plot holes, inconsistencies, or issues you find. For each issue, explain what the problem is and suggest how to fix it. If the story is consistent, state that clearly.
+
+${langInstruction}`,
+                thinkingBudget: getThinkingBudget('plotHoleDetection')
+            };
+        }
         default:
             throw new Error(`Unknown prompt type: ${type}`);
     }
@@ -374,6 +439,21 @@ export const generateJson = async <T>(prompt: string, creativity: AiCreativity, 
         throw new Error(errorMessage);
     }
 }
+
+export const checkConsistency = async (characterId: string, creativity: AiCreativity, lang: string): Promise<string> => {
+    const { prompt } = getPrompts('consistencyCheck', { characterId, lang });
+    return await generateText(prompt, creativity);
+};
+
+export const analyzeAsCritic = async (text: string, creativity: AiCreativity, lang: string): Promise<string> => {
+    const { prompt } = getPrompts('criticAnalysis', { text, lang });
+    return await generateText(prompt, creativity);
+};
+
+export const detectPlotHoles = async (text: string, creativity: AiCreativity, lang: string): Promise<string> => {
+    const { prompt } = getPrompts('plotHoleDetection', { text, lang });
+    return await generateText(prompt, creativity);
+};
 
 export const streamText = async (prompt: string, creativity: AiCreativity, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<void> => {
     try {

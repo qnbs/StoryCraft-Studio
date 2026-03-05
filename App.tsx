@@ -13,8 +13,10 @@ import { CharacterView } from './components/CharacterView';
 import { WorldView } from './components/WorldView';
 import { ExportView } from './components/ExportView';
 import { SettingsView } from './components/SettingsView';
-import { HelpView } from './components/HelpView';
-import { WelcomePortal } from './components/WelcomePortal';
+import { SceneBoardView } from './components/SceneBoardView';
+import { CharacterGraphView } from './components/CharacterGraphView';
+import { ConsistencyCheckerView } from './components/ConsistencyCheckerView';
+import { CriticView } from './components/CriticView';
 import { I18nProvider } from './contexts/I18nContext';
 import { useTranslation } from './hooks/useTranslation';
 import { AppContext } from './contexts/AppContext';
@@ -85,6 +87,10 @@ const App: FC<AppProps> = ({ isNewUser }) => {
             case 'export': return <ExportView />;
             case 'settings': return <SettingsView />;
             case 'help': return <HelpView />;
+            case 'sceneboard': return <SceneBoardView />;
+            case 'characterGraph': return <CharacterGraphView />;
+            case 'consistencyChecker': return <ConsistencyCheckerView />;
+            case 'critic': return <CriticView />;
             default: return <Dashboard onNavigate={handleNavigate} />;
         }
     };

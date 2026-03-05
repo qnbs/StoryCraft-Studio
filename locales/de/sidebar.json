@@ -6,6 +6,10 @@
     "sidebar.outline": "Gliederungsgenerator",
     "sidebar.characters": "Charaktere",
     "sidebar.world": "Weltenbau",
+    "sidebar.sceneboard": "Szenenbrett",
+    "sidebar.characterGraph": "Charaktergraph",
+    "sidebar.consistencyChecker": "Konsistenzprüfer",
+    "sidebar.critic": "KI-Kritiker",
     "sidebar.export": "Exportieren",
     "sidebar.settings": "Einstellungen",
     "sidebar.help": "Hilfe"

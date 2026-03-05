@@ -23,6 +23,7 @@ export const useCharacterView = () => {
     const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false);
     const [isRefiningPortrait, setIsRefiningPortrait] = useState(false);
     const [refinementPrompt, setRefinementPrompt] = useState('');
+    const [portraitStyle, setPortraitStyle] = useState('digital painting');
 
     const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
 
@@ -79,7 +80,7 @@ export const useCharacterView = () => {
     const handleGeneratePortrait = useCallback(async () => {
         if (!selectedCharacter || !selectedCharacter.appearance) return;
         setIsGeneratingPortrait(true);
-        const resultAction = await dispatch(generateCharacterPortraitThunk({ characterId: selectedCharacter.id, description: selectedCharacter.appearance, lang: language }));
+        const resultAction = await dispatch(generateCharacterPortraitThunk({ characterId: selectedCharacter.id, description: selectedCharacter.appearance, style: portraitStyle, lang: language }));
         if (!generateCharacterPortraitThunk.fulfilled.match(resultAction)) {
              toast.error(t('characters.error.portraitFailed'));
         } else {
@@ -87,7 +88,7 @@ export const useCharacterView = () => {
             setSelectedCharacter(c => c ? { ...c, hasAvatar: true } : null);
         }
         setIsGeneratingPortrait(false);
-    }, [dispatch, selectedCharacter, language, t, toast]);
+    }, [dispatch, selectedCharacter, portraitStyle, language, t, toast]);
 
     const handleRefinePortrait = useCallback(async () => {
         if (!selectedCharacter || !refinementPrompt) return;
@@ -136,6 +137,8 @@ export const useCharacterView = () => {
         isRefiningPortrait,
         refinementPrompt,
         setRefinementPrompt,
+        portraitStyle,
+        setPortraitStyle,
         characterToDelete,
         setCharacterToDelete,
         handleAddNewManually,

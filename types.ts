@@ -2,7 +2,7 @@ import { EntityState } from '@reduxjs/toolkit';
 import { Type } from '@google/genai';
 import { ProjectData } from './features/project/projectSlice'; // Import ProjectData type
 
-export type View = 'dashboard' | 'manuscript' | 'writer' | 'templates' | 'outline' | 'characters' | 'world' | 'export' | 'settings' | 'help';
+export type View = 'dashboard' | 'manuscript' | 'writer' | 'templates' | 'outline' | 'characters' | 'world' | 'export' | 'settings' | 'help' | 'sceneboard' | 'analytics' | 'zen' | 'characterGraph' | 'consistencyChecker' | 'critic';
 
 export interface Character {
   id: string;
@@ -23,10 +23,53 @@ export interface WorldLocation {
   name: string;
   description: string;
 }
+export interface CharacterRelationship {
+  id: string;
+  fromCharacterId: string;
+  toCharacterId: string;
+  type: 'family' | 'romantic' | 'friend' | 'enemy' | 'mentor' | 'rival' | 'ally' | 'acquaintance';
+  description?: string;
+  strength: number; // 1-10
+}
+
+export interface WorldLocation {
+  id: string;
+  name: string;
+  description: string;
+  coordinates?: { lat: number; lng: number };
+  type: 'city' | 'village' | 'forest' | 'mountain' | 'castle' | 'temple' | 'other';
+  population?: number;
+  significance?: string;
+}
+
 export interface WorldTimelineEvent {
   id: string;
   era: string;
+  year?: number;
+  title: string;
   description: string;
+  date?: string; // ISO date string
+  locationId?: string;
+  characterIds?: string[];
+}
+
+export interface WritingSession {
+  id: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  wordsWritten: number;
+  sectionId?: string;
+  notes?: string;
+}
+
+export interface WritingGoal {
+  id: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'total';
+  target: number;
+  current: number;
+  period: string; // YYYY-MM-DD for daily, YYYY-MM for monthly, etc.
+  achieved: boolean;
 }
 
 export interface World {
@@ -40,6 +83,7 @@ export interface World {
   hasAmbianceImage?: boolean;
   timeline: WorldTimelineEvent[];
   locations: WorldLocation[];
+  relationships?: CharacterRelationship[]; // Character relationships in this world
 }
 
 export interface StorySection {
@@ -49,6 +93,12 @@ export interface StorySection {
   prompt?: string;
   summary?: string;
   notes?: string;
+  color?: string; // For scene board cards
+  position?: { x: number; y: number }; // For scene board positioning
+  characterIds?: string[]; // Linked characters
+  worldIds?: string[]; // Linked worlds
+  wordCount?: number;
+  status?: 'draft' | 'outline' | 'first-draft' | 'revised' | 'final';
 }
 
 export interface StoryProject {

@@ -66,6 +66,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isSid
     { id: 'outline', label: t('sidebar.outline'), icon: ICONS.OUTLINE },
     { id: 'characters', label: t('sidebar.characters'), icon: ICONS.CHARACTERS },
     { id: 'world', label: t('sidebar.world'), icon: ICONS.WORLD },
+    { id: 'sceneboard', label: t('sidebar.sceneboard'), icon: ICONS.SCENEBOARD },
+    { id: 'characterGraph', label: t('sidebar.characterGraph'), icon: ICONS.CHARACTERGRAPH },
+    { id: 'consistencyChecker', label: t('sidebar.consistencyChecker'), icon: ICONS.CONSISTENCYCHECKER },
+    { id: 'critic', label: t('sidebar.critic'), icon: ICONS.CRITIC },
     { id: 'export', label: t('sidebar.export'), icon: ICONS.EXPORT },
   ];
 

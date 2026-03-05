@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, createEntityAdapter, PayloadAction, Enti
 import { v4 as uuidv4 } from 'uuid';
 import { getPrompts, generateText, generateJson, generateImage, streamText } from '../../services/geminiService';
 import { RootState } from '../../app/store';
-import { Character, World, StorySection, OutlineSection, OutlineGenerationParams, CustomTemplateParams } from '../../types';
+import { Character, World, StorySection, OutlineSection, OutlineGenerationParams, CustomTemplateParams, CharacterRelationship } from '../../types';
 import { dbService } from '../../services/dbService';
 
 // --- Entity Adapters ---
@@ -22,6 +22,7 @@ export interface ProjectData {
     worlds: EntityState<World>;
     outline: OutlineSection[];
     manuscript: StorySection[];
+    relationships?: CharacterRelationship[];
     projectGoals?: {
         totalWordCount: number;
         targetDate: string | null;
@@ -30,6 +31,9 @@ export interface ProjectData {
         date: string; // YYYY-MM-DD
         words: number;
     }[];
+    writingSessions?: WritingSession[];
+    writingGoals?: WritingGoal[];
+    sceneBoardLayout?: { [sectionId: string]: { x: number; y: number } };
 }
 
 // Helper interface for importing legacy or current formats
@@ -167,8 +171,9 @@ export const regenerateCharacterFieldThunk = createAsyncThunk(
 
 export const generateCharacterPortraitThunk = createAsyncThunk(
     'project/generateCharacterPortrait',
-    async ({ characterId, description, lang }: { characterId: string; description: string, lang: string }) => {
-        const { prompt } = getPrompts('characterPortrait', { description, lang });
+    async ({ characterId, description, style, lang }: { characterId: string; description: string; style?: string; lang: string }) => {
+        const fullDescription = style ? `${description}. Style: ${style}` : description;
+        const { prompt } = getPrompts('characterPortrait', { description: fullDescription, lang });
         const base64 = await generateImage(prompt);
         await dbService.saveImage(characterId, base64);
         return { characterId };
@@ -393,6 +398,38 @@ const projectSlice = createSlice({
         },
         deleteManuscriptSection: (state, action: PayloadAction<string>) => {
             state.data.manuscript = state.data.manuscript.filter(s => s.id !== action.payload);
+        },
+        // --- Relationships ---
+        addRelationship: (state, action: PayloadAction<CharacterRelationship>) => {
+            if (!state.data.relationships) state.data.relationships = [];
+            state.data.relationships.push(action.payload);
+        },
+        updateRelationship: (state, action: PayloadAction<{ id: string; changes: Partial<CharacterRelationship> }>) => {
+            if (!state.data.relationships) state.data.relationships = [];
+            const index = state.data.relationships.findIndex(r => r.id === action.payload.id);
+            if (index !== -1) {
+                state.data.relationships[index] = { ...state.data.relationships[index], ...action.payload.changes };
+            }
+        },
+        deleteRelationship: (state, action: PayloadAction<string>) => {
+            if (!state.data.relationships) state.data.relationships = [];
+            state.data.relationships = state.data.relationships.filter(r => r.id !== action.payload);
+        },
+        // --- Scene Board ---
+        updateSceneBoardLayout: (state, action: PayloadAction<{ [sectionId: string]: { x: number; y: number } }>) => {
+            state.data.sceneBoardLayout = { ...state.data.sceneBoardLayout, ...action.payload };
+        },
+        // --- Writing Analytics ---
+        addWritingSession: (state, action: PayloadAction<WritingSession>) => {
+            if (!state.data.writingSessions) state.data.writingSessions = [];
+            state.data.writingSessions.push(action.payload);
+        },
+        updateWritingGoal: (state, action: PayloadAction<{ id: string; changes: Partial<WritingGoal> }>) => {
+            if (!state.data.writingGoals) state.data.writingGoals = [];
+            const index = state.data.writingGoals.findIndex(g => g.id === action.payload.id);
+            if (index !== -1) {
+                state.data.writingGoals[index] = { ...state.data.writingGoals[index], ...action.payload.changes };
+            }
         },
     },
     extraReducers: (builder) => {

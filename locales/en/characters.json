@@ -18,6 +18,9 @@
     "characters.selectCharacter": "Select a character to edit or add a new one.",
     "characters.tabs.profile": "Profile",
     "characters.tabs.arc": "Character Arc",
+    "characterGraph.title": "Character Relationship Graph",
+    "characterGraph.relationships": "Relationships",
+    "characterGraph.legend": "Legend"
     "characters.tabs.relationships": "Relationships",
     "characters.tabs.notes": "Notes",
     "characters.dossier.title": "Dossier: {{name}}",
@@ -37,6 +40,13 @@
     "characters.aiModal.button": "Generate Profile",
     "characters.loading.profile": "Generating detailed profile...",
     "characters.error.portraitFailed": "Portrait generation failed. Try adding more detail to the appearance description.",
-    "characters.deleteConfirm": "Are you sure you want to delete this character? This action cannot be undone.",
-    "characters.deleteLabel": "Delete {{name}}"
+    "characters.edit.portrait.styleLabel": "Art Style",
+    "characters.edit.portrait.styles.digitalPainting": "Digital Painting",
+    "characters.edit.portrait.styles.photorealistic": "Photorealistic",
+    "characters.edit.portrait.styles.anime": "Anime",
+    "characters.edit.portrait.styles.cartoon": "Cartoon",
+    "characters.edit.portrait.styles.watercolor": "Watercolor",
+    "characters.edit.portrait.styles.oilPainting": "Oil Painting",
+    "characters.edit.portrait.styles.sketch": "Sketch",
+    "characters.edit.portrait.styles.comicBook": "Comic Book",
 }

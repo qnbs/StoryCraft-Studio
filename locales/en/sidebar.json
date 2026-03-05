@@ -6,6 +6,10 @@
     "sidebar.outline": "Outline Generator",
     "sidebar.characters": "Characters",
     "sidebar.world": "World Building",
+    "sidebar.sceneboard": "Scene Board",
+    "sidebar.characterGraph": "Character Graph",
+    "sidebar.consistencyChecker": "Consistency Checker",
+    "sidebar.critic": "AI Critic",
     "sidebar.export": "Export",
     "sidebar.settings": "Settings",
     "sidebar.help": "Help"
