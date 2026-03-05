@@ -53,6 +53,6 @@
     "export.export": "Exportieren",
     "export.importSuccess": "Projekt erfolgreich importiert",
     "export.exportSuccess": "Projekt erfolgreich exportiert",
-    "export.importFailed": "Import fehlgeschlagen",
-    "export.importFailed": "Export fehlgeschlagen"
+    "export.importFailed": "Export fehlgeschlagen",
+    "export.exportFailed": "Export fehlgeschlagen"
 }

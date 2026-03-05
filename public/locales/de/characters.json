@@ -49,4 +49,6 @@
     "characters.edit.portrait.styles.oilPainting": "Ölgemälde",
     "characters.edit.portrait.styles.sketch": "Skizze",
     "characters.edit.portrait.styles.comicBook": "Comic-Buch",
+    "characters.deleteLabel": "{{name}} löschen",
+    "characters.deleteConfirm": "Sind Sie sicher, dass Sie diesen Charakter dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
 }

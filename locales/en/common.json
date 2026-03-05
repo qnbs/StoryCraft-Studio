@@ -33,7 +33,7 @@
     "critic.plotAnalysis": "Plot Analysis",
     "critic.detectPlotHoles": "Detect Plot Holes",
     "critic.results": "Analysis Results",
-    "critic.noResults": "No analysis results yet."
+    "critic.noResults": "No analysis results yet.",
     "error.fileImportError": "File Import Error",
     "error.snapshotError": "Snapshot Error",
     "palette.placeholder": "Type a command or search...",
@@ -50,5 +50,10 @@
     "palette.footer.navigate": "Navigate",
     "palette.footer.select": "Select",
     "palette.voice.start": "Start voice search",
-    "palette.voice.stop": "Stop voice search"
+    "palette.voice.stop": "Stop voice search",
+    "sceneboard.title": "Scene Board",
+    "sceneboard.confirmDelete": "Are you sure you want to delete this scene?",
+    "sceneboard.newSceneTitle": "New Scene",
+    "sceneboard.addScene": "Add Scene",
+    "sceneboard.noScenes": "No scenes yet. Add one to get started."
 }

@@ -33,7 +33,7 @@
     "critic.plotAnalysis": "Plot-Analyse",
     "critic.detectPlotHoles": "Plotlücken erkennen",
     "critic.results": "Analyse-Ergebnisse",
-    "critic.noResults": "Noch keine Analyse-Ergebnisse."
+    "critic.noResults": "Noch keine Analyse-Ergebnisse.",
     "error.fileImportError": "Importfehler",
     "error.snapshotError": "Sicherungsfehler",
     "palette.placeholder": "Befehl eingeben oder suchen...",
@@ -50,5 +50,10 @@
     "palette.footer.navigate": "Navigieren",
     "palette.footer.select": "Auswählen",
     "palette.voice.start": "Sprachsuche starten",
-    "palette.voice.stop": "Sprachsuche beenden"
+    "palette.voice.stop": "Sprachsuche beenden",
+    "sceneboard.title": "Szenenboard",
+    "sceneboard.confirmDelete": "Sind Sie sicher, dass Sie diese Szene löschen möchten?",
+    "sceneboard.newSceneTitle": "Neue Szene",
+    "sceneboard.addScene": "Szene hinzufügen",
+    "sceneboard.noScenes": "Noch keine Szenen. Fügen Sie eine hinzu, um zu beginnen."
 }

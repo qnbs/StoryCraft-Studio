@@ -42,5 +42,11 @@
     "writer.studio.result.prev": "Zurück",
     "writer.studio.result.next": "Weiter",
     "writer.studio.tools.grammarCheck.title": "Grammatik & Stil",
-    "writer.studio.tools.grammarCheck.instruction": "Markieren Sie Text und klicken Sie auf 'Grammatik & Stil', um Fehler und Stil zu verbessern (deutsch/englisch automatisch)."
+    "writer.studio.tools.grammarCheck.instruction": "Markieren Sie Text und klicken Sie auf 'Grammatik & Stil', um Fehler und Stil zu verbessern (deutsch/englisch automatisch).",
+    "writer.studio.tools.critic.title": "Lektor (Critic)",
+    "writer.studio.tools.critic.instruction": "Sei dein professioneller Lektor und Kritiker.",
+    "writer.studio.tools.plotholes.title": "Plot-Holes Detektor",
+    "writer.studio.tools.plotholes.instruction": "Finde Logiklücken oder Inkonsistenzen im Plot.",
+    "writer.studio.tools.consistency.title": "Inkonsistenzen-Check",
+    "writer.studio.tools.consistency.instruction": "Gleiche den Text mit deinen Charakteren und der World-Lore ab, um Widersprüche zu finden."
 }

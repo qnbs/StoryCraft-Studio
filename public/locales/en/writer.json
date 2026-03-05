@@ -42,5 +42,11 @@
     "writer.studio.result.replace": "Replace",
     "writer.studio.result.retry": "Retry",
     "writer.studio.result.prev": "Prev",
-    "writer.studio.result.next": "Next"
+    "writer.studio.result.next": "Next",
+    "writer.studio.tools.critic.title": "AI Critic",
+    "writer.studio.tools.critic.instruction": "Act as your professional literary critic and editor.",
+    "writer.studio.tools.plotholes.title": "Plot-Hole Detector",
+    "writer.studio.tools.plotholes.instruction": "Find logical gaps or plot holes in the selected text.",
+    "writer.studio.tools.consistency.title": "Universe Consistency",
+    "writer.studio.tools.consistency.instruction": "Check the text against your character dossiers and world lore for continuity errors."
 }

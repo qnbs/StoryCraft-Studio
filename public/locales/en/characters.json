@@ -20,7 +20,7 @@
     "characters.tabs.arc": "Character Arc",
     "characterGraph.title": "Character Relationship Graph",
     "characterGraph.relationships": "Relationships",
-    "characterGraph.legend": "Legend"
+    "characterGraph.legend": "Legend",
     "characters.tabs.relationships": "Relationships",
     "characters.tabs.notes": "Notes",
     "characters.dossier.title": "Dossier: {{name}}",
@@ -49,4 +49,6 @@
     "characters.edit.portrait.styles.oilPainting": "Oil Painting",
     "characters.edit.portrait.styles.sketch": "Sketch",
     "characters.edit.portrait.styles.comicBook": "Comic Book",
+    "characters.deleteLabel": "Delete {{name}}",
+    "characters.deleteConfirm": "Are you sure you want to permanently delete this character? This action cannot be undone."
 }

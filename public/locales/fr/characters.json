@@ -20,7 +20,7 @@
     "characters.tabs.arc": "Character Arc",
     "characterGraph.title": "Character Relationship Graph",
     "characterGraph.relationships": "Relationships",
-    "characterGraph.legend": "Legend"
+    "characterGraph.legend": "Legend",
     "characters.tabs.relationships": "Relationships",
     "characters.tabs.notes": "Notes",
     "characters.dossier.title": "Dossier: {{name}}",
