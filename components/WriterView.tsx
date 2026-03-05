@@ -48,7 +48,7 @@ const ContextPanel: FC = React.memo(() => {
                 </div>
             )}
             <Card className="h-full flex flex-col border-0 sm:border">
-                <CardHeader className="hidden lg:block">
+                <CardHeader className="hidden md:block">
                      <h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('writer.studio.context.title')}</h2>
                 </CardHeader>
                 <CardContent className="space-y-3 flex-grow flex flex-col p-4 sm:p-6 overflow-hidden">
@@ -160,11 +160,11 @@ const ToolsPanel: FC = React.memo(() => {
     return (
        <div className="h-full flex flex-col">
              <Card className="h-full flex flex-col sticky top-0 lg:top-20 border-0 sm:border">
-                <CardHeader className="hidden lg:block">
+                <CardHeader className="hidden md:block">
                     <h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('writer.studio.tools.title')}</h2>
                 </CardHeader>
                 <CardContent className="flex flex-col space-y-4 flex-grow overflow-hidden p-4 sm:p-6">
-                    <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-5 gap-2 flex-shrink-0" role="group" aria-label="Tool selection">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-5 gap-2 flex-shrink-0" role="group" aria-label="Tool selection">
                         {tools.map(tool => (
                             <button 
                                 key={tool.id}
@@ -251,7 +251,7 @@ const AiScratchpad: FC = React.memo(() => {
     return (
         <div className="h-full flex flex-col">
             <Card className="h-full min-h-[400px] flex flex-col border-0 sm:border">
-                <CardHeader className="hidden lg:block">
+                <CardHeader className="hidden md:block">
                      <h2 className="text-xl font-semibold text-[var(--foreground-primary)]">{t('writer.studio.result.title')}</h2>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-grow min-h-0 p-4 sm:p-6 overflow-hidden">
@@ -303,7 +303,7 @@ const WriterViewUI: FC = () => {
     return (
         <div className="h-full flex flex-col">
             {/* Mobile Segmented Control - Top Navigation */}
-            <div className="lg:hidden p-1 mx-0 mb-4 bg-[var(--background-tertiary)] rounded-xl flex items-center relative border border-[var(--border-primary)]/50 shadow-inner select-none">
+            <div className="md:hidden p-1 mx-0 mb-4 bg-[var(--background-tertiary)] rounded-xl flex items-center relative border border-[var(--border-primary)]/50 shadow-inner select-none">
                 {(['context', 'tools', 'result'] as const).map((tab) => (
                     <button
                         key={tab}
@@ -322,17 +322,17 @@ const WriterViewUI: FC = () => {
             </div>
 
             {/* Mobile Views (Conditional Render) */}
-            <div className="lg:hidden flex-grow min-h-0 overflow-hidden">
+            <div className="md:hidden flex-grow min-h-0 overflow-hidden">
                 {activeMobileTab === 'context' && <ContextPanel />}
                 {activeMobileTab === 'tools' && <ToolsPanel />}
                 {activeMobileTab === 'result' && <AiScratchpad />}
             </div>
 
             {/* Desktop Grid Layout (Always Visible on LG+) */}
-            <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 h-full items-start">
-                <div className="lg:col-span-4 h-full overflow-hidden"><ContextPanel /></div>
-                <div className="lg:col-span-4 h-full overflow-hidden"><ToolsPanel /></div>
-                <div className="lg:col-span-4 h-full overflow-hidden"><AiScratchpad /></div>
+            <div className="hidden md:grid md:grid-cols-12 md:gap-6 h-full items-start">
+                <div className="md:col-span-4 h-full overflow-hidden"><ContextPanel /></div>
+                <div className="md:col-span-4 h-full overflow-hidden"><ToolsPanel /></div>
+                <div className="md:col-span-4 h-full overflow-hidden"><AiScratchpad /></div>
             </div>
         </div>
     );

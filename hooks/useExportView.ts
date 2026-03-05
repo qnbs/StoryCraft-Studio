@@ -220,6 +220,21 @@ export const useExportView = () => {
 <body><h1>${project.title}</h1><p><i>${project.logline}</i></p></body></html>`);
 
         let chapterCount = 2;
+        
+        if (synopsis) {
+            contentOpf += `<item id="synopsis" href="synopsis.xhtml" media-type="application/xhtml+xml"/>\n`;
+            spineRef += `<itemref idref="synopsis"/>\n`;
+            tocNcx += `<navPoint id="navPoint-${chapterCount}" playOrder="${chapterCount}"><navLabel><text>AI Synopsis</text></navLabel><content src="synopsis.xhtml"/></navPoint>\n`;
+            chapterCount++;
+            
+            const synopsisHtml = `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>AI Synopsis</title></head>
+<body><h2>AI Synopsis</h2>${synopsis.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}</body></html>`;
+            folder?.file("synopsis.xhtml", synopsisHtml);
+        }
+
         if (contentToExport.manuscript) {
             project.manuscript.forEach((section, idx) => {
                 const id = `chap${idx}`;
@@ -252,7 +267,7 @@ export const useExportView = () => {
         a.click();
         URL.revokeObjectURL(url);
 
-    }, [project, contentToExport]);
+    }, [project, contentToExport, synopsis, aiEnhancements, t]);
 
     const handleDownload = useCallback(() => {
         if (format === 'pdf') {

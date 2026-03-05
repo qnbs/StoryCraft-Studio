@@ -78,7 +78,7 @@ export const useWriterView = () => {
                 return `Write a concise, one-paragraph synopsis of the following text from a story. Capture the key events, character actions, and tone of the passage.\n\nText:\n"""\n${content}\n"""\n`;
             case 'grammarCheck':
                 // Deutsch/Englisch automatisch, Prompt für Korrektur und Stilverbesserung
-                return `Check and improve grammar, spelling, and style in the following text. If the text is in German, reply in German. If in English, reply in English.\n\nText:\n"""\n${selection.text || content}\n"""\n`;
+                return `Korrigiere Grammatik, Stil und Wiederholungen im folgenden Text. Behalte die Sprache des Originals (Deutsch/Englisch) bei. Liefere nur den verbesserten Text ohne weitere Erklärungen.\n\nText:\n"""\n${selection.text || content}\n"""\n`;
             default: return '';
         }
     }, [manuscript, selectedSectionId, activeTool, selection, style, tone, dialogueCharacters, scenario, brainstormContext]);

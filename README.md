@@ -20,7 +20,9 @@
 
 ## 🌐 Live Demo
 
-**[➡️ Launch StoryCraft Studio](https://qnbs.github.io/StoryCraft-Studio/)**
+**🚀 [Launch StoryCraft Studio in your Browser!](https://qnbs.github.io/StoryCraft-Studio/) 🚀**
+
+✨ *Try it right now, no installation required! All data is saved securely in your browser's IndexedDB.* ✨
 
 ---
 

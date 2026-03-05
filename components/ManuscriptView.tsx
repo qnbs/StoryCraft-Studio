@@ -583,7 +583,7 @@ const ManuscriptViewUI: FC = () => {
     return (
         <div className="h-full flex flex-col">
             {/* Mobile Header */}
-            <header className="lg:hidden flex-shrink-0 flex justify-between items-center p-2 mb-2 bg-[var(--background-secondary)]/80 backdrop-blur-md border-b border-[var(--border-primary)] sticky top-0 z-20">
+            <header className="md:hidden flex-shrink-0 flex justify-between items-center p-2 mb-2 bg-[var(--background-secondary)]/80 backdrop-blur-md border-b border-[var(--border-primary)] sticky top-0 z-20">
                 <Button variant="ghost" onClick={() => setIsNavDrawerOpen(true)} size="sm" className="-ml-1">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                 </Button>
@@ -594,7 +594,7 @@ const ManuscriptViewUI: FC = () => {
             </header>
 
             {/* Desktop Toolbar - Focus Toggle */}
-            <div className="hidden lg:flex justify-end px-2 pb-2">
+            <div className="hidden md:flex justify-end px-2 pb-2">
                 <Button 
                     variant="ghost" 
                     size="sm" 
@@ -613,7 +613,7 @@ const ManuscriptViewUI: FC = () => {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-grow min-h-0 hidden lg:flex lg:flex-row relative">
+            <main className="flex-grow min-h-0 hidden md:flex md:flex-row relative">
                 {/* Desktop Navigator */}
                 <div 
                     className={`h-full flex flex-col transition-all duration-500 ease-in-out overflow-hidden ${isFocusMode ? 'opacity-0 w-0 border-0 pointer-events-none' : 'opacity-100 border-r border-[var(--border-primary)]'}`}
@@ -647,7 +647,7 @@ const ManuscriptViewUI: FC = () => {
             </main>
             
             {/* Mobile Editor (takes full space) */}
-            <main className="flex-grow min-h-0 lg:hidden bg-[var(--background-secondary)] overflow-hidden relative">
+            <main className="flex-grow min-h-0 md:hidden bg-[var(--background-secondary)] overflow-hidden relative">
                 <ManuscriptEditor isFocusMode={false} />
             </main>
 

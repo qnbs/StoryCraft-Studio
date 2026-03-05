@@ -5,21 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StoryCraft Studio</title>
   <script>
-    // GitHub Pages SPA Redirect
-    // Konvertiert 404 zu einem Query-Parameter für den Router
-    (function() {
-      var base = '/StoryCraft-Studio/';
-      var path = window.location.pathname;
-      // Entferne Base-Pfad
-      var relativePath = path.replace(base, '');
-      // SPA-Redirect: Nur weiterleiten, wenn nicht auf der Startseite
-      if (relativePath && relativePath !== '' && relativePath !== 'index.html') {
-        var target = base + '?p=' + encodeURIComponent('/' + relativePath + window.location.search + window.location.hash);
-        window.location.replace(target);
-      } else {
-        window.location.replace(base);
-      }
-    })();
+    // GitHub Pages Redirect
+    // Die App nutzt State-basiertes Routing, daher leiten wir einfach zur Startseite weiter
+    window.location.replace('/StoryCraft-Studio/');
   </script>
   <noscript>
     <meta http-equiv="refresh" content="0; url=/StoryCraft-Studio/">
