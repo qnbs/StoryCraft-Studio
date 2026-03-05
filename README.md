@@ -39,6 +39,7 @@
 - [🚀 A Creative Workflow](#-a-creative-workflow)
 - [🤝 Contributing](#-contributing)
 - [Deutsche Version (German)](#-storycraft-studio-deutsch)
+- [Fehlerverhalten & Hinweise](#-fehlerverhalten-&-hinweise)
 
 ---
 
@@ -81,6 +82,23 @@ StoryCraft Studio is packed with state-of-the-art tools designed to support ever
 -   **📤 Polished Exporting Suite**: Go from draft to document in seconds. Export your project as Markdown, Plain Text, or a professionally formatted **PDF** with a title page. Selectively include content and even generate a one-page **AI Synopsis** of your entire manuscript.
 
 -   **🌐 Full Multi-language Support**: Fully localized UI available in **English** and **German**.
+
+-   **## EPUB-Export**
+
+    Der EPUB-Export erfolgt serverseitig über ein Node.js-Backend (Express + epub-gen).
+
+    **API:**
+    - POST `/api/export/epub` mit Storydaten (JSON)
+    - Response: EPUB-Datei als Download
+
+    **Backend-Beispiel:**
+    Siehe `backend/epubExport.js` für eine einfache Express-API.
+
+    **Frontend:**
+    Im Export-Dialog wird der EPUB-Export-Button angezeigt. Die Datei wird nach erfolgreichem Export automatisch heruntergeladen.
+
+    **Hinweis:**
+    Das Backend muss separat gestartet werden (z.B. mit `node backend/epubExport.js`).
 
 ---
 
@@ -307,3 +325,13 @@ StoryCraft Studio verwendet **clientseitige Verschlüsselung** zur sicheren Spei
 5.  **Verbessern**: Nutzen Sie das **KI-Schreibstudio**, um Schreibblockaden zu überwinden.
 6.  **Überprüfen & Sichern**: Verwenden Sie das **Snapshot**-System in den Einstellungen, um Versionen Ihres Projekts vor größeren Änderungen zu speichern.
 7.  **Veröffentlichen**: Exportieren Sie Ihr Werk als Markdown, Textdatei oder formatiertes **PDF**, komplett mit einer KI-generierten Synopse.
+
+## Fehlerverhalten & Hinweise
+
+- Alle KI-Funktionen zeigen Fehlertexte bei API- oder Netzwerkproblemen.
+- Die ErrorBoundary fängt globale Fehler ab und zeigt eine verständliche Meldung.
+- Bei Gemini- oder IndexedDB-Ausfällen werden automatisch Retry-Versuche unternommen.
+- Nutzer erhalten klare Hinweise, falls der Export, die KI oder die Speicherung fehlschlägt.
+- Die Grammatik- und Stilprüfung erkennt automatisch Deutsch/Englisch und liefert passende Korrekturen.
+
+Siehe auch die Hilfeseite im Menü für weitere Tipps zur Fehlerbehandlung.

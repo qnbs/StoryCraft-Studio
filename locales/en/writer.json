@@ -21,6 +21,8 @@
     "writer.studio.tools.brainstorm.contextPlaceholder": "Provide a brief situation, or the AI will use the current manuscript section.",
     "writer.studio.tools.synopsis.title": "Summarize Section",
     "writer.studio.tools.synopsis.instruction": "The AI will generate a summary of the currently selected manuscript section.",
+    "writer.studio.tools.grammarCheck.title": "Grammar & Style",
+    "writer.studio.tools.grammarCheck.instruction": "Select text and click 'Grammar & Style' to check and improve errors and style (auto-detects English/German).",
     "writer.studio.controls.title": "Style Controls",
     "writer.studio.controls.style": "Style",
     "writer.studio.controls.selectTone": "Select a new tone",

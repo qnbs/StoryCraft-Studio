@@ -40,5 +40,7 @@
     "writer.studio.result.replace": "Ersetzen",
     "writer.studio.result.retry": "Erneut",
     "writer.studio.result.prev": "Zurück",
-    "writer.studio.result.next": "Weiter"
+    "writer.studio.result.next": "Weiter",
+    "writer.studio.tools.grammarCheck.title": "Grammatik & Stil",
+    "writer.studio.tools.grammarCheck.instruction": "Markieren Sie Text und klicken Sie auf 'Grammatik & Stil', um Fehler und Stil zu verbessern (deutsch/englisch automatisch)."
 }

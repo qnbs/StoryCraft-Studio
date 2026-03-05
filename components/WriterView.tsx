@@ -111,6 +111,7 @@ const ToolsPanel: FC = React.memo(() => {
         { id: 'dialogue', title: t('writer.studio.tools.dialogue.title'), icon: ICONS.DIALOGUE },
         { id: 'brainstorm', title: t('writer.studio.tools.brainstorm.title'), icon: ICONS.BRAINSTORM },
         { id: 'synopsis', title: t('writer.studio.tools.synopsis.title'), icon: ICONS.NEWSPAPER },
+        { id: 'grammarCheck', title: t('writer.studio.tools.grammarCheck.title'), icon: ICONS.CHECK },
     ];
     
     const handleToneSelect = (val: string) => {
@@ -151,6 +152,7 @@ const ToolsPanel: FC = React.memo(() => {
             case 'dialogue': return <div className="space-y-4"><div><label className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.charactersLabel')}</label><div className="space-y-2 max-h-32 overflow-y-auto bg-white/5 p-2 rounded-md border border-[var(--border-primary)]">{project.characters.map(char => (<div key={char.id}><Checkbox id={`char-${char.id}`} label={char.name} checked={dialogueCharacters.some(c => c.id === char.id)} onChange={() => dispatch(writerActions.toggleDialogueCharacter(char))} /></div>))}</div></div><div><label htmlFor="scenario" className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.dialogue.scenarioLabel')}</label><DebouncedTextarea id="scenario" value={scenario} onDebouncedChange={(val) => dispatch(writerActions.setScenario(val))} placeholder={t('writer.studio.tools.dialogue.scenarioPlaceholder')} rows={3}/></div></div>;
             case 'brainstorm': return <div><label htmlFor="brainstorm-context" className="text-sm font-medium text-[var(--foreground-secondary)] mb-2 block">{t('writer.studio.tools.brainstorm.contextLabel')}</label><DebouncedTextarea id="brainstorm-context" value={brainstormContext} onDebouncedChange={(val) => dispatch(writerActions.setBrainstormContext(val))} placeholder={t('writer.studio.tools.brainstorm.contextPlaceholder')} rows={4}/></div>
             case 'synopsis': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.synopsis.instruction')}</p>
+            case 'grammarCheck': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.grammarCheck.instruction')}</p>
             default: return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.continue.instruction')}</p>;
         }
     }

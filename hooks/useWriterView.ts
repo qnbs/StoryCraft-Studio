@@ -74,8 +74,11 @@ export const useWriterView = () => {
             case 'brainstorm':
                 const brainstormInput = brainstormContext || content;
                 return `Brainstorm 3-5 interesting plot points or ideas for what could happen next, based on this context:\n\n"${brainstormInput}"`;
-             case 'synopsis':
+            case 'synopsis':
                 return `Write a concise, one-paragraph synopsis of the following text from a story. Capture the key events, character actions, and tone of the passage.\n\nText:\n"""\n${content}\n"""\n`;
+            case 'grammarCheck':
+                // Deutsch/Englisch automatisch, Prompt für Korrektur und Stilverbesserung
+                return `Check and improve grammar, spelling, and style in the following text. If the text is in German, reply in German. If in English, reply in English.\n\nText:\n"""\n${selection.text || content}\n"""\n`;
             default: return '';
         }
     }, [manuscript, selectedSectionId, activeTool, selection, style, tone, dialogueCharacters, scenario, brainstormContext]);

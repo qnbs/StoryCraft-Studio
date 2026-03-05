@@ -27,6 +27,7 @@ export const ICONS = {
   NEWSPAPER: <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5" />,
   UNDO: <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />,
   REDO: <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />,
+  CHECK: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
   CHANGE_TONE: <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 2.25c-.244.244-.488.488-.732.732a10.493 10.493 0 00-3.29 5.253 10.493 10.493 0 00-3.29-5.253C6.703 2.738 6.459 2.494 6.215 2.25m8.035 0a10.47 10.47 0 01-8.035 0M2.25 12c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5c0-1.01-.2-1.97-.568-2.848M2.25 12V9.75M17.25 12v2.25" transform="rotate(-45 12 12)" />,
   TARGET: <><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></>,
 };
@@ -152,6 +153,100 @@ export const STORY_TEMPLATES: Template[] = [
         { titleKey: 'templates.romance.sections.3' }, { titleKey: 'templates.romance.sections.4' },
         { titleKey: 'templates.romance.sections.5' }, { titleKey: 'templates.romance.sections.6' },
         { titleKey: 'templates.romance.sections.7' }, { titleKey: 'templates.romance.sections.8' }
+    ]
+  },
+  {
+    id: 'thriller',
+    name: 'templates.thriller.name',
+    description: 'templates.thriller.description',
+    type: 'Genre',
+    tags: ['tags.suspense', 'tags.plotDriven', 'tags.fastPaced'],
+    arcDescription: 'templates.thriller.arc',
+    sections: [
+      { titleKey: 'templates.thriller.sections.1' }, { titleKey: 'templates.thriller.sections.2' },
+      { titleKey: 'templates.thriller.sections.3' }, { titleKey: 'templates.thriller.sections.4' },
+      { titleKey: 'templates.thriller.sections.5' }, { titleKey: 'templates.thriller.sections.6' },
+      { titleKey: 'templates.thriller.sections.7' },
+    ]
+  },
+  {
+    id: 'fantasy',
+    name: 'templates.fantasy.name',
+    description: 'templates.fantasy.description',
+    type: 'Genre',
+    tags: ['tags.epic', 'tags.adventure', 'tags.characterDriven'],
+    arcDescription: 'templates.fantasy.arc',
+    sections: [
+      { titleKey: 'templates.fantasy.sections.1' }, { titleKey: 'templates.fantasy.sections.2' },
+      { titleKey: 'templates.fantasy.sections.3' }, { titleKey: 'templates.fantasy.sections.4' },
+      { titleKey: 'templates.fantasy.sections.5' }, { titleKey: 'templates.fantasy.sections.6' },
+      { titleKey: 'templates.fantasy.sections.7' }, { titleKey: 'templates.fantasy.sections.8' },
+    ]
+  },
+  {
+    id: 'horror',
+    name: 'templates.horror.name',
+    description: 'templates.horror.description',
+    type: 'Genre',
+    tags: ['tags.suspense', 'tags.plotDriven'],
+    arcDescription: 'templates.horror.arc',
+    sections: [
+      { titleKey: 'templates.horror.sections.1' }, { titleKey: 'templates.horror.sections.2' },
+      { titleKey: 'templates.horror.sections.3' }, { titleKey: 'templates.horror.sections.4' },
+      { titleKey: 'templates.horror.sections.5' }, { titleKey: 'templates.horror.sections.6' },
+      { titleKey: 'templates.horror.sections.7' },
+    ]
+  },
+  {
+    id: 'historical-fiction',
+    name: 'templates.historical.name',
+    description: 'templates.historical.description',
+    type: 'Genre',
+    tags: ['tags.characterDriven', 'tags.emotional'],
+    arcDescription: 'templates.historical.arc',
+    sections: [
+      { titleKey: 'templates.historical.sections.1' }, { titleKey: 'templates.historical.sections.2' },
+      { titleKey: 'templates.historical.sections.3' }, { titleKey: 'templates.historical.sections.4' },
+      { titleKey: 'templates.historical.sections.5' }, { titleKey: 'templates.historical.sections.6' },
+    ]
+  },
+  {
+    id: 'coming-of-age',
+    name: 'templates.comingOfAge.name',
+    description: 'templates.comingOfAge.description',
+    type: 'Genre',
+    tags: ['tags.characterDriven', 'tags.emotional'],
+    arcDescription: 'templates.comingOfAge.arc',
+    sections: [
+      { titleKey: 'templates.comingOfAge.sections.1' }, { titleKey: 'templates.comingOfAge.sections.2' },
+      { titleKey: 'templates.comingOfAge.sections.3' }, { titleKey: 'templates.comingOfAge.sections.4' },
+      { titleKey: 'templates.comingOfAge.sections.5' }, { titleKey: 'templates.comingOfAge.sections.6' },
+    ]
+  },
+  {
+    id: 'adventure',
+    name: 'templates.adventure.name',
+    description: 'templates.adventure.description',
+    type: 'Genre',
+    tags: ['tags.adventure', 'tags.fastPaced', 'tags.plotDriven'],
+    arcDescription: 'templates.adventure.arc',
+    sections: [
+      { titleKey: 'templates.adventure.sections.1' }, { titleKey: 'templates.adventure.sections.2' },
+      { titleKey: 'templates.adventure.sections.3' }, { titleKey: 'templates.adventure.sections.4' },
+      { titleKey: 'templates.adventure.sections.5' }, { titleKey: 'templates.adventure.sections.6' },
+    ]
+  },
+  {
+    id: 'mystery',
+    name: 'templates.mystery.name',
+    description: 'templates.mystery.description',
+    type: 'Genre',
+    tags: ['tags.investigation', 'tags.suspense', 'tags.plotDriven'],
+    arcDescription: 'templates.mystery.arc',
+    sections: [
+      { titleKey: 'templates.mystery.sections.1' }, { titleKey: 'templates.mystery.sections.2' },
+      { titleKey: 'templates.mystery.sections.3' }, { titleKey: 'templates.mystery.sections.4' },
+      { titleKey: 'templates.mystery.sections.5' }, { titleKey: 'templates.mystery.sections.6' },
     ]
   },
 ];
