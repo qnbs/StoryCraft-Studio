@@ -11,11 +11,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true
   },
-  "include": ["."]
+  "include": ["."],
+  "exclude": ["node_modules", "dist", ".storybook"]
 }

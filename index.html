@@ -43,6 +43,30 @@
     <meta name="msapplication-tap-highlight"       content="no" />
     <meta name="application-name"                  content="StoryCraft Studio" />
 
+    <!-- ── Security: Content Security Policy ─────────────── -->
+    <!--
+      CSP-Strategie:
+      - script-src: nur eigene Skripte + Tailwind CDN (inline Vite HMR via 'unsafe-inline' in dev)
+      - style-src: eigene + Fonts + Tailwind CDN (unsafe-inline nötig für Tailwind utility classes)
+      - connect-src: Gemini API + Fonts (kein Wildcard)
+      - img-src: data: URLs für Base64-Bilder erlaubt
+      - Produktions-CSP wird über HTTP-Header des Hosts verschärft
+    -->
+    <meta http-equiv="Content-Security-Policy"
+          content="
+            default-src 'self';
+            script-src  'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+            style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com;
+            font-src    'self' https://fonts.gstatic.com data:;
+            img-src     'self' data: blob: https:;
+            connect-src 'self' https://generativelanguage.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com;
+            worker-src  'self' blob:;
+            manifest-src 'self';
+            object-src  'none';
+            base-uri    'self';
+            form-action 'self';
+          " />
+
     <!-- ── Performance: Preconnect to external origins ───── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
     <link rel="preconnect" href="https://fonts.gstatic.com"    crossorigin="anonymous" />

@@ -1,61 +1,64 @@
-import { ProjectSnapshot } from '../types';
-import { ProjectData } from '../features/project/projectSlice';
-import { Settings } from '../types';
-import LZString from 'lz-string';
+import { ProjectSnapshot, Settings } from "../types";
+import { ProjectData } from "../features/project/projectSlice";
+import LZString from "lz-string";
 
-const DB_NAME = 'storycraft-db';
+const DB_NAME = "storycraft-db";
 const DB_VERSION = 5; // v5: RAG vectors store added
-const APP_DATA_STORE = 'app-data-store';
-const SNAPSHOTS_STORE = 'snapshots-store';
-const IMAGES_STORE = 'images-store';
-const RAG_VECTORS_STORE = 'rag-vectors-store';
+const APP_DATA_STORE = "app-data-store";
+const SNAPSHOTS_STORE = "snapshots-store";
+const IMAGES_STORE = "images-store";
+const RAG_VECTORS_STORE = "rag-vectors-store";
 
 // LZ-String threshold: compress payloads >10 KB
 const COMPRESS_THRESHOLD_BYTES = 10_240;
 
 // Serialize + compress, transparently decompress on read
 function compressData<T>(data: T): string | T {
-    try {
-        const json = JSON.stringify(data);
-        if (json.length < COMPRESS_THRESHOLD_BYTES) return data; // small enough, skip
-        const compressed = LZString.compressToUTF16(json);
-        // prefix so we can identify compressed values
-        return '\x00lz1\x00' + compressed;
-    } catch {
-        return data;
-    }
+  try {
+    const json = JSON.stringify(data);
+    if (json.length < COMPRESS_THRESHOLD_BYTES) return data; // small enough, skip
+    const compressed = LZString.compressToUTF16(json);
+    // prefix so we can identify compressed values
+    return "\x00lz1\x00" + compressed;
+  } catch {
+    return data;
+  }
 }
 
 function decompressData<T>(raw: any): T {
-    if (typeof raw === 'string' && raw.startsWith('\x00lz1\x00')) {
-        try {
-            const decompressed = LZString.decompressFromUTF16(raw.slice(5));
-            return JSON.parse(decompressed ?? '{}') as T;
-        } catch {
-            return raw as unknown as T;
-        }
+  if (typeof raw === "string" && raw.startsWith("\x00lz1\x00")) {
+    try {
+      const decompressed = LZString.decompressFromUTF16(raw.slice(5));
+      return JSON.parse(decompressed ?? "{}") as T;
+    } catch {
+      return raw as unknown as T;
     }
-    return raw as T;
+  }
+  return raw as T;
 }
 
 // Secure API Key Storage Records
-const GEMINI_API_KEY_RECORD = 'gemini_api_key_encrypted_v1';
-const GEMINI_API_KEY_IV_RECORD = 'gemini_api_key_iv_v1';
+const GEMINI_API_KEY_RECORD = "gemini_api_key_encrypted_v1";
+const GEMINI_API_KEY_IV_RECORD = "gemini_api_key_iv_v1";
 
 // Define structure of state stored in DB
 interface PersistedProjectState {
-    // Redux-undo shape for present state, or full undoable envelope
-    data?: ProjectData; // Flattened structure often saved
-    present?: { data: ProjectData }; // Structure if full slice saved
+  // Redux-undo shape for present state, or full undoable envelope
+  data?: ProjectData; // Flattened structure often saved
+  present?: { data: ProjectData }; // Structure if full slice saved
 }
 
 interface PersistedState {
-    project?: PersistedProjectState;
-    settings?: Settings;
+  project?: PersistedProjectState;
+  settings?: Settings;
 }
 
 // Hilfsfunktion für Retry bei IndexedDB
-async function retryDb<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
+async function retryDb<T>(
+  fn: () => Promise<T>,
+  retries = 2,
+  delayMs = 500,
+): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -63,8 +66,14 @@ async function retryDb<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Pro
     } catch (err) {
       lastError = err;
       // Nur bei temporären Fehlern erneut versuchen
-      if (err?.name === 'QuotaExceededError' || err?.name === 'InvalidStateError' || err?.name === 'AbortError' || err?.name === 'TransactionInactiveError') {
-        if (attempt < retries) await new Promise(res => setTimeout(res, delayMs));
+      if (
+        err?.name === "QuotaExceededError" ||
+        err?.name === "InvalidStateError" ||
+        err?.name === "AbortError" ||
+        err?.name === "TransactionInactiveError"
+      ) {
+        if (attempt < retries)
+          await new Promise((res) => setTimeout(res, delayMs));
       } else {
         break;
       }
@@ -74,20 +83,23 @@ async function retryDb<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Pro
 }
 
 function getUserFriendlyDbError(error: any): string {
-  if (error?.name === 'QuotaExceededError') {
-    return 'Speicherplatz im Browser ist erschöpft. Bitte löschen Sie alte Projekte oder Snapshots.';
+  if (error?.name === "QuotaExceededError") {
+    return "Speicherplatz im Browser ist erschöpft. Bitte löschen Sie alte Projekte oder Snapshots.";
   }
-  if (error?.name === 'InvalidStateError' || error?.name === 'TransactionInactiveError') {
-    return 'Interner Fehler beim Zugriff auf die Datenbank. Bitte Seite neu laden.';
+  if (
+    error?.name === "InvalidStateError" ||
+    error?.name === "TransactionInactiveError"
+  ) {
+    return "Interner Fehler beim Zugriff auf die Datenbank. Bitte Seite neu laden.";
   }
-  if (error?.name === 'AbortError') {
-    return 'Datenbankoperation wurde abgebrochen.';
+  if (error?.name === "AbortError") {
+    return "Datenbankoperation wurde abgebrochen.";
   }
-  return error?.message || 'Unbekannter Fehler beim Zugriff auf die Datenbank.';
+  return error?.message || "Unbekannter Fehler beim Zugriff auf die Datenbank.";
 }
 
-import { StoryProject, Settings } from '../types';
-import { StorageBackend } from './storageService';
+import { StoryProject, Settings } from "../types";
+import { StorageBackend } from "./storageService";
 
 // Extend IndexedDBService to implement StorageBackend
 class IndexedDBService implements StorageBackend {
@@ -100,32 +112,29 @@ class IndexedDBService implements StorageBackend {
   private async getLocalCryptoKey(): Promise<CryptoKey> {
     // Generiere einen geräte-spezifischen Schlüssel basierend auf Origin
     const material = new TextEncoder().encode(
-      `${location.origin}|StoryCraftStudio|gemini-key-v1|${navigator.userAgent.slice(0, 50)}`
+      `${location.origin}|StoryCraftStudio|gemini-key-v1|${navigator.userAgent.slice(0, 50)}`,
     );
-    const hash = await crypto.subtle.digest('SHA-256', material);
-    return crypto.subtle.importKey(
-      'raw',
-      hash,
-      { name: 'AES-GCM' },
-      false,
-      ['encrypt', 'decrypt']
-    );
+    const hash = await crypto.subtle.digest("SHA-256", material);
+    return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, [
+      "encrypt",
+      "decrypt",
+    ]);
   }
 
   async saveGeminiApiKey(apiKey: string): Promise<void> {
     if (!apiKey || apiKey.trim().length === 0) {
-      throw new Error('API key cannot be empty');
+      throw new Error("API key cannot be empty");
     }
     return retryDb(async () => {
       const cryptoKey = await this.getLocalCryptoKey();
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const encodedKey = new TextEncoder().encode(apiKey.trim());
       const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
+        { name: "AES-GCM", iv },
         cryptoKey,
-        encodedKey
+        encodedKey,
       );
-      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
       return new Promise((resolve, reject) => {
         const encryptedArray = Array.from(new Uint8Array(encrypted));
         const ivArray = Array.from(iv);
@@ -147,7 +156,7 @@ class IndexedDBService implements StorageBackend {
   async getGeminiApiKey(): Promise<string | null> {
     return retryDb(async () => {
       try {
-        const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
+        const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
         const [encryptedArray, ivArray] = await Promise.all([
           new Promise<number[] | undefined>((resolve, reject) => {
             const req = store.get(GEMINI_API_KEY_RECORD);
@@ -165,13 +174,13 @@ class IndexedDBService implements StorageBackend {
         }
         const cryptoKey = await this.getLocalCryptoKey();
         const decrypted = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: new Uint8Array(ivArray) },
+          { name: "AES-GCM", iv: new Uint8Array(ivArray) },
           cryptoKey,
-          new Uint8Array(encryptedArray)
+          new Uint8Array(encryptedArray),
         );
         return new TextDecoder().decode(decrypted);
       } catch (error) {
-        console.warn('Failed to decrypt API key:', error);
+        console.warn("Failed to decrypt API key:", error);
         return null;
       }
     });
@@ -184,7 +193,7 @@ class IndexedDBService implements StorageBackend {
 
   async clearGeminiApiKey(): Promise<void> {
     return retryDb(async () => {
-      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
+      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
       return new Promise((resolve, reject) => {
         const req1 = store.delete(GEMINI_API_KEY_RECORD);
         const req2 = store.delete(GEMINI_API_KEY_IV_RECORD);
@@ -211,30 +220,37 @@ class IndexedDBService implements StorageBackend {
         const db = request.result;
         // v1: Basis-Store
         if (event.oldVersion < 1) {
-            if (!db.objectStoreNames.contains(APP_DATA_STORE)) {
-              db.createObjectStore(APP_DATA_STORE);
-            }
+          if (!db.objectStoreNames.contains(APP_DATA_STORE)) {
+            db.createObjectStore(APP_DATA_STORE);
+          }
         }
         // v2: Snapshot-Store
         if (event.oldVersion < 2) {
-            if (!db.objectStoreNames.contains(SNAPSHOTS_STORE)) {
-              db.createObjectStore(SNAPSHOTS_STORE, { keyPath: 'id', autoIncrement: true });
-            }
+          if (!db.objectStoreNames.contains(SNAPSHOTS_STORE)) {
+            db.createObjectStore(SNAPSHOTS_STORE, {
+              keyPath: "id",
+              autoIncrement: true,
+            });
+          }
         }
         // v3: Bilder-Store
         if (event.oldVersion < 3) {
-            if (!db.objectStoreNames.contains(IMAGES_STORE)) {
-                db.createObjectStore(IMAGES_STORE);
-            }
+          if (!db.objectStoreNames.contains(IMAGES_STORE)) {
+            db.createObjectStore(IMAGES_STORE);
+          }
         }
         // v4: API-Key-Verschlüsselung (kein neuer Store – Daten in APP_DATA_STORE)
         // v5: RAG-Vektoren-Store für Konsistenzprüfung & semantische Suche
         if (event.oldVersion < 5) {
-            if (!db.objectStoreNames.contains(RAG_VECTORS_STORE)) {
-                const vectorStore = db.createObjectStore(RAG_VECTORS_STORE, { keyPath: 'id' });
-                vectorStore.createIndex('projectId', 'projectId', { unique: false });
-                vectorStore.createIndex('type', 'type', { unique: false });
-            }
+          if (!db.objectStoreNames.contains(RAG_VECTORS_STORE)) {
+            const vectorStore = db.createObjectStore(RAG_VECTORS_STORE, {
+              keyPath: "id",
+            });
+            vectorStore.createIndex("projectId", "projectId", {
+              unique: false,
+            });
+            vectorStore.createIndex("type", "type", { unique: false });
+          }
         }
       };
 
@@ -242,9 +258,11 @@ class IndexedDBService implements StorageBackend {
       request.onsuccess = () => {
         const db = request.result;
         db.onversionchange = () => {
-            db.close();
-            this.db = null;
-            console.warn('IndexedDB: Datenbankversion geändert – Verbindung geschlossen. Bitte Seite neu laden.');
+          db.close();
+          this.db = null;
+          console.warn(
+            "IndexedDB: Datenbankversion geändert – Verbindung geschlossen. Bitte Seite neu laden.",
+          );
         };
         this.db = db;
         resolve();
@@ -255,244 +273,259 @@ class IndexedDBService implements StorageBackend {
       (request as any).__handled = true;
 
       request.onerror = () => {
-        console.error('IndexedDB error:', request.error);
+        console.error("IndexedDB error:", request.error);
         reject(request.error);
       };
     });
   }
 
-  private async getObjectStore(storeName: string, mode: IDBTransactionMode): Promise<IDBObjectStore> {
+  private async getObjectStore(
+    storeName: string,
+    mode: IDBTransactionMode,
+  ): Promise<IDBObjectStore> {
     if (!this.db) {
       await this.initDB();
     }
     const transaction = this.db!.transaction(storeName, mode);
     return transaction.objectStore(storeName);
   }
-  
-  async saveSlice(sliceName: 'project' | 'settings', data: PersistedProjectState | Settings): Promise<void> {
+
+  async saveSlice(
+    sliceName: "project" | "settings",
+    data: PersistedProjectState | Settings,
+  ): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
-        // Compress large state objects (project data can exceed 100 KB)
-        const payload = compressData(data);
-        const request = store.put(payload, sliceName);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      // Compress large state objects (project data can exceed 100 KB)
+      const payload = compressData(data);
+      const request = store.put(payload, sliceName);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 
   // Helper methods for explicit saving
   async saveProject(data: PersistedProjectState): Promise<void> {
-      // Check auto-snapshot condition during save
-      if (Date.now() - this.lastAutoSnapshotTime > this.AUTO_SNAPSHOT_INTERVAL) {
-          // We need to extract just the data part if it's the full redux state
-          const projectData = data.present ? data.present.data : data.data;
-          if(projectData && projectData.manuscript) {
-             this.lastAutoSnapshotTime = Date.now();
-             // Fire and forget snapshot to not block UI
-             this.createSnapshot(projectData).then(() => this.pruneAutoSnapshots());
-          }
+    // Check auto-snapshot condition during save
+    if (Date.now() - this.lastAutoSnapshotTime > this.AUTO_SNAPSHOT_INTERVAL) {
+      // We need to extract just the data part if it's the full redux state
+      const projectData = data.present ? data.present.data : data.data;
+      if (projectData && projectData.manuscript) {
+        this.lastAutoSnapshotTime = Date.now();
+        // Fire and forget snapshot to not block UI
+        this.createSnapshot(projectData).then(() => this.pruneAutoSnapshots());
       }
-      return this.saveSlice('project', data);
+    }
+    return this.saveSlice("project", data);
   }
 
   async saveSettings(data: Settings): Promise<void> {
-      return this.saveSlice('settings', data);
+    return this.saveSlice("settings", data);
   }
 
   // Helper to validate state structure and fix common issues
-  private validateAndFixState(project: unknown, settings: unknown): PersistedState | undefined {
-      // If project is missing but we have settings, return partial to allow new user flow
-      if (!project && !settings) return undefined;
+  private validateAndFixState(
+    project: unknown,
+    settings: unknown,
+  ): PersistedState | undefined {
+    // If project is missing but we have settings, return partial to allow new user flow
+    if (!project && !settings) return undefined;
 
-      let validProject = project ? (project as PersistedProjectState) : undefined;
-      
-      // Ensure Project Structure consistency
-      if (validProject) {
-          const rawData = validProject.present ? validProject.present.data : validProject.data;
-          if (rawData) {
-              // Ensure projectGoals exists
-              if (!rawData.projectGoals) {
-                  rawData.projectGoals = { totalWordCount: 50000, targetDate: null };
-              }
-              // Ensure writingHistory exists
-              if (!rawData.writingHistory) {
-                  rawData.writingHistory = [];
-              }
-          }
+    let validProject = project ? (project as PersistedProjectState) : undefined;
+
+    // Ensure Project Structure consistency
+    if (validProject) {
+      const rawData = validProject.present
+        ? validProject.present.data
+        : validProject.data;
+      if (rawData) {
+        // Ensure projectGoals exists
+        if (!rawData.projectGoals) {
+          rawData.projectGoals = { totalWordCount: 50000, targetDate: null };
+        }
+        // Ensure writingHistory exists
+        if (!rawData.writingHistory) {
+          rawData.writingHistory = [];
+        }
       }
+    }
 
-      // Ensure settings has defaults if missing keys
-      let validSettings = settings as Settings;
-      if (settings) {
-          validSettings = {
-              theme: 'dark',
-              editorFont: 'serif',
-              fontSize: 16,
-              lineSpacing: 1.6,
-              aiCreativity: 'Balanced',
-              paragraphSpacing: 1,
-              indentFirstLine: false,
-              ...(settings as Partial<Settings>)
-          };
-      }
+    // Ensure settings has defaults if missing keys
+    let validSettings = settings as Settings;
+    if (settings) {
+      validSettings = {
+        theme: "dark",
+        editorFont: "serif",
+        fontSize: 16,
+        lineSpacing: 1.6,
+        aiCreativity: "Balanced",
+        paragraphSpacing: 1,
+        indentFirstLine: false,
+        ...(settings as Partial<Settings>),
+      };
+    }
 
-      return { project: validProject, settings: validSettings };
+    return { project: validProject, settings: validSettings };
   }
 
   async loadState(): Promise<PersistedState | undefined> {
     return new Promise(async (resolve, reject) => {
-        const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
-        const projectRequest = store.get('project');
-        const settingsRequest = store.get('settings');
+      const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+      const projectRequest = store.get("project");
+      const settingsRequest = store.get("settings");
 
-        let project: unknown;
-        let settings: unknown;
-        let completed = 0;
+      let project: unknown;
+      let settings: unknown;
+      let completed = 0;
 
-        const onComplete = () => {
-            if (++completed === 2) {
-                const validated = this.validateAndFixState(project, settings);
-                resolve(validated);
-            }
+      const onComplete = () => {
+        if (++completed === 2) {
+          const validated = this.validateAndFixState(project, settings);
+          resolve(validated);
         }
-        
-        projectRequest.onsuccess = () => {
-            project = decompressData(projectRequest.result);
-            onComplete();
-        };
-        settingsRequest.onsuccess = () => {
-            settings = decompressData(settingsRequest.result);
-            onComplete();
-        };
+      };
 
-        projectRequest.onerror = () => reject(projectRequest.error);
-        settingsRequest.onerror = () => reject(settingsRequest.error);
+      projectRequest.onsuccess = () => {
+        project = decompressData(projectRequest.result);
+        onComplete();
+      };
+      settingsRequest.onsuccess = () => {
+        settings = decompressData(settingsRequest.result);
+        onComplete();
+      };
+
+      projectRequest.onerror = () => reject(projectRequest.error);
+      settingsRequest.onerror = () => reject(settingsRequest.error);
     });
   }
-  
+
   async hasSavedData(): Promise<boolean> {
-      try {
-          const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
-          const request = store.count(); 
-          return new Promise((resolve) => {
-              request.onsuccess = () => {
-                  resolve(request.result > 0);
-              };
-              request.onerror = () => resolve(false);
-          });
-      } catch (e) {
-          return false;
-      }
+    try {
+      const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+      const request = store.count();
+      return new Promise((resolve) => {
+        request.onsuccess = () => {
+          resolve(request.result > 0);
+        };
+        request.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      return false;
+    }
   }
-  
+
   // --- Image Store Methods ---
   async saveImage(id: string, base64: string): Promise<void> {
-      const store = await this.getObjectStore(IMAGES_STORE, 'readwrite');
-      return new Promise((resolve, reject) => {
-          const request = store.put(base64, id);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-      });
+    const store = await this.getObjectStore(IMAGES_STORE, "readwrite");
+    return new Promise((resolve, reject) => {
+      const request = store.put(base64, id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
-  
+
   async getImage(id: string): Promise<string | undefined> {
-      const store = await this.getObjectStore(IMAGES_STORE, 'readonly');
-      return new Promise((resolve, reject) => {
-          const request = store.get(id);
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-      });
+    const store = await this.getObjectStore(IMAGES_STORE, "readonly");
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async deleteImage(id: string): Promise<void> {
-      const store = await this.getObjectStore(IMAGES_STORE, 'readwrite');
-      return new Promise((resolve, reject) => {
-          const request = store.delete(id);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-      });
+    const store = await this.getObjectStore(IMAGES_STORE, "readwrite");
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
   // --- Snapshot Methods ---
 
   async createSnapshot(data: ProjectData, name?: string): Promise<void> {
-    const wordCount = data.manuscript.reduce((sum, section) => sum + (section.content?.split(/\s+/).filter(Boolean).length || 0), 0);
+    const wordCount = data.manuscript.reduce(
+      (sum, section) =>
+        sum + (section.content?.split(/\s+/).filter(Boolean).length || 0),
+      0,
+    );
     const snapshotData = {
       date: new Date().toISOString(),
-      name: name || 'Automatic Snapshot',
+      name: name || "Automatic Snapshot",
       wordCount,
       // Compress snapshot payload – snapshots can be very large
       data: compressData(data),
     };
-    
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
+
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
     return new Promise((resolve, reject) => {
-        const request = store.add(snapshotData);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+      const request = store.add(snapshotData);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 
   async listSnapshots(): Promise<ProjectSnapshot[]> {
-      const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
-      // IDBKeyRange: iterate in reverse (newest first) using cursor direction 'prev'
-      const request = store.openCursor(null, 'prev');
-      const snapshots: ProjectSnapshot[] = [];
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readonly");
+    // IDBKeyRange: iterate in reverse (newest first) using cursor direction 'prev'
+    const request = store.openCursor(null, "prev");
+    const snapshots: ProjectSnapshot[] = [];
 
-      return new Promise((resolve, reject) => {
-        request.onsuccess = () => {
-            const cursor = request.result;
-            if(cursor) {
-                const { data, ...metadata } = cursor.value;
-                snapshots.push({ id: cursor.key as number, ...metadata });
-                cursor.continue();
-            } else {
-                resolve(snapshots);
-            }
-        };
-        request.onerror = () => reject(request.error);
-      });
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          const { data, ...metadata } = cursor.value;
+          snapshots.push({ id: cursor.key as number, ...metadata });
+          cursor.continue();
+        } else {
+          resolve(snapshots);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async getSnapshotData(id: number): Promise<ProjectData> {
-      const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
-      return new Promise((resolve, reject) => {
-          const request = store.get(id);
-          request.onsuccess = () => {
-              const raw = request.result?.data;
-              resolve(decompressData<ProjectData>(raw));
-          };
-          request.onerror = () => reject(request.error);
-      });
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readonly");
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const raw = request.result?.data;
+        resolve(decompressData<ProjectData>(raw));
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async deleteSnapshot(id: number): Promise<void> {
-      const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
-      return new Promise((resolve, reject) => {
-          const request = store.delete(id);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-      });
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
   private async pruneAutoSnapshots(): Promise<void> {
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
     // Use IDBKeyRange to get all keys efficiently (no full data fetch needed)
     const allKeys: number[] = await new Promise((resolve, reject) => {
-        const req = store.getAllKeys();
-        req.onsuccess = () => resolve(req.result as number[]);
-        req.onerror = () => reject(req.error);
+      const req = store.getAllKeys();
+      req.onsuccess = () => resolve(req.result as number[]);
+      req.onerror = () => reject(req.error);
     });
 
     if (allKeys.length <= this.MAX_AUTO_SNAPSHOTS) return;
 
     // Keys are auto-increment ints → oldest first; delete oldest excess
     const toDelete = allKeys
-        .sort((a, b) => a - b)
-        .slice(0, allKeys.length - this.MAX_AUTO_SNAPSHOTS);
+      .sort((a, b) => a - b)
+      .slice(0, allKeys.length - this.MAX_AUTO_SNAPSHOTS);
 
     for (const key of toDelete) {
-        await this.deleteSnapshot(key);
+      await this.deleteSnapshot(key);
     }
   }
 }
@@ -517,24 +550,34 @@ export interface StorageBackendMethods {
 }
 
 // Add StorageBackend implementation to IndexedDBService
-declare module './dbService' {
+declare module "./dbService" {
   interface IndexedDBService extends StorageBackendMethods {}
 }
 
 // Implement the methods
 IndexedDBService.prototype.saveProject = IndexedDBService.prototype.saveProject;
 IndexedDBService.prototype.loadProject = IndexedDBService.prototype.loadProject;
-IndexedDBService.prototype.listProjects = IndexedDBService.prototype.listProjects;
-IndexedDBService.prototype.deleteProject = IndexedDBService.prototype.deleteProject;
+IndexedDBService.prototype.listProjects =
+  IndexedDBService.prototype.listProjects;
+IndexedDBService.prototype.deleteProject =
+  IndexedDBService.prototype.deleteProject;
 IndexedDBService.prototype.saveImage = IndexedDBService.prototype.saveImage;
 IndexedDBService.prototype.getImage = IndexedDBService.prototype.getImage;
-IndexedDBService.prototype.saveSettings = IndexedDBService.prototype.saveSettings;
-IndexedDBService.prototype.loadSettings = IndexedDBService.prototype.loadSettings;
-IndexedDBService.prototype.saveGeminiApiKey = IndexedDBService.prototype.saveGeminiApiKey;
-IndexedDBService.prototype.getGeminiApiKey = IndexedDBService.prototype.getGeminiApiKey;
-IndexedDBService.prototype.saveSnapshot = IndexedDBService.prototype.createSnapshot;
-IndexedDBService.prototype.getSnapshotData = IndexedDBService.prototype.getSnapshotData;
-IndexedDBService.prototype.listSnapshots = IndexedDBService.prototype.listSnapshots;
-IndexedDBService.prototype.deleteSnapshot = IndexedDBService.prototype.deleteSnapshot;
+IndexedDBService.prototype.saveSettings =
+  IndexedDBService.prototype.saveSettings;
+IndexedDBService.prototype.loadSettings =
+  IndexedDBService.prototype.loadSettings;
+IndexedDBService.prototype.saveGeminiApiKey =
+  IndexedDBService.prototype.saveGeminiApiKey;
+IndexedDBService.prototype.getGeminiApiKey =
+  IndexedDBService.prototype.getGeminiApiKey;
+IndexedDBService.prototype.saveSnapshot =
+  IndexedDBService.prototype.createSnapshot;
+IndexedDBService.prototype.getSnapshotData =
+  IndexedDBService.prototype.getSnapshotData;
+IndexedDBService.prototype.listSnapshots =
+  IndexedDBService.prototype.listSnapshots;
+IndexedDBService.prototype.deleteSnapshot =
+  IndexedDBService.prototype.deleteSnapshot;
 
 export const dbService = new IndexedDBService();

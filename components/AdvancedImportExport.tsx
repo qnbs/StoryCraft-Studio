@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { selectProjectData } from '../features/project/projectSelectors';
-import { projectActions } from '../features/project/projectSlice';
-import { storageService } from '../services/storageService';
-import { Button } from './ui/Button';
-import { Card, CardContent, CardHeader } from './ui/Card';
-import { Modal } from './ui/Modal';
-import { Select } from './ui/Select';
-import { Spinner } from './ui/Spinner';
-import { useToast } from './ui/Toast';
-import mammoth from 'mammoth';
+import React, { useState } from "react";
+import { useTranslation } from "../hooks/useTranslation";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { selectProjectData } from "../features/project/projectSelectors";
+import { projectActions } from "../features/project/projectSlice";
+import { Button } from "./ui/Button";
+import { Card, CardContent, CardHeader } from "./ui/Card";
+import { Modal } from "./ui/Modal";
+import { Select } from "./ui/Select";
+import { Spinner } from "./ui/Spinner";
+import { useToast } from "./ui/Toast";
+import mammoth from "mammoth";
 
 export const AdvancedImportExport: React.FC = () => {
   const { t } = useTranslation();
@@ -20,119 +19,157 @@ export const AdvancedImportExport: React.FC = () => {
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [importFormat, setImportFormat] = useState<'json' | 'markdown' | 'docx'>('json');
-  const [exportFormat, setExportFormat] = useState<'json' | 'markdown' | 'docx'>('json');
+  const [importFormat, setImportFormat] = useState<
+    "json" | "markdown" | "docx"
+  >("json");
+  const [exportFormat, setExportFormat] = useState<
+    "json" | "markdown" | "docx"
+  >("json");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPasteSection, setShowPasteSection] = useState(false);
-  const [pasteText, setPasteText] = useState('');
-  const [pasteTitle, setPasteTitle] = useState('');
+  const [pasteText, setPasteText] = useState("");
+  const [pasteTitle, setPasteTitle] = useState("");
 
-  const handleImport = async () => {
-    if (!project) return;
-
-    setIsProcessing(true);
-    try {
-      const importedProject = await storageService.importProject();
-      if (importedProject) {
-        dispatch(projectActions.loadProject(importedProject));
-        toast.success(t('export.importSuccess'), importedProject.title);
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept =
+      importFormat === "json"
+        ? ".json"
+        : importFormat === "markdown"
+          ? ".md,.markdown"
+          : ".docx";
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      setIsProcessing(true);
+      try {
+        if (importFormat === "docx") {
+          await handleDocxImport(file);
+        } else {
+          const text = await file.text();
+          if (importFormat === "json") {
+            const parsed = JSON.parse(text) as {
+              title?: string;
+              logline?: string;
+              manuscript?: Array<{
+                id: string;
+                title: string;
+                content: string;
+              }>;
+            };
+            if (parsed.title)
+              dispatch(projectActions.updateTitle(parsed.title));
+            if (parsed.logline)
+              dispatch(projectActions.updateLogline(parsed.logline));
+            if (Array.isArray(parsed.manuscript))
+              dispatch(projectActions.setManuscript(parsed.manuscript));
+          } else {
+            // Markdown: split by '# ' headings
+            const sections = text
+              .split(/\n(?=# )/)
+              .filter(Boolean)
+              .map((chunk, i) => {
+                const firstNewline = chunk.indexOf("\n");
+                const rawTitle =
+                  firstNewline > 0 ? chunk.slice(0, firstNewline) : chunk;
+                const title =
+                  rawTitle.replace(/^# /, "").trim() || `Abschnitt ${i + 1}`;
+                const content =
+                  firstNewline > 0 ? chunk.slice(firstNewline + 1).trim() : "";
+                return { id: `import-${Date.now()}-${i}`, title, content };
+              });
+            if (sections.length > 0)
+              dispatch(projectActions.setManuscript(sections));
+          }
+        }
+        toast.success(t("export.importSuccess"), file.name);
         setIsImportModalOpen(false);
+      } catch (error) {
+        console.error("Import failed:", error);
+        toast.error(t("export.importFailed"));
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      console.error('Import failed:', error);
-      toast.error(t('export.importFailed'));
-    } finally {
-      setIsProcessing(false);
-    }
+    };
+    input.click();
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     if (!project) return;
-
-    setIsProcessing(true);
-    try {
-      await storageService.exportProject(project, exportFormat);
-      toast.success(t('export.exportSuccess'), project.title);
-      setIsExportModalOpen(false);
-    } catch (error) {
-      console.error('Export failed:', error);
-      toast.error(t('export.exportFailed'));
-    } finally {
-      setIsProcessing(false);
+    const safeName = project.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    let content: string;
+    let filename: string;
+    if (exportFormat === "json") {
+      content = JSON.stringify(
+        {
+          title: project.title,
+          logline: project.logline,
+          manuscript: project.manuscript,
+        },
+        null,
+        2,
+      );
+      filename = `${safeName}.json`;
+    } else {
+      content = project.manuscript
+        .map((s) => `# ${s.title}\n\n${s.content}`)
+        .join("\n\n---\n\n");
+      filename = `${safeName}.md`;
     }
+    const blob = new Blob([content], {
+      type: exportFormat === "json" ? "application/json" : "text/markdown",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("export.exportSuccess"), project.title);
+    setIsExportModalOpen(false);
   };
 
   const handlePasteImport = () => {
     if (!pasteText.trim() || !project) return;
     const newSection = {
       id: `paste-${Date.now()}`,
-      title: pasteTitle.trim() || 'Eingefügter Inhalt',
+      title: pasteTitle.trim() || "Eingefügter Inhalt",
       content: pasteText.trim(),
     };
     dispatch(projectActions.setManuscript([...project.manuscript, newSection]));
-    toast.success(t('export.importSuccess'), newSection.title);
-    setPasteText('');
-    setPasteTitle('');
+    toast.success(t("export.importSuccess"), newSection.title);
+    setPasteText("");
+    setPasteTitle("");
     setShowPasteSection(false);
   };
 
   const handleCopyForNotion = () => {
     if (!project) return;
     const md = project.manuscript
-      .map(s => `# ${s.title}\n\n${s.content}`)
-      .join('\n\n---\n\n');
+      .map((s) => `# ${s.title}\n\n${s.content}`)
+      .join("\n\n---\n\n");
     navigator.clipboard.writeText(md);
-    toast.success('Markdown kopiert — in Notion oder Google Docs einfügen');
+    toast.success("Markdown kopiert — in Notion oder Google Docs einfügen");
   };
 
   const handleDocxImport = async (file: File) => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
-      const text = result.value;
-
-      // Parse the text into a project structure
-      const lines = text.split('\n');
-      let title = 'Imported from Word';
-      let manuscript = '';
-
-      // Simple parsing - look for title and content
-      for (const line of lines) {
-        if (line.trim() && !title) {
-          title = line.trim();
-        } else if (line.trim()) {
-          manuscript += line + '\n';
-        }
-      }
-
-      const importedProject = {
-        id: Date.now().toString(),
-        title,
-        author: '',
-        description: 'Imported from Word document',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        characters: [],
-        worlds: [],
-        manuscript: manuscript.trim(),
-        templates: [],
-        settings: project?.settings || {
-          theme: 'dark',
-          editorFont: 'serif',
-          aiCreativity: 'Balanced',
-          aiModel: 'gemini-1.5-flash',
-          advancedAi: {
-            model: 'gemini-1.5-flash',
-            temperature: 0.7
-          }
-        }
-      };
-
-      dispatch(projectActions.loadProject(importedProject));
-      toast.success(t('export.importSuccess'), importedProject.title);
+      const lines = result.value.split("\n").filter((l) => l.trim());
+      const title = lines[0]?.trim() || "Imported from Word";
+      const content = lines.slice(1).join("\n").trim();
+      dispatch(projectActions.updateTitle(title));
+      dispatch(
+        projectActions.setManuscript([
+          { id: `docx-${Date.now()}`, title: "Chapter 1", content },
+        ]),
+      );
+      toast.success(t("export.importSuccess"), title);
     } catch (error) {
-      console.error('DOCX import failed:', error);
-      toast.error(t('export.importFailed'));
+      console.error("DOCX import failed:", error);
+      toast.error(t("export.importFailed"));
     }
   };
 
@@ -144,14 +181,14 @@ export const AdvancedImportExport: React.FC = () => {
           className="w-full"
           variant="secondary"
         >
-          {t('export.importProject')}
+          {t("export.importProject")}
         </Button>
         <Button
           onClick={() => setIsExportModalOpen(true)}
           className="w-full"
           variant="secondary"
         >
-          {t('export.exportProject')}
+          {t("export.exportProject")}
         </Button>
       </div>
 
@@ -159,13 +196,15 @@ export const AdvancedImportExport: React.FC = () => {
       <Card className="mt-4">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[var(--foreground)]">Google Docs / Notion</h3>
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">
+              Google Docs / Notion
+            </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowPasteSection(!showPasteSection)}
             >
-              {showPasteSection ? '▲ Einklappen' : '▼ Text einfügen'}
+              {showPasteSection ? "▲ Einklappen" : "▼ Text einfügen"}
             </Button>
           </div>
         </CardHeader>
@@ -210,12 +249,12 @@ export const AdvancedImportExport: React.FC = () => {
       <Modal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        title={t('export.importModalTitle')}
+        title={t("export.importModalTitle")}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-              {t('export.importFormat')}
+              {t("export.importFormat")}
             </label>
             <Select
               value={importFormat}
@@ -232,13 +271,10 @@ export const AdvancedImportExport: React.FC = () => {
               variant="secondary"
               onClick={() => setIsImportModalOpen(false)}
             >
-              {t('common.cancel')}
+              {t("common.cancel")}
             </Button>
-            <Button
-              onClick={handleImport}
-              disabled={isProcessing}
-            >
-              {isProcessing ? <Spinner /> : t('export.import')}
+            <Button onClick={handleImport} disabled={isProcessing}>
+              {isProcessing ? <Spinner /> : t("export.import")}
             </Button>
           </div>
         </div>
@@ -248,12 +284,12 @@ export const AdvancedImportExport: React.FC = () => {
       <Modal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        title={t('export.exportModalTitle')}
+        title={t("export.exportModalTitle")}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
-              {t('export.exportFormat')}
+              {t("export.exportFormat")}
             </label>
             <Select
               value={exportFormat}
@@ -270,13 +306,10 @@ export const AdvancedImportExport: React.FC = () => {
               variant="secondary"
               onClick={() => setIsExportModalOpen(false)}
             >
-              {t('common.cancel')}
+              {t("common.cancel")}
             </Button>
-            <Button
-              onClick={handleExport}
-              disabled={isProcessing}
-            >
-              {isProcessing ? <Spinner /> : t('export.export')}
+            <Button onClick={handleExport} disabled={isProcessing}>
+              {isProcessing ? <Spinner /> : t("export.export")}
             </Button>
           </div>
         </div>

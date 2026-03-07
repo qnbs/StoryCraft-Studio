@@ -1,471 +1,730 @@
-import { createSlice, createAsyncThunk, createEntityAdapter, PayloadAction, EntityState } from '@reduxjs/toolkit';
-import { v4 as uuidv4 } from 'uuid';
-import { getPrompts, generateText, generateJson, generateImage, streamText } from '../../services/geminiService';
-import { RootState } from '../../app/store';
-import { Character, World, StorySection, OutlineSection, OutlineGenerationParams, CustomTemplateParams, CharacterRelationship } from '../../types';
-import { dbService } from '../../services/dbService';
-import { storageService } from '../../services/storageService';
+import {
+  createSlice,
+  createAsyncThunk,
+  createEntityAdapter,
+  PayloadAction,
+  EntityState,
+} from "@reduxjs/toolkit";
+import { v4 as uuidv4 } from "uuid";
+import {
+  getPrompts,
+  generateText,
+  generateJson,
+  generateImage,
+  streamText,
+} from "../../services/geminiService";
+import { RootState } from "../../app/store";
+import {
+  Character,
+  World,
+  StorySection,
+  OutlineSection,
+  OutlineGenerationParams,
+  CustomTemplateParams,
+  CharacterRelationship,
+  WritingSession,
+  WritingGoal,
+} from "../../types";
+import { dbService } from "../../services/dbService";
+import { storageService } from "../../services/storageService";
 
 // --- Entity Adapters ---
-export const charactersAdapter = createEntityAdapter<Character>({
-    selectId: (character) => character.id,
-});
+export const charactersAdapter = createEntityAdapter<Character>();
 
-export const worldsAdapter = createEntityAdapter<World>({
-    selectId: (world) => world.id,
-});
+export const worldsAdapter = createEntityAdapter<World>();
 
 // --- Initial State ---
 export interface ProjectData {
-    title: string;
-    logline: string;
-    characters: EntityState<Character>;
-    worlds: EntityState<World>;
-    outline: OutlineSection[];
-    manuscript: StorySection[];
-    relationships?: CharacterRelationship[];
-    projectGoals?: {
-        totalWordCount: number;
-        targetDate: string | null;
-    };
-    writingHistory?: {
-        date: string; // YYYY-MM-DD
-        words: number;
-    }[];
-    writingSessions?: WritingSession[];
-    writingGoals?: WritingGoal[];
-    sceneBoardLayout?: { [sectionId: string]: { x: number; y: number } };
+  title: string;
+  logline: string;
+  author?: string;
+  characters: EntityState<Character, string>;
+  worlds: EntityState<World, string>;
+  outline: OutlineSection[];
+  manuscript: StorySection[];
+  relationships?: CharacterRelationship[];
+  projectGoals?: {
+    totalWordCount: number;
+    targetDate: string | null;
+  };
+  writingHistory?: {
+    date: string; // YYYY-MM-DD
+    words: number;
+  }[];
+  writingSessions?: WritingSession[];
+  writingGoals?: WritingGoal[];
+  sceneBoardLayout?: { [sectionId: string]: { x: number; y: number } };
 }
 
 // Helper interface for importing legacy or current formats
 interface ImportedProjectData {
-    title: string;
-    logline: string;
-    characters: Character[] | { ids: string[], entities: Record<string, Character> };
-    worlds: World[] | { ids: string[], entities: Record<string, World> };
-    outline?: OutlineSection[];
-    manuscript?: StorySection[];
-    projectGoals?: ProjectData['projectGoals'];
-    writingHistory?: ProjectData['writingHistory'];
+  title: string;
+  logline: string;
+  characters:
+    | Character[]
+    | { ids: string[]; entities: Record<string, Character> };
+  worlds: World[] | { ids: string[]; entities: Record<string, World> };
+  outline?: OutlineSection[];
+  manuscript?: StorySection[];
+  projectGoals?: ProjectData["projectGoals"];
+  writingHistory?: ProjectData["writingHistory"];
 }
 
 const initialState: { data: ProjectData } = {
-    data: {
-        title: '',
-        logline: '',
-        characters: charactersAdapter.getInitialState(),
-        worlds: worldsAdapter.getInitialState(),
-        outline: [],
-        manuscript: [],
-        projectGoals: {
-            totalWordCount: 50000,
-            targetDate: null,
-        },
-        writingHistory: [],
-    }
+  data: {
+    title: "",
+    logline: "",
+    characters: charactersAdapter.getInitialState(),
+    worlds: worldsAdapter.getInitialState(),
+    outline: [],
+    manuscript: [],
+    projectGoals: {
+      totalWordCount: 50000,
+      targetDate: null,
+    },
+    writingHistory: [],
+  },
 };
 
 // --- Async Thunks ---
 export const generateLoglineSuggestionsThunk = createAsyncThunk(
-    'project/generateLogline',
-    async (lang: string, { getState }) => {
-        const state = getState() as RootState;
-        const project = state.project.present.data;
-        const creativity = state.settings.aiCreativity;
-        
-        const { prompt, schema } = getPrompts('logline', { project, lang });
-        const response = await generateJson<string[]>(prompt, creativity, schema);
-        return response;
-    }
+  "project/generateLogline",
+  async (lang: string, { getState }) => {
+    const state = getState() as RootState;
+    const project = state.project.present.data;
+    const creativity = state.settings.aiCreativity;
+
+    const { prompt, schema } = getPrompts("logline", { project, lang });
+    const response = await generateJson<string[]>(prompt, creativity, schema);
+    return response;
+  },
 );
 
 export const importProjectThunk = createAsyncThunk(
-    'project/importProject',
-    async (file: File) => {
-        const text = await file.text();
-        const projectData = JSON.parse(text) as ImportedProjectData;
-        
-        const charactersState = charactersAdapter.getInitialState();
-        const worldsState = worldsAdapter.getInitialState();
+  "project/importProject",
+  async (file: File) => {
+    const text = await file.text();
+    const projectData = JSON.parse(text) as ImportedProjectData;
 
-        const charactersToSet: Character[] = [];
-        const worldsToSet: World[] = [];
+    const charactersState = charactersAdapter.getInitialState();
+    const worldsState = worldsAdapter.getInitialState();
 
-        let characterArray: (Character & { avatarBase64?: string })[] = [];
-        if (Array.isArray(projectData.characters)) {
-            characterArray = projectData.characters;
-        } else if (projectData.characters && 'ids' in projectData.characters && 'entities' in projectData.characters) {
-            const { ids, entities } = projectData.characters;
-            characterArray = ids.map((id: string) => entities[id]);
-        }
+    const charactersToSet: Character[] = [];
+    const worldsToSet: World[] = [];
 
-        for(const char of characterArray) {
-            const newChar = { ...char };
-            if (newChar.avatarBase64) {
-                await storageService.saveImage(newChar.id, newChar.avatarBase64);
-                newChar.hasAvatar = true;
-                delete newChar.avatarBase64;
-            }
-            charactersToSet.push(newChar);
-        }
-        charactersAdapter.setAll(charactersState, charactersToSet);
-        
-        let worldArray: (World & { ambianceImageBase64?: string })[] = [];
-        if (Array.isArray(projectData.worlds)) {
-            worldArray = projectData.worlds;
-        } else if (projectData.worlds && 'ids' in projectData.worlds && 'entities' in projectData.worlds) {
-            const { ids, entities } = projectData.worlds;
-            worldArray = ids.map((id: string) => entities[id]);
-        }
-
-        for(const world of worldArray) {
-            const newWorld = { ...world };
-            if (newWorld.ambianceImageBase64) {
-                await storageService.saveImage(newWorld.id, newWorld.ambianceImageBase64);
-                newWorld.hasAmbianceImage = true;
-                delete newWorld.ambianceImageBase64;
-            }
-            worldsToSet.push(newWorld);
-        }
-        worldsAdapter.setAll(worldsState, worldsToSet);
-
-        return {
-            title: projectData.title,
-            logline: projectData.logline,
-            characters: charactersState,
-            worlds: worldsState,
-            outline: projectData.outline || [],
-            manuscript: projectData.manuscript || [],
-            projectGoals: projectData.projectGoals || initialState.data.projectGoals,
-            writingHistory: projectData.writingHistory || [],
-        } as ProjectData;
+    let characterArray: (Character & { avatarBase64?: string })[] = [];
+    if (Array.isArray(projectData.characters)) {
+      characterArray = projectData.characters;
+    } else if (
+      projectData.characters &&
+      "ids" in projectData.characters &&
+      "entities" in projectData.characters
+    ) {
+      const { ids, entities } = projectData.characters;
+      characterArray = ids.map((id: string) => entities[id]);
     }
+
+    for (const char of characterArray) {
+      const newChar = { ...char };
+      if (newChar.avatarBase64) {
+        await storageService.saveImage(newChar.id, newChar.avatarBase64);
+        newChar.hasAvatar = true;
+        delete newChar.avatarBase64;
+      }
+      charactersToSet.push(newChar);
+    }
+    charactersAdapter.setAll(charactersState, charactersToSet);
+
+    let worldArray: (World & { ambianceImageBase64?: string })[] = [];
+    if (Array.isArray(projectData.worlds)) {
+      worldArray = projectData.worlds;
+    } else if (
+      projectData.worlds &&
+      "ids" in projectData.worlds &&
+      "entities" in projectData.worlds
+    ) {
+      const { ids, entities } = projectData.worlds;
+      worldArray = ids.map((id: string) => entities[id]);
+    }
+
+    for (const world of worldArray) {
+      const newWorld = { ...world };
+      if (newWorld.ambianceImageBase64) {
+        await storageService.saveImage(
+          newWorld.id,
+          newWorld.ambianceImageBase64,
+        );
+        newWorld.hasAmbianceImage = true;
+        delete newWorld.ambianceImageBase64;
+      }
+      worldsToSet.push(newWorld);
+    }
+    worldsAdapter.setAll(worldsState, worldsToSet);
+
+    return {
+      title: projectData.title,
+      logline: projectData.logline,
+      characters: charactersState,
+      worlds: worldsState,
+      outline: projectData.outline || [],
+      manuscript: projectData.manuscript || [],
+      projectGoals: projectData.projectGoals || initialState.data.projectGoals,
+      writingHistory: projectData.writingHistory || [],
+    } as ProjectData;
+  },
 );
 
 export const restoreSnapshotThunk = createAsyncThunk(
-    'project/restoreSnapshot',
-    async (snapshotId: number) => {
-        const data = await storageService.getSnapshotData(snapshotId);
-        return data;
-    }
+  "project/restoreSnapshot",
+  async (snapshotId: number) => {
+    const data = await storageService.getSnapshotData(snapshotId);
+    return data;
+  },
 );
 
 export const generateCharacterProfileThunk = createAsyncThunk(
-    'project/generateCharacterProfile',
-    async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        // Pass thinking budget indirectly via prompt type config in geminiService
-        const { prompt, schema, thinkingBudget } = getPrompts('characterProfile', { concept, lang });
-        return await generateJson<Omit<Character, 'id'>>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-    }
+  "project/generateCharacterProfile",
+  async (
+    { concept, lang }: { concept: string; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    // Pass thinking budget indirectly via prompt type config in geminiService
+    const { prompt, schema, thinkingBudget } = getPrompts("characterProfile", {
+      concept,
+      lang,
+    });
+    return await generateJson<Omit<Character, "id">>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+  },
 );
 
 export const regenerateCharacterFieldThunk = createAsyncThunk(
-    'project/regenerateCharacterField',
-    async ({ character, field, lang }: { character: Character, field: keyof Character, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt } = getPrompts('regenerateCharacterField', { character, field, lang });
-        const response = await generateText(prompt, state.settings.aiCreativity);
-        return { field, value: response };
-    }
+  "project/regenerateCharacterField",
+  async (
+    {
+      character,
+      field,
+      lang,
+    }: { character: Character; field: keyof Character; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const { prompt } = getPrompts("regenerateCharacterField", {
+      character,
+      field,
+      lang,
+    });
+    const response = await generateText(prompt, state.settings.aiCreativity);
+    return { field, value: response };
+  },
 );
 
 export const generateCharacterPortraitThunk = createAsyncThunk(
-    'project/generateCharacterPortrait',
-    async ({ characterId, description, style, lang }: { characterId: string; description: string; style?: string; lang: string }) => {
-        const fullDescription = style ? `${description}. Style: ${style}` : description;
-        const { prompt } = getPrompts('characterPortrait', { description: fullDescription, lang });
-        const base64 = await generateImage(prompt);
-        await storageService.saveImage(characterId, base64);
-        return { characterId };
-    }
+  "project/generateCharacterPortrait",
+  async ({
+    characterId,
+    description,
+    style,
+    lang,
+  }: {
+    characterId: string;
+    description: string;
+    style?: string;
+    lang: string;
+  }) => {
+    const fullDescription = style
+      ? `${description}. Style: ${style}`
+      : description;
+    const { prompt } = getPrompts("characterPortrait", {
+      description: fullDescription,
+      lang,
+    });
+    const base64 = await generateImage(prompt);
+    await storageService.saveImage(characterId, base64);
+    return { characterId };
+  },
 );
 
 export const uploadCharacterImageThunk = createAsyncThunk(
-    'project/uploadCharacterImage',
-    async ({ characterId, file }: { characterId: string, file: File }) => {
-        return new Promise<{ characterId: string }>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
-                await storageService.saveImage(characterId, base64);
-                resolve({ characterId });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
+  "project/uploadCharacterImage",
+  async ({ characterId, file }: { characterId: string; file: File }) => {
+    return new Promise<{ characterId: string }>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = (reader.result as string).replace(
+          /^data:image\/\w+;base64,/,
+          "",
+        );
+        await storageService.saveImage(characterId, base64);
+        resolve({ characterId });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
 );
 
 export const generateWorldProfileThunk = createAsyncThunk(
-    'project/generateWorldProfile',
-    async ({ concept, lang }: { concept: string, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt, schema, thinkingBudget } = getPrompts('worldProfile', { concept, lang });
-        return await generateJson<Omit<World, 'id'>>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-    }
+  "project/generateWorldProfile",
+  async (
+    { concept, lang }: { concept: string; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts("worldProfile", {
+      concept,
+      lang,
+    });
+    return await generateJson<Omit<World, "id">>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+  },
 );
 
 export const regenerateWorldFieldThunk = createAsyncThunk(
-    'project/regenerateWorldField',
-    async ({ world, field, lang }: { world: World, field: keyof World, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt } = getPrompts('regenerateWorldField', { world, field, lang });
-        const response = await generateText(prompt, state.settings.aiCreativity);
-        return { field, value: response };
-    }
+  "project/regenerateWorldField",
+  async (
+    { world, field, lang }: { world: World; field: keyof World; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const { prompt } = getPrompts("regenerateWorldField", {
+      world,
+      field,
+      lang,
+    });
+    const response = await generateText(prompt, state.settings.aiCreativity);
+    return { field, value: response };
+  },
 );
 
 export const generateWorldImageThunk = createAsyncThunk(
-    'project/generateWorldImage',
-    async ({ worldId, description, lang }: { worldId: string, description: string, lang: string }) => {
-        const { prompt } = getPrompts('worldImage', { description, lang });
-        const base64 = await generateImage(prompt);
-        await storageService.saveImage(worldId, base64);
-        return { worldId };
-    }
+  "project/generateWorldImage",
+  async ({
+    worldId,
+    description,
+    lang,
+  }: {
+    worldId: string;
+    description: string;
+    lang: string;
+  }) => {
+    const { prompt } = getPrompts("worldImage", { description, lang });
+    const base64 = await generateImage(prompt);
+    await storageService.saveImage(worldId, base64);
+    return { worldId };
+  },
 );
 
 export const uploadWorldImageThunk = createAsyncThunk(
-    'project/uploadWorldImage',
-    async ({ worldId, file }: { worldId: string, file: File }) => {
-        return new Promise<{ worldId: string }>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
-                await storageService.saveImage(worldId, base64);
-                resolve({ worldId });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
+  "project/uploadWorldImage",
+  async ({ worldId, file }: { worldId: string; file: File }) => {
+    return new Promise<{ worldId: string }>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = (reader.result as string).replace(
+          /^data:image\/\w+;base64,/,
+          "",
+        );
+        await storageService.saveImage(worldId, base64);
+        resolve({ worldId });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
 );
 
 export const generateOutlineThunk = createAsyncThunk(
-    'project/generateOutline',
-    async (params: OutlineGenerationParams, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt, schema, thinkingBudget } = getPrompts('outline', params);
-        return await generateJson<OutlineSection[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-    }
+  "project/generateOutline",
+  async (params: OutlineGenerationParams, { getState }) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts("outline", params);
+    return await generateJson<OutlineSection[]>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+  },
 );
 
 export const regenerateOutlineSectionThunk = createAsyncThunk(
-    'project/regenerateOutlineSection',
-    async ({ allSections, sectionToIndex, lang }: { allSections: OutlineSection[], sectionToIndex: number, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt, schema, thinkingBudget } = getPrompts('regenerateOutlineSection', { allSections, sectionToIndex, lang });
-        const response = await generateJson<OutlineSection>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-        return { index: sectionToIndex, newSection: response };
-    }
+  "project/regenerateOutlineSection",
+  async (
+    {
+      allSections,
+      sectionToIndex,
+      lang,
+    }: { allSections: OutlineSection[]; sectionToIndex: number; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts(
+      "regenerateOutlineSection",
+      { allSections, sectionToIndex, lang },
+    );
+    const response = await generateJson<OutlineSection>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+    return { index: sectionToIndex, newSection: response };
+  },
 );
 
 export const personalizeTemplateThunk = createAsyncThunk(
-    'project/personalizeTemplate',
-    async ({ sections, concept, lang }: { sections: {title: string}[], concept: string, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt, schema, thinkingBudget } = getPrompts('personalizeTemplate', { sections, concept, lang });
-        return await generateJson<{ title: string; prompt: string }[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-    }
+  "project/personalizeTemplate",
+  async (
+    {
+      sections,
+      concept,
+      lang,
+    }: { sections: { title: string }[]; concept: string; lang: string },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts(
+      "personalizeTemplate",
+      { sections, concept, lang },
+    );
+    return await generateJson<{ title: string; prompt: string }[]>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+  },
 );
 
 export const generateCustomTemplateThunk = createAsyncThunk(
-    'project/generateCustomTemplate',
-    async (params: CustomTemplateParams, { getState }) => {
-        const state = getState() as RootState;
-        const { prompt, schema, thinkingBudget } = getPrompts('customTemplate', params);
-        return await generateJson<{ title: string }[]>(prompt, state.settings.aiCreativity, schema, undefined, thinkingBudget);
-    }
+  "project/generateCustomTemplate",
+  async (params: CustomTemplateParams, { getState }) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts(
+      "customTemplate",
+      params,
+    );
+    return await generateJson<{ title: string }[]>(
+      prompt,
+      state.settings.aiCreativity,
+      schema,
+      undefined,
+      thinkingBudget,
+    );
+  },
 );
 
 export const streamGenerationThunk = createAsyncThunk(
-    'project/streamGeneration',
-    async ({ prompt, lang, onChunk, signal }: { prompt: string, lang: string, onChunk: (chunk: string) => void, signal?: AbortSignal }, { getState }) => {
-        const state = getState() as RootState;
-        const fullPrompt = `${prompt}\n\nRespond in ${lang === 'de' ? 'German' : 'English'}.`;
-        await streamText(fullPrompt, state.settings.aiCreativity, onChunk, signal);
-    }
+  "project/streamGeneration",
+  async (
+    {
+      prompt,
+      lang,
+      onChunk,
+      signal,
+    }: {
+      prompt: string;
+      lang: string;
+      onChunk: (chunk: string) => void;
+      signal?: AbortSignal;
+    },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+    const fullPrompt = `${prompt}\n\nRespond in ${lang === "de" ? "German" : "English"}.`;
+    await streamText(fullPrompt, state.settings.aiCreativity, onChunk, signal);
+  },
 );
 
-
 export const generateSynopsisThunk = createAsyncThunk(
-    'project/generateSynopsis',
-    async (lang: string, { getState }) => {
-        const state = getState() as RootState;
-        const project = state.project.present.data;
-        const creativity = state.settings.aiCreativity;
-        const { prompt, thinkingBudget } = getPrompts('synopsis', { project, lang });
-        return await generateText(prompt, creativity, undefined, thinkingBudget);
-    }
+  "project/generateSynopsis",
+  async (lang: string, { getState }) => {
+    const state = getState() as RootState;
+    const project = state.project.present.data;
+    const creativity = state.settings.aiCreativity;
+    const { prompt, thinkingBudget } = getPrompts("synopsis", {
+      project,
+      lang,
+    });
+    return await generateText(prompt, creativity, undefined, thinkingBudget);
+  },
 );
 
 export const proofreadTextThunk = createAsyncThunk(
-    'project/proofreadText',
-    async ({ text, lang }: { text: string, lang: string }, { getState }) => {
-        const state = getState() as RootState;
-        const creativity = state.settings.aiCreativity;
-        const { prompt, schema, thinkingBudget } = getPrompts('proofread', { text, lang });
-        return await generateJson<{ original: string, suggestion: string, explanation: string }[]>(prompt, creativity, schema, undefined, thinkingBudget);
-    }
+  "project/proofreadText",
+  async ({ text, lang }: { text: string; lang: string }, { getState }) => {
+    const state = getState() as RootState;
+    const creativity = state.settings.aiCreativity;
+    const { prompt, schema, thinkingBudget } = getPrompts("proofread", {
+      text,
+      lang,
+    });
+    return await generateJson<
+      { original: string; suggestion: string; explanation: string }[]
+    >(prompt, creativity, schema, undefined, thinkingBudget);
+  },
 );
 
 // --- Slice Definition ---
 const projectSlice = createSlice({
-    name: 'project',
-    initialState,
-    reducers: {
-        // --- Project Meta ---
-        updateTitle: (state, action: PayloadAction<string>) => {
-            state.data.title = action.payload;
-        },
-        updateLogline: (state, action: PayloadAction<string>) => {
-            state.data.logline = action.payload;
-        },
-        updateProjectGoal: (state, action: PayloadAction<{ key: 'totalWordCount' | 'targetDate'; value: number | string | null }>) => {
-            if (state.data.projectGoals) {
-                if (action.payload.key === 'totalWordCount') {
-                    state.data.projectGoals.totalWordCount = action.payload.value as number;
-                } else if (action.payload.key === 'targetDate') {
-                    state.data.projectGoals.targetDate = action.payload.value as string | null;
-                }
-            }
-        },
-        resetProject: (state, action: PayloadAction<{title: string, logline: string}>) => {
-            state.data = {
-                ...initialState.data,
-                title: action.payload.title,
-                logline: action.payload.logline,
-                characters: charactersAdapter.getInitialState(),
-                worlds: worldsAdapter.getInitialState(),
-                 manuscript: [{ id: `sec-${Date.now()}`, title: 'Chapter 1', content: '' }],
-            };
-        },
-        // --- Characters ---
-        addCharacter: (state, action: PayloadAction<Partial<Character> & { name: string }>) => {
-            const newChar: Character = {
-                id: uuidv4(),
-                name: action.payload.name,
-                backstory: '', motivation: '', appearance: '', personalityTraits: '',
-                flaws: '', notes: '', hasAvatar: false, characterArc: '', relationships: '',
-                ...action.payload,
-            };
-            charactersAdapter.addOne(state.data.characters, newChar);
-        },
-        updateCharacter: (state, action: PayloadAction<{ id: string; changes: Partial<Character> }>) => {
-            charactersAdapter.updateOne(state.data.characters, {id: action.payload.id, changes: action.payload.changes});
-        },
-        deleteCharacter: (state, action: PayloadAction<string>) => {
-            charactersAdapter.removeOne(state.data.characters, action.payload);
-        },
-        // --- Worlds ---
-        addWorld: (state, action: PayloadAction<Partial<World> & { name: string }>) => {
-            const newWorld: World = {
-                id: uuidv4(),
-                name: action.payload.name,
-                description: '', geography: '', magicSystem: '', culture: '',
-                notes: '', hasAmbianceImage: false, timeline: [], locations: [],
-                ...action.payload,
-            };
-            worldsAdapter.addOne(state.data.worlds, newWorld);
-        },
-        updateWorld: (state, action: PayloadAction<{ id: string; changes: Partial<World> }>) => {
-            worldsAdapter.updateOne(state.data.worlds, {id: action.payload.id, changes: action.payload.changes});
-        },
-        deleteWorld: (state, action: PayloadAction<string>) => {
-            worldsAdapter.removeOne(state.data.worlds, action.payload);
-        },
-        // --- Outline ---
-        setOutline: (state, action: PayloadAction<OutlineSection[]>) => {
-            state.data.outline = action.payload;
-        },
-        // --- Manuscript ---
-        setManuscript: (state, action: PayloadAction<StorySection[]>) => {
-            state.data.manuscript = action.payload;
-        },
-        updateManuscriptSection: (state, action: PayloadAction<{ id: string; changes: Partial<StorySection> }>) => {
-            const index = state.data.manuscript.findIndex(s => s.id === action.payload.id);
-            if (index !== -1) {
-                state.data.manuscript[index] = { ...state.data.manuscript[index], ...action.payload.changes };
-            }
-        },
-        addManuscriptSection: (state, action: PayloadAction<{ title: string; index?: number }>) => {
-            const newSection: StorySection = { id: uuidv4(), title: action.payload.title, content: '' };
-            if (action.payload.index !== undefined) {
-                state.data.manuscript.splice(action.payload.index, 0, newSection);
-            } else {
-                state.data.manuscript.push(newSection);
-            }
-        },
-        deleteManuscriptSection: (state, action: PayloadAction<string>) => {
-            state.data.manuscript = state.data.manuscript.filter(s => s.id !== action.payload);
-        },
-        // --- Relationships ---
-        addRelationship: (state, action: PayloadAction<CharacterRelationship>) => {
-            if (!state.data.relationships) state.data.relationships = [];
-            state.data.relationships.push(action.payload);
-        },
-        updateRelationship: (state, action: PayloadAction<{ id: string; changes: Partial<CharacterRelationship> }>) => {
-            if (!state.data.relationships) state.data.relationships = [];
-            const index = state.data.relationships.findIndex(r => r.id === action.payload.id);
-            if (index !== -1) {
-                state.data.relationships[index] = { ...state.data.relationships[index], ...action.payload.changes };
-            }
-        },
-        deleteRelationship: (state, action: PayloadAction<string>) => {
-            if (!state.data.relationships) state.data.relationships = [];
-            state.data.relationships = state.data.relationships.filter(r => r.id !== action.payload);
-        },
-        // --- Scene Board ---
-        updateSceneBoardLayout: (state, action: PayloadAction<{ [sectionId: string]: { x: number; y: number } }>) => {
-            state.data.sceneBoardLayout = { ...state.data.sceneBoardLayout, ...action.payload };
-        },
-        // --- Writing Analytics ---
-        addWritingSession: (state, action: PayloadAction<WritingSession>) => {
-            if (!state.data.writingSessions) state.data.writingSessions = [];
-            state.data.writingSessions.push(action.payload);
-        },
-        updateWritingGoal: (state, action: PayloadAction<{ id: string; changes: Partial<WritingGoal> }>) => {
-            if (!state.data.writingGoals) state.data.writingGoals = [];
-            const index = state.data.writingGoals.findIndex(g => g.id === action.payload.id);
-            if (index !== -1) {
-                state.data.writingGoals[index] = { ...state.data.writingGoals[index], ...action.payload.changes };
-            }
-        },
+  name: "project",
+  initialState,
+  reducers: {
+    // --- Project Meta ---
+    updateTitle: (state, action: PayloadAction<string>) => {
+      state.data.title = action.payload;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(importProjectThunk.fulfilled, (state, action) => {
-                state.data = action.payload;
-            })
-            .addCase(restoreSnapshotThunk.fulfilled, (state, action) => {
-                state.data = action.payload;
-            })
-            .addCase(generateCharacterPortraitThunk.fulfilled, (state, action) => {
-                charactersAdapter.updateOne(state.data.characters, {
-                    id: action.payload.characterId,
-                    changes: { hasAvatar: true }
-                });
-            })
-            .addCase(uploadCharacterImageThunk.fulfilled, (state, action) => {
-                charactersAdapter.updateOne(state.data.characters, {
-                    id: action.payload.characterId,
-                    changes: { hasAvatar: true }
-                });
-            })
-            .addCase(generateWorldImageThunk.fulfilled, (state, action) => {
-                worldsAdapter.updateOne(state.data.worlds, {
-                    id: action.payload.worldId,
-                    changes: { hasAmbianceImage: true }
-                });
-            })
-            .addCase(uploadWorldImageThunk.fulfilled, (state, action) => {
-                worldsAdapter.updateOne(state.data.worlds, {
-                    id: action.payload.worldId,
-                    changes: { hasAmbianceImage: true }
-                });
-            });
-    }
+    updateLogline: (state, action: PayloadAction<string>) => {
+      state.data.logline = action.payload;
+    },
+    updateProjectGoal: (
+      state,
+      action: PayloadAction<{
+        key: "totalWordCount" | "targetDate";
+        value: number | string | null;
+      }>,
+    ) => {
+      if (state.data.projectGoals) {
+        if (action.payload.key === "totalWordCount") {
+          state.data.projectGoals.totalWordCount = action.payload
+            .value as number;
+        } else if (action.payload.key === "targetDate") {
+          state.data.projectGoals.targetDate = action.payload.value as
+            | string
+            | null;
+        }
+      }
+    },
+    resetProject: (
+      state,
+      action: PayloadAction<{ title: string; logline: string }>,
+    ) => {
+      state.data = {
+        ...initialState.data,
+        title: action.payload.title,
+        logline: action.payload.logline,
+        characters: charactersAdapter.getInitialState(),
+        worlds: worldsAdapter.getInitialState(),
+        manuscript: [
+          { id: `sec-${Date.now()}`, title: "Chapter 1", content: "" },
+        ],
+      };
+    },
+    // --- Characters ---
+    addCharacter: (
+      state,
+      action: PayloadAction<Partial<Character> & { name: string }>,
+    ) => {
+      const newChar: Character = {
+        id: uuidv4(),
+        name: action.payload.name,
+        backstory: "",
+        motivation: "",
+        appearance: "",
+        personalityTraits: "",
+        flaws: "",
+        notes: "",
+        hasAvatar: false,
+        characterArc: "",
+        relationships: "",
+        ...action.payload,
+      };
+      charactersAdapter.addOne(state.data.characters, newChar);
+    },
+    updateCharacter: (
+      state,
+      action: PayloadAction<{ id: string; changes: Partial<Character> }>,
+    ) => {
+      charactersAdapter.updateOne(state.data.characters, {
+        id: action.payload.id,
+        changes: action.payload.changes,
+      });
+    },
+    deleteCharacter: (state, action: PayloadAction<string>) => {
+      charactersAdapter.removeOne(state.data.characters, action.payload);
+    },
+    // --- Worlds ---
+    addWorld: (
+      state,
+      action: PayloadAction<Partial<World> & { name: string }>,
+    ) => {
+      const newWorld: World = {
+        id: uuidv4(),
+        name: action.payload.name,
+        description: "",
+        geography: "",
+        magicSystem: "",
+        culture: "",
+        notes: "",
+        hasAmbianceImage: false,
+        timeline: [],
+        locations: [],
+        ...action.payload,
+      };
+      worldsAdapter.addOne(state.data.worlds, newWorld);
+    },
+    updateWorld: (
+      state,
+      action: PayloadAction<{ id: string; changes: Partial<World> }>,
+    ) => {
+      worldsAdapter.updateOne(state.data.worlds, {
+        id: action.payload.id,
+        changes: action.payload.changes,
+      });
+    },
+    deleteWorld: (state, action: PayloadAction<string>) => {
+      worldsAdapter.removeOne(state.data.worlds, action.payload);
+    },
+    // --- Outline ---
+    setOutline: (state, action: PayloadAction<OutlineSection[]>) => {
+      state.data.outline = action.payload;
+    },
+    // --- Manuscript ---
+    setManuscript: (state, action: PayloadAction<StorySection[]>) => {
+      state.data.manuscript = action.payload;
+    },
+    updateManuscriptSection: (
+      state,
+      action: PayloadAction<{ id: string; changes: Partial<StorySection> }>,
+    ) => {
+      const index = state.data.manuscript.findIndex(
+        (s) => s.id === action.payload.id,
+      );
+      if (index !== -1) {
+        state.data.manuscript[index] = {
+          ...state.data.manuscript[index],
+          ...action.payload.changes,
+        };
+      }
+    },
+    addManuscriptSection: (
+      state,
+      action: PayloadAction<{ title: string; index?: number }>,
+    ) => {
+      const newSection: StorySection = {
+        id: uuidv4(),
+        title: action.payload.title,
+        content: "",
+      };
+      if (action.payload.index !== undefined) {
+        state.data.manuscript.splice(action.payload.index, 0, newSection);
+      } else {
+        state.data.manuscript.push(newSection);
+      }
+    },
+    deleteManuscriptSection: (state, action: PayloadAction<string>) => {
+      state.data.manuscript = state.data.manuscript.filter(
+        (s) => s.id !== action.payload,
+      );
+    },
+    // --- Relationships ---
+    addRelationship: (state, action: PayloadAction<CharacterRelationship>) => {
+      if (!state.data.relationships) state.data.relationships = [];
+      state.data.relationships.push(action.payload);
+    },
+    updateRelationship: (
+      state,
+      action: PayloadAction<{
+        id: string;
+        changes: Partial<CharacterRelationship>;
+      }>,
+    ) => {
+      if (!state.data.relationships) state.data.relationships = [];
+      const index = state.data.relationships.findIndex(
+        (r) => r.id === action.payload.id,
+      );
+      if (index !== -1) {
+        state.data.relationships[index] = {
+          ...state.data.relationships[index],
+          ...action.payload.changes,
+        };
+      }
+    },
+    deleteRelationship: (state, action: PayloadAction<string>) => {
+      if (!state.data.relationships) state.data.relationships = [];
+      state.data.relationships = state.data.relationships.filter(
+        (r) => r.id !== action.payload,
+      );
+    },
+    // --- Scene Board ---
+    updateSceneBoardLayout: (
+      state,
+      action: PayloadAction<{ [sectionId: string]: { x: number; y: number } }>,
+    ) => {
+      state.data.sceneBoardLayout = {
+        ...state.data.sceneBoardLayout,
+        ...action.payload,
+      };
+    },
+    // --- Writing Analytics ---
+    addWritingSession: (state, action: PayloadAction<WritingSession>) => {
+      if (!state.data.writingSessions) state.data.writingSessions = [];
+      state.data.writingSessions.push(action.payload);
+    },
+    updateWritingGoal: (
+      state,
+      action: PayloadAction<{ id: string; changes: Partial<WritingGoal> }>,
+    ) => {
+      if (!state.data.writingGoals) state.data.writingGoals = [];
+      const index = state.data.writingGoals.findIndex(
+        (g) => g.id === action.payload.id,
+      );
+      if (index !== -1) {
+        state.data.writingGoals[index] = {
+          ...state.data.writingGoals[index],
+          ...action.payload.changes,
+        };
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(importProjectThunk.fulfilled, (state, action) => {
+        state.data = action.payload;
+      })
+      .addCase(restoreSnapshotThunk.fulfilled, (state, action) => {
+        state.data = action.payload;
+      })
+      .addCase(generateCharacterPortraitThunk.fulfilled, (state, action) => {
+        charactersAdapter.updateOne(state.data.characters, {
+          id: action.payload.characterId,
+          changes: { hasAvatar: true },
+        });
+      })
+      .addCase(uploadCharacterImageThunk.fulfilled, (state, action) => {
+        charactersAdapter.updateOne(state.data.characters, {
+          id: action.payload.characterId,
+          changes: { hasAvatar: true },
+        });
+      })
+      .addCase(generateWorldImageThunk.fulfilled, (state, action) => {
+        worldsAdapter.updateOne(state.data.worlds, {
+          id: action.payload.worldId,
+          changes: { hasAmbianceImage: true },
+        });
+      })
+      .addCase(uploadWorldImageThunk.fulfilled, (state, action) => {
+        worldsAdapter.updateOne(state.data.worlds, {
+          id: action.payload.worldId,
+          changes: { hasAmbianceImage: true },
+        });
+      });
+  },
 });
 
 export const projectActions = projectSlice.actions;

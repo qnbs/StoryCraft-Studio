@@ -1,5 +1,7 @@
-// Node.js-Backend für EPUB-Export
-// Beispiel für Express + epub-gen
+// DEPRECATED: Node.js-Backend für EPUB-Export
+// EPUB-Export ist seit v2.0 vollständig client-seitig implementiert (services/epubApiService.ts).
+// Diese Datei wird nicht mehr verwendet und wird in einem zukünftigen Release entfernt.
+// Ursprüngliches Beispiel für Express + epub-gen
 
 const express = require('express');
 const Epub = require('epub-gen');
