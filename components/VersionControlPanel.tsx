@@ -30,6 +30,7 @@ const BranchBadge: FC<{ branch: VersionBranch; isActive?: boolean }> = ({
     }`}
   >
     <span
+      aria-hidden="true"
       className="w-2 h-2 rounded-full flex-shrink-0"
       style={{ backgroundColor: branch.color }}
     />
@@ -205,13 +206,15 @@ export const VersionControlPanel: FC = () => {
       {/* Drawer */}
       <aside
         className="fixed right-0 top-0 h-full w-full max-w-md bg-[var(--background-primary)] border-l border-[var(--border-primary)] shadow-2xl z-50 flex flex-col overflow-hidden"
-        role="complementary"
-        aria-label="Versionsverlauf"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="version-control-heading"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
           <div className="flex items-center gap-3">
             <svg
+              aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -225,7 +228,10 @@ export const VersionControlPanel: FC = () => {
                 d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
               />
             </svg>
-            <h2 className="text-lg font-bold text-[var(--foreground-primary)]">
+            <h2
+              id="version-control-heading"
+              className="text-lg font-bold text-[var(--foreground-primary)]"
+            >
               Versionsverlauf
             </h2>
           </div>
@@ -234,7 +240,7 @@ export const VersionControlPanel: FC = () => {
             className="p-2 rounded-md hover:bg-[var(--background-secondary)] text-[var(--foreground-secondary)] transition-colors"
             aria-label="Versionsverlauf schließen"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         </div>
 

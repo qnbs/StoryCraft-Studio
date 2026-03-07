@@ -460,7 +460,7 @@ const ToolsPanel: FC = React.memo(() => {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24"
+                  viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="w-6 h-6 mb-1"
@@ -534,7 +534,7 @@ const ToolsPanel: FC = React.memo(() => {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24"
+                  viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="w-5 h-5 mr-2"
@@ -556,7 +556,7 @@ const ToolsPanel: FC = React.memo(() => {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24"
+                  viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="w-5 h-5 mr-2"
@@ -644,7 +644,7 @@ const AiScratchpad: FC = React.memo(() => {
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
-                    viewBox="0 0 24"
+                    viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
                     className="w-4 h-4"
@@ -670,7 +670,7 @@ const AiScratchpad: FC = React.memo(() => {
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
-                    viewBox="0 0 24"
+                    viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
                     className="w-4 h-4"
@@ -708,7 +708,7 @@ const AiScratchpad: FC = React.memo(() => {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
-                        viewBox="0 0 24"
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
                         stroke="currentColor"
                         className="w-4 h-4"
@@ -723,7 +723,7 @@ const AiScratchpad: FC = React.memo(() => {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
-                        viewBox="0 0 24"
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
                         stroke="currentColor"
                         className="w-4 h-4"
@@ -746,7 +746,7 @@ const AiScratchpad: FC = React.memo(() => {
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
-                    viewBox="0 0 24"
+                    viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
                     className="w-4 h-4"

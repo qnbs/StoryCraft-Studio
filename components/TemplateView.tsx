@@ -115,7 +115,7 @@ const PreviewModal: FC = () => {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24"
+                  viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="w-5 h-5 mr-2"
@@ -160,7 +160,7 @@ const PreviewModal: FC = () => {
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
-                    viewBox="0 0 24"
+                    viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
                     className="w-5 h-5 text-gray-500 flex-shrink-0"
@@ -187,7 +187,7 @@ const PreviewModal: FC = () => {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
-                        viewBox="0 0 24"
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
                         stroke="currentColor"
                         className="w-5 h-5"
@@ -205,7 +205,7 @@ const PreviewModal: FC = () => {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
-                        viewBox="0 0 24"
+                        viewBox="0 0 24 24"
                         strokeWidth={1.5}
                         stroke="currentColor"
                         className="w-5 h-5"
@@ -314,7 +314,7 @@ const CreateCustomModal: FC = () => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
-                viewBox="0 0 24"
+                viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
                 className="w-5 h-5 mr-2"

@@ -91,8 +91,12 @@ const WelcomePortal = lazy(() =>
 
 // Fallback während eine View geladen wird
 const ViewLoader: FC = () => (
-  <div className="flex h-full w-full items-center justify-center">
-    <Spinner className="w-10 h-10 text-indigo-500" />
+  <div
+    role="status"
+    aria-label="Lädt…"
+    className="flex h-full w-full items-center justify-center"
+  >
+    <Spinner className="w-10 h-10 text-indigo-500" label="Lädt…" />
   </div>
 );
 
@@ -214,8 +218,12 @@ const App: FC<AppProps> = ({ isNewUser }) => {
 
   if (isInitialLoad) {
     return (
-      <div className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]">
-        <Spinner className="w-16 h-16" />
+      <div
+        role="status"
+        aria-label="Anwendung wird geladen"
+        className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]"
+      >
+        <Spinner className="w-16 h-16" label="Anwendung wird geladen" />
       </div>
     );
   }
@@ -224,8 +232,12 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     return (
       <Suspense
         fallback={
-          <div className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]">
-            <Spinner className="w-16 h-16" />
+          <div
+            role="status"
+            aria-label="Anwendung wird geladen"
+            className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]"
+          >
+            <Spinner className="w-16 h-16" label="Anwendung wird geladen" />
           </div>
         }
       >
@@ -236,6 +248,17 @@ const App: FC<AppProps> = ({ isNewUser }) => {
 
   return (
     <AppContext.Provider value={appState}>
+      {/* Skip-to-main-content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[var(--background-interactive)] focus:text-white focus:rounded-lg focus:text-sm focus:font-medium focus:shadow-lg"
+      >
+        Zum Hauptinhalt springen
+      </a>
+      {/* ARIA live region: announces view changes to screen readers */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {currentView}
+      </div>
       <div className="flex h-[100dvh] bg-[var(--background-primary)] text-[var(--foreground-primary)] overflow-hidden touch-none md:touch-auto">
         <Sidebar
           currentView={currentView}
@@ -250,7 +273,11 @@ const App: FC<AppProps> = ({ isNewUser }) => {
             isSidebarOpen={appState.isSidebarOpen}
             onOpenPalette={() => setIsPaletteOpen(true)}
           />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth overscroll-none">
+          <main
+            id="main-content"
+            aria-label="Hauptinhalt"
+            className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth overscroll-none"
+          >
             <ErrorBoundary>
               <Suspense fallback={<ViewLoader />}>{renderView()}</Suspense>
             </ErrorBoundary>

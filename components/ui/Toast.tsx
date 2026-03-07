@@ -94,9 +94,10 @@ const ToastItem: FC<{
         <div className="flex items-start">
           <div className="flex-shrink-0">
             <svg
+              aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
-              viewBox="0 0 24"
+              viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
               className="w-6 h-6"
@@ -117,6 +118,7 @@ const ToastItem: FC<{
           <div className="ml-4 flex-shrink-0 flex">
             <button
               onClick={() => onDismiss(message.id)}
+              aria-label="Benachrichtigung schließen"
               className="inline-flex rounded-md text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <span className="sr-only">Close</span>
@@ -185,7 +187,13 @@ export const ToastProvider: FC<{ children: React.ReactNode }> = ({
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-end z-50">
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Benachrichtigungen"
+        className="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-end z-50"
+      >
         <div className="w-full flex flex-col items-center space-y-4 sm:items-end">
           {notifications.map((toast) => (
             <ToastItem key={toast.id} message={toast} onDismiss={removeToast} />

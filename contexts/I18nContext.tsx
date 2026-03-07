@@ -1,6 +1,12 @@
-import React, { createContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from "react";
 
-type Language = 'en' | 'de' | 'fr' | 'es' | 'it';
+type Language = "en" | "de" | "fr" | "es" | "it";
 
 interface I18nContextType {
   language: Language;
@@ -9,98 +15,135 @@ interface I18nContextType {
 }
 
 export const I18nContext = createContext<I18nContextType>({
-  language: 'de',
+  language: "de",
   setLanguage: () => {},
   t: (key: string) => key,
 });
 
 interface I18nProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
-const modules = ['common', 'sidebar', 'portal', 'dashboard', 'manuscript', 'writer', 'templates', 'tags', 'outline', 'characters', 'worlds', 'export', 'settings', 'help'];
+const modules = [
+  "common",
+  "sidebar",
+  "portal",
+  "dashboard",
+  "manuscript",
+  "writer",
+  "templates",
+  "tags",
+  "outline",
+  "characters",
+  "worlds",
+  "export",
+  "settings",
+  "help",
+];
 
-const LANG_KEY = 'storycraft-language';
-const VALID_LANGS: Language[] = ['en', 'de', 'fr', 'es', 'it'];
+const LANG_KEY = "storycraft-language";
+const VALID_LANGS: Language[] = ["en", "de", "fr", "es", "it"];
 
 const getInitialLanguage = (): Language => {
   try {
     const saved = localStorage.getItem(LANG_KEY) as Language;
     if (saved && VALID_LANGS.includes(saved)) return saved;
   } catch {}
-  return 'de';
+  return "de";
 };
 
 export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
-  const [translations, setTranslations] = useState<Record<string, Record<string, any>> | null>(null);
+  const [translations, setTranslations] = useState<Record<
+    string,
+    Record<string, any>
+  > | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
-    try { localStorage.setItem(LANG_KEY, lang); } catch {}
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {}
   }, []);
 
   useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
+  useEffect(() => {
     // KRITISCHER FIX: Verwende import.meta.env.BASE_URL für Subpath-Unterstützung
-    const base = import.meta.env.BASE_URL || '/';
-    
+    const base = import.meta.env.BASE_URL || "/";
+
     const fetchTranslations = async (lang: Language) => {
       const settled = await Promise.allSettled(
-        modules.map(module =>
-          fetch(`${base}locales/${lang}/${module}.json`).then(res => {
+        modules.map((module) =>
+          fetch(`${base}locales/${lang}/${module}.json`).then((res) => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();
-          })
-        )
+          }),
+        ),
       );
-      return settled.reduce((acc, result) => {
-        if (result.status === 'fulfilled') return { ...acc, ...result.value };
-        return acc;
-      }, {} as Record<string, any>);
+      return settled.reduce(
+        (acc, result) => {
+          if (result.status === "fulfilled") return { ...acc, ...result.value };
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
     };
-    
+
     const loadAllLanguages = async () => {
-        setIsLoading(true);
-        try {
-            const [enData, deData, frData, esData, itData] = await Promise.all([
-                fetchTranslations('en'),
-                fetchTranslations('de'),
-                fetchTranslations('fr'),
-                fetchTranslations('es'),
-                fetchTranslations('it')
-            ]);
-            setTranslations({ en: enData, de: deData, fr: frData, es: esData, it: itData });
-        } catch (error) {
-            console.error("Failed to load all translation files", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
+      setIsLoading(true);
+      try {
+        const [enData, deData, frData, esData, itData] = await Promise.all([
+          fetchTranslations("en"),
+          fetchTranslations("de"),
+          fetchTranslations("fr"),
+          fetchTranslations("es"),
+          fetchTranslations("it"),
+        ]);
+        setTranslations({
+          en: enData,
+          de: deData,
+          fr: frData,
+          es: esData,
+          it: itData,
+        });
+      } catch (error) {
+        console.error("Failed to load all translation files", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     loadAllLanguages();
   }, []);
 
-  const t = useCallback((key: string, replacements?: Record<string, string>) => {
-    if (!translations) {
-      return key;
-    }
-    // Fallback auf EN wenn die aktuelle Sprache den Key nicht hat
-    const value = translations[language]?.[key] ?? translations['en']?.[key] ?? key;
+  const t = useCallback(
+    (key: string, replacements?: Record<string, string>) => {
+      if (!translations) {
+        return key;
+      }
+      // Fallback auf EN wenn die aktuelle Sprache den Key nicht hat
+      const value =
+        translations[language]?.[key] ?? translations["en"]?.[key] ?? key;
 
-    if (typeof value !== 'string') {
+      if (typeof value !== "string") {
         return value; // For objects/arrays like help categories
-    }
+      }
 
-    let translation = value;
+      let translation = value;
 
-    if (replacements) {
-      Object.entries(replacements).forEach(([placeholder, value]) => {
-        translation = translation.replace(`{{${placeholder}}}`, value);
-      });
-    }
+      if (replacements) {
+        Object.entries(replacements).forEach(([placeholder, value]) => {
+          translation = translation.replace(`{{${placeholder}}}`, value);
+        });
+      }
 
-    return translation;
-  }, [language, translations]);
+      return translation;
+    },
+    [language, translations],
+  );
 
   if (isLoading) {
     return (

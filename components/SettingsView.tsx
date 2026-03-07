@@ -29,12 +29,14 @@ const NavButton: FC<{
 }> = React.memo(({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
+    aria-current={isActive ? "page" : undefined}
     className={`flex items-center w-full px-3 py-2 text-left rounded-md transition-colors ${isActive ? "bg-[var(--nav-background-active)] text-[var(--nav-text-active)]" : "hover:bg-[var(--nav-background-hover)] text-[var(--foreground-secondary)] hover:text-[var(--foreground-primary)]"}`}
   >
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
-      viewBox="0 0 24"
+      viewBox="0 0 24 24"
       strokeWidth={1.5}
       stroke="currentColor"
       className="w-5 h-5 mr-3"
@@ -959,7 +961,7 @@ const SettingsViewUI: FC = () => {
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
-                              viewBox="0 0 24"
+                              viewBox="0 0 24 24"
                               strokeWidth={1.5}
                               stroke="currentColor"
                               className="w-5 h-5"
@@ -976,7 +978,7 @@ const SettingsViewUI: FC = () => {
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
-                          viewBox="0 0 24"
+                          viewBox="0 0 24 24"
                           strokeWidth={1.5}
                           stroke="currentColor"
                           className="w-8 h-8 text-[var(--foreground-muted)]"
@@ -1818,7 +1820,7 @@ const SettingsViewUI: FC = () => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
-                viewBox="0 0 24"
+                viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
                 className="w-16 h-16 text-indigo-400 mx-auto"
