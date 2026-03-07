@@ -113,7 +113,58 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
       }
     });
 
-    // 3. Search Content (Characters)
+    // 3. AI-Schnellbefehle
+    const aiCommands = [
+      {
+        id: 'ai-outline',
+        title: '/ai outline – KI-Gliederung generieren',
+        view: 'outline' as const,
+        shortcut: ['/ai', 'outline'],
+      },
+      {
+        id: 'ai-character',
+        title: '/ai character – Charakter-Profil generieren',
+        view: 'characters' as const,
+        shortcut: ['/ai', 'char'],
+      },
+      {
+        id: 'ai-consistency',
+        title: '/consistency – Konsistenz prüfen',
+        view: 'consistencyChecker' as const,
+        shortcut: ['/ai', 'check'],
+      },
+      {
+        id: 'ai-critic',
+        title: '/critic – KI-Kritiker starten',
+        view: 'critic' as const,
+        shortcut: ['/ai', 'critic'],
+      },
+      {
+        id: 'ai-writer',
+        title: '/ai write – KI-Schreibstudio öffnen',
+        view: 'writer' as const,
+        shortcut: ['/ai', 'write'],
+      },
+      {
+        id: 'export-pdf',
+        title: '/export – Export & Download',
+        view: 'export' as const,
+        shortcut: ['/export'],
+      },
+    ];
+
+    aiCommands.forEach(cmd => {
+      cmds.push({
+        id: cmd.id,
+        title: cmd.title,
+        icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">{ICONS.SPARKLES}</svg>,
+        category: t('palette.category.ai'),
+        shortcut: cmd.shortcut,
+        action: () => onNavigate(cmd.view),
+      });
+    });
+
+    // 4. Search Content (Characters)
     characters.forEach(char => {
       cmds.push({
         id: `char-${char.id}`,

@@ -1,6 +1,6 @@
 import React, { FC, useState, useEffect, useCallback } from 'react';
 import { dbService } from '../services/dbService';
-import { invalidateAiClientCache } from '../services/geminiService';
+import { invalidateAiClientCache, generateText } from '../services/geminiService';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Spinner } from './ui/Spinner';
@@ -12,6 +12,8 @@ export const ApiKeySection: FC = () => {
   const [hasKey, setHasKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showKey, setShowKey] = useState(false);
 
@@ -48,6 +50,7 @@ export const ApiKeySection: FC = () => {
       setApiKey('');
       setHasKey(true);
       setMessage({ type: 'success', text: t('settings.apiKey.saved') });
+      setTestResult(null);
     } catch (error: any) {
       console.error('Failed to save API key:', error);
       setMessage({ type: 'error', text: error?.message || t('settings.apiKey.errorSave') });
@@ -59,6 +62,7 @@ export const ApiKeySection: FC = () => {
   const handleRemoveKey = async () => {
     setIsSaving(true);
     setMessage(null);
+    setTestResult(null);
     try {
       await dbService.clearGeminiApiKey();
       invalidateAiClientCache();
@@ -69,6 +73,34 @@ export const ApiKeySection: FC = () => {
       setMessage({ type: 'error', text: error?.message || t('settings.apiKey.errorRemove') });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      // Einfacher Ping: kurze Generierungsaufgabe
+      const result = await generateText('Reply with exactly one word: "OK"', 'Focused');
+      if (result && result.length > 0) {
+        setTestResult({ ok: true, text: `Verbindung erfolgreich! API antwortet korrekt.` });
+      } else {
+        setTestResult({ ok: false, text: 'API hat eine leere Antwort geliefert.' });
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'Verbindungstest fehlgeschlagen.';
+      if (msg.includes('INVALID_API_KEY')) {
+        setTestResult({ ok: false, text: 'Ungültiger API-Key. Bitte einen gültigen Key eingeben.' });
+        setHasKey(false);
+      } else if (msg.includes('RATE_LIMITED')) {
+        setTestResult({ ok: false, text: 'Rate-Limit erreicht. Bitte warte kurz und versuche es erneut. (API-Key ist gültig)' });
+      } else if (msg.includes('OFFLINE')) {
+        setTestResult({ ok: false, text: 'Keine Internetverbindung. Bitte Verbindung prüfen.' });
+      } else {
+        setTestResult({ ok: false, text: msg });
+      }
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -87,15 +119,15 @@ export const ApiKeySection: FC = () => {
           {t('settings.apiKey.title')}
         </h3>
         <span className={`px-2 py-1 text-xs rounded-full ${
-          hasKey 
-            ? 'bg-green-500/20 text-green-400' 
+          hasKey
+            ? 'bg-green-500/20 text-green-400'
             : 'bg-yellow-500/20 text-yellow-400'
         }`}>
           {hasKey ? t('settings.apiKey.statusActive') : t('settings.apiKey.statusInactive')}
         </span>
       </div>
 
-      {/* Security Warning */}
+      {/* Security Notice */}
       <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
         <div className="flex items-start gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5">
@@ -112,7 +144,7 @@ export const ApiKeySection: FC = () => {
         </div>
       </div>
 
-      {/* Key Input or Status */}
+      {/* Key Status / Input */}
       {hasKey ? (
         <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--background-tertiary)] border border-[var(--border-primary)]">
           <div className="flex items-center gap-3">
@@ -126,14 +158,35 @@ export const ApiKeySection: FC = () => {
               <p className="text-sm text-[var(--foreground-secondary)]">{t('settings.apiKey.encryptedNote')}</p>
             </div>
           </div>
-          <Button 
-            variant="danger" 
-            size="sm" 
-            onClick={handleRemoveKey}
-            disabled={isSaving}
-          >
-            {isSaving ? <Spinner className="w-4 h-4" /> : t('settings.apiKey.remove')}
-          </Button>
+          <div className="flex gap-2">
+            {/* Test-Verbindung Button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleTestConnection}
+              disabled={isTesting || isSaving}
+              title="API-Verbindung testen"
+            >
+              {isTesting ? (
+                <><Spinner className="w-3 h-3 mr-1" /> Testen…</>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+                  </svg>
+                  Verbindung testen
+                </>
+              )}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleRemoveKey}
+              disabled={isSaving}
+            >
+              {isSaving ? <Spinner className="w-4 h-4" /> : t('settings.apiKey.remove')}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -148,6 +201,7 @@ export const ApiKeySection: FC = () => {
                   type={showKey ? 'text' : 'password'}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveKey()}
                   placeholder="AIza..."
                   autoComplete="off"
                   className="pr-10"
@@ -175,12 +229,12 @@ export const ApiKeySection: FC = () => {
               </Button>
             </div>
           </div>
-          
+
           <p className="text-sm text-[var(--foreground-muted)]">
             {t('settings.apiKey.getKeyHint')}{' '}
-            <a 
-              href="https://aistudio.google.com/app/apikey" 
-              target="_blank" 
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
               rel="noopener noreferrer"
               className="text-indigo-400 hover:text-indigo-300 underline"
             >
@@ -190,11 +244,31 @@ export const ApiKeySection: FC = () => {
         </div>
       )}
 
-      {/* Message */}
+      {/* Test-Ergebnis */}
+      {testResult && (
+        <div className={`p-3 rounded-lg text-sm flex items-start gap-2 ${
+          testResult.ok
+            ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+            : 'bg-red-500/10 text-red-400 border border-red-500/30'
+        }`}>
+          {testResult.ok ? (
+            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          )}
+          {testResult.text}
+        </div>
+      )}
+
+      {/* Allgemeine Statusmeldung */}
       {message && (
         <div className={`p-3 rounded-lg text-sm ${
-          message.type === 'success' 
-            ? 'bg-green-500/10 text-green-400 border border-green-500/30' 
+          message.type === 'success'
+            ? 'bg-green-500/10 text-green-400 border border-green-500/30'
             : 'bg-red-500/10 text-red-400 border border-red-500/30'
         }`}>
           {message.text}

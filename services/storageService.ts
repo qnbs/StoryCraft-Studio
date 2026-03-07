@@ -19,6 +19,7 @@ export interface StorageBackend {
   // Gemini API key
   saveGeminiApiKey(apiKey: string): Promise<void>;
   getGeminiApiKey(): Promise<string | null>;
+  clearGeminiApiKey(): Promise<void>;
 
   // Snapshots
   saveSnapshot(snapshotId: string, data: any): Promise<void>;
@@ -97,6 +98,10 @@ class StorageManager {
 
   async getGeminiApiKey(): Promise<string | null> {
     return this.backend.getGeminiApiKey();
+  }
+
+  async clearGeminiApiKey(): Promise<void> {
+    return (this.backend as any).clearGeminiApiKey?.();
   }
 
   async saveSnapshot(snapshotId: string, data: any): Promise<void> {

@@ -305,9 +305,40 @@ const AiScratchpad: FC = React.memo(() => {
 const WriterViewUI: FC = () => {
     const { t } = useTranslation();
     const [activeMobileTab, setActiveMobileTab] = useState<'context' | 'tools' | 'result'>('tools');
+    const [collapsedPanels, setCollapsedPanels] = useState<Record<string, boolean>>({});
+    const [focusMode, setFocusMode] = useState(false);
+
+    const togglePanel = (panel: string) => {
+        setCollapsedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+    };
 
     return (
         <div className="h-full flex flex-col">
+            {/* Focus Mode Toggle + Panel Controls (Desktop) */}
+            <div className="hidden md:flex items-center justify-end mb-2 gap-2">
+                <button
+                    onClick={() => togglePanel('context')}
+                    title={collapsedPanels.context ? 'Kontext einblenden' : 'Kontext ausblenden'}
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                    {collapsedPanels.context ? '▷ Kontext' : '◁ Kontext'}
+                </button>
+                <button
+                    onClick={() => togglePanel('tools')}
+                    title={collapsedPanels.tools ? 'Tools einblenden' : 'Tools ausblenden'}
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                    {collapsedPanels.tools ? '▷ Tools' : '◁ Tools'}
+                </button>
+                <button
+                    onClick={() => setFocusMode(f => !f)}
+                    title={focusMode ? 'Fokus-Modus beenden' : 'Fokus-Modus (nur Manuskript + KI)'}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${focusMode ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10' : 'border-[var(--border-primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-secondary)]'}`}
+                >
+                    {focusMode ? '⊠ Fokus beenden' : '⊡ Fokus-Modus'}
+                </button>
+            </div>
+
             {/* Mobile Segmented Control - Top Navigation */}
             <div className="md:hidden p-1 mx-0 mb-4 bg-[var(--background-tertiary)] rounded-xl flex items-center relative border border-[var(--border-primary)]/50 shadow-inner select-none">
                 {(['context', 'tools', 'result'] as const).map((tab) => (
@@ -334,12 +365,29 @@ const WriterViewUI: FC = () => {
                 {activeMobileTab === 'result' && <AiScratchpad />}
             </div>
 
-            {/* Desktop Grid Layout (Always Visible on LG+) */}
-            <div className="hidden md:grid md:grid-cols-12 md:gap-6 h-full items-start">
-                <div className="md:col-span-4 h-full overflow-hidden"><ContextPanel /></div>
-                <div className="md:col-span-4 h-full overflow-hidden"><ToolsPanel /></div>
-                <div className="md:col-span-4 h-full overflow-hidden"><AiScratchpad /></div>
-            </div>
+            {/* Desktop Grid Layout (Always Visible on MD+) */}
+            {focusMode ? (
+                // Focus Mode: nur Manuskript-Kontext + KI-Ergebnis
+                <div className="hidden md:grid md:grid-cols-2 md:gap-6 h-full items-start">
+                    <div className="h-full overflow-hidden"><ContextPanel /></div>
+                    <div className="h-full overflow-hidden"><AiScratchpad /></div>
+                </div>
+            ) : (
+                <div className={`hidden md:grid md:gap-6 h-full items-start transition-all duration-300 ${
+                    collapsedPanels.context && collapsedPanels.tools ? 'md:grid-cols-[0_0_1fr]' :
+                    collapsedPanels.context ? 'md:grid-cols-[0_1fr_1fr]' :
+                    collapsedPanels.tools ? 'md:grid-cols-[1fr_0_1fr]' :
+                    'md:grid-cols-3'
+                }`}>
+                    <div className={`h-full overflow-hidden transition-all duration-300 ${collapsedPanels.context ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'}`}>
+                        <ContextPanel />
+                    </div>
+                    <div className={`h-full overflow-hidden transition-all duration-300 ${collapsedPanels.tools ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'}`}>
+                        <ToolsPanel />
+                    </div>
+                    <div className="h-full overflow-hidden"><AiScratchpad /></div>
+                </div>
+            )}
         </div>
     );
 };

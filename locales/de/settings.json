@@ -18,6 +18,7 @@
     "settings.appearance.theme": "Anwendungsthema",
     "settings.theme.dark": "Dunkel",
     "settings.theme.light": "Hell",
+    "settings.theme.auto": "Automatisch",
     "settings.editor.title": "Editor-Einstellungen",
     "settings.editor.fontFamily": "Schriftfamilie",
     "settings.font.serif": "Serif",

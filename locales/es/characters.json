@@ -49,4 +49,6 @@
     "characters.edit.portrait.styles.oilPainting": "Oil Painting",
     "characters.edit.portrait.styles.sketch": "Sketch",
     "characters.edit.portrait.styles.comicBook": "Comic Book",
+    "characters.deleteLabel": "Eliminar {{name}}",
+    "characters.deleteConfirm": "¿Está seguro de que desea eliminar permanentemente este personaje? Esta acción no se puede deshacer."
 }

@@ -3,10 +3,11 @@ import { ProjectData } from '../features/project/projectSlice';
 import { Settings } from '../types';
 
 const DB_NAME = 'storycraft-db';
-const DB_VERSION = 4; // Upgraded for API key encryption support
+const DB_VERSION = 5; // v5: RAG vectors store added
 const APP_DATA_STORE = 'app-data-store';
 const SNAPSHOTS_STORE = 'snapshots-store';
 const IMAGES_STORE = 'images-store';
+const RAG_VECTORS_STORE = 'rag-vectors-store';
 
 // Secure API Key Storage Records
 const GEMINI_API_KEY_RECORD = 'gemini_api_key_encrypted_v1';
@@ -63,7 +64,7 @@ import { StorageBackend } from './storageService';
 class IndexedDBService implements StorageBackend {
   private db: IDBDatabase | null = null;
   private lastAutoSnapshotTime = Date.now();
-  private readonly AUTO_SNAPSHOT_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  private readonly AUTO_SNAPSHOT_INTERVAL = 30 * 1000; // 30 Sekunden (War: 30 Minuten)
   private readonly MAX_AUTO_SNAPSHOTS = 20;
 
   // === CRYPTO HELPERS für API Key Verschlüsselung ===
@@ -179,27 +180,50 @@ class IndexedDBService implements StorageBackend {
 
       request.onupgradeneeded = (event) => {
         const db = request.result;
+        // v1: Basis-Store
         if (event.oldVersion < 1) {
             if (!db.objectStoreNames.contains(APP_DATA_STORE)) {
               db.createObjectStore(APP_DATA_STORE);
             }
         }
+        // v2: Snapshot-Store
         if (event.oldVersion < 2) {
             if (!db.objectStoreNames.contains(SNAPSHOTS_STORE)) {
               db.createObjectStore(SNAPSHOTS_STORE, { keyPath: 'id', autoIncrement: true });
             }
         }
+        // v3: Bilder-Store
         if (event.oldVersion < 3) {
             if (!db.objectStoreNames.contains(IMAGES_STORE)) {
                 db.createObjectStore(IMAGES_STORE);
             }
         }
+        // v4: API-Key-Verschlüsselung (kein neuer Store – Daten in APP_DATA_STORE)
+        // v5: RAG-Vektoren-Store für Konsistenzprüfung & semantische Suche
+        if (event.oldVersion < 5) {
+            if (!db.objectStoreNames.contains(RAG_VECTORS_STORE)) {
+                const vectorStore = db.createObjectStore(RAG_VECTORS_STORE, { keyPath: 'id' });
+                vectorStore.createIndex('projectId', 'projectId', { unique: false });
+                vectorStore.createIndex('type', 'type', { unique: false });
+            }
+        }
       };
 
+      // Verbindungs-Abbruch bei versionchange (anderer Tab öffnet neue Version)
       request.onsuccess = () => {
-        this.db = request.result;
+        const db = request.result;
+        db.onversionchange = () => {
+            db.close();
+            this.db = null;
+            console.warn('IndexedDB: Datenbankversion geändert – Verbindung geschlossen. Bitte Seite neu laden.');
+        };
+        this.db = db;
         resolve();
+        return; // Verhindert doppeltes Setzen unten
       };
+
+      // Dummy-Value damit der folgende onsuccess-Block nicht doppelt läuft
+      (request as any).__handled = true;
 
       request.onerror = () => {
         console.error('IndexedDB error:', request.error);

@@ -9,6 +9,8 @@ import { storageService } from './storageService';
 
 let cachedAiClient: GoogleGenAI | null = null;
 let cachedApiKeyHash: string | null = null;
+// Race-Condition-Schutz: nur ein Initialisierungs-Promise gleichzeitig
+let clientInitPromise: Promise<GoogleGenAI> | null = null;
 
 const hashApiKey = async (key: string): Promise<string> => {
   const encoder = new TextEncoder();
@@ -19,30 +21,55 @@ const hashApiKey = async (key: string): Promise<string> => {
 };
 
 const getAiClient = async (): Promise<GoogleGenAI> => {
-  const apiKey = await storageService.getGeminiApiKey();
-  
-  if (!apiKey) {
-    throw new Error(
-      'NO_API_KEY: Kein Gemini API-Key konfiguriert. ' +
-      'Bitte öffnen Sie die Einstellungen und fügen Sie Ihren API-Key hinzu.'
-    );
-  }
+  // Wenn bereits ein Init-Vorgang läuft, darauf warten (verhindert Race Conditions)
+  if (clientInitPromise) return clientInitPromise;
 
-  // Cache invalidation bei Key-Änderung
-  const currentHash = await hashApiKey(apiKey);
-  if (cachedAiClient && cachedApiKeyHash === currentHash) {
-    return cachedAiClient;
-  }
+  clientInitPromise = (async () => {
+    try {
+      const apiKey = await storageService.getGeminiApiKey();
 
-  cachedAiClient = new GoogleGenAI({ apiKey });
-  cachedApiKeyHash = currentHash;
-  return cachedAiClient;
+      if (!apiKey) {
+        throw new Error(
+          'NO_API_KEY: Kein Gemini API-Key konfiguriert. ' +
+          'Bitte öffnen Sie die Einstellungen und fügen Sie Ihren API-Key hinzu.'
+        );
+      }
+
+      // Cache invalidation bei Key-Änderung
+      const currentHash = await hashApiKey(apiKey);
+      if (cachedAiClient && cachedApiKeyHash === currentHash) {
+        return cachedAiClient;
+      }
+
+      cachedAiClient = new GoogleGenAI({ apiKey });
+      cachedApiKeyHash = currentHash;
+      return cachedAiClient;
+    } finally {
+      // Promise-Lock immer freigeben
+      clientInitPromise = null;
+    }
+  })();
+
+  return clientInitPromise;
+};
+
+// Wird bei 401 (ungültiger Key) aufgerufen – Key löschen, Cache leeren
+export const handleInvalidApiKey = async (): Promise<void> => {
+  cachedAiClient = null;
+  cachedApiKeyHash = null;
+  clientInitPromise = null;
+  try {
+    await storageService.clearGeminiApiKey();
+  } catch {
+    // Ignorieren – Key ist sowieso ungültig
+  }
 };
 
 // Reset cache when key changes
 export const invalidateAiClientCache = (): void => {
   cachedAiClient = null;
   cachedApiKeyHash = null;
+  clientInitPromise = null;
 };
 
 const creativityToTemperature: Record<AiCreativity, number> = {
@@ -54,16 +81,41 @@ const creativityToTemperature: Record<AiCreativity, number> = {
 const getModelForText = () => 'gemini-2.5-flash';
 const getModelForImage = () => 'gemini-2.5-flash-image';
 
-// --- Hilfsfunktion für Retry ---
+// --- Hilfsfunktion für Retry mit 401/429-Handling ---
 async function retry<T>(fn: () => Promise<T>, retries = 2, delayMs = 600): Promise<T> {
     let lastError: any;
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             return await fn();
-        } catch (err) {
+        } catch (err: any) {
             lastError = err;
-            // Nur bei Netzwerkfehlern oder temporären Fehlern erneut versuchen
+
+            // Sofortiger Abbruch + Cache-/Key-Reset bei ungültigem API-Key (401)
+            const is401 = err?.status === 401 || err?.message?.includes('401') ||
+                          err?.message?.toLowerCase().includes('api key not valid') ||
+                          err?.message?.toLowerCase().includes('invalid api key') ||
+                          err?.message?.toLowerCase().includes('permission_denied');
+            if (is401) {
+                await handleInvalidApiKey();
+                throw new Error('INVALID_API_KEY: Der API-Key ist ungültig oder abgelaufen. Bitte in den Einstellungen einen gültigen Key hinterlegen.');
+            }
+
+            // Kein Retry bei AbortError
             if (err instanceof DOMException && err.name === 'AbortError') throw err;
+
+            // Bei Rate-Limit (429) längere Wartezeit
+            const is429 = err?.status === 429 || err?.message?.includes('429') ||
+                          err?.message?.toLowerCase().includes('quota') ||
+                          err?.message?.toLowerCase().includes('rate limit') ||
+                          err?.message?.toLowerCase().includes('resource_exhausted');
+            if (is429) {
+                if (attempt < retries) {
+                    await new Promise(res => setTimeout(res, delayMs * 3 * (attempt + 1)));
+                    continue;
+                }
+                throw new Error('RATE_LIMITED: Das API-Nutzungslimit wurde erreicht. Bitte warte eine Minute und versuche es erneut.');
+            }
+
             if (attempt < retries) await new Promise(res => setTimeout(res, delayMs));
         }
     }
@@ -74,6 +126,15 @@ function getUserFriendlyGeminiError(error: any): string {
     if (error instanceof Error) {
         if (error.message.includes('NO_API_KEY')) {
             return 'Gemini API-Key fehlt. Bitte in den Einstellungen hinterlegen.';
+        }
+        if (error.message.includes('INVALID_API_KEY')) {
+            return 'Der Gemini API-Key ist ungültig oder abgelaufen. Bitte hinterlegen Sie einen gültigen Key in den Einstellungen.';
+        }
+        if (error.message.includes('RATE_LIMITED')) {
+            return 'Das API-Nutzungslimit wurde erreicht. Bitte warte eine Minute und versuche es erneut.';
+        }
+        if (error.message.includes('OFFLINE')) {
+            return 'Keine Internetverbindung. KI-Funktionen sind offline nicht verfügbar.';
         }
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
             return 'Netzwerkfehler: Die Verbindung zum Gemini-Server ist fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
@@ -87,6 +148,13 @@ function getUserFriendlyGeminiError(error: any): string {
         return error.message;
     }
     return 'Unbekannter Fehler bei der Gemini-API.';
+}
+
+// Offline-Check vor jedem API-Aufruf
+function assertOnline(): void {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new Error('OFFLINE: Keine Internetverbindung. KI-Funktionen sind offline nicht verfügbar. Lokale Features (Schreiben, Manuskript, Snapshots) funktionieren weiterhin.');
+    }
 }
 // --- PROMPT TYPES ---
 type PromptType = 'logline' | 'characterProfile' | 'regenerateCharacterField' | 'characterPortrait' | 'worldProfile' | 'regenerateWorldField' | 'worldImage' | 'outline' | 'regenerateOutlineSection' | 'personalizeTemplate' | 'customTemplate' | 'synopsis' | 'proofread' | 'consistencyCheck' | 'criticAnalysis' | 'plotHoleDetection';
@@ -350,6 +418,7 @@ ${langInstruction}`,
 
 export const generateText = async (prompt: string, creativity: AiCreativity, signal?: AbortSignal, thinkingBudget?: number): Promise<string> => {
     try {
+        assertOnline();
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
@@ -382,6 +451,7 @@ export const generateText = async (prompt: string, creativity: AiCreativity, sig
 
 export const generateJson = async <T>(prompt: string, creativity: AiCreativity, schema: GeminiSchema, signal?: AbortSignal, thinkingBudget?: number): Promise<T> => {
     try {
+        assertOnline();
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
@@ -444,6 +514,7 @@ export const detectPlotHoles = async (text: string, creativity: AiCreativity, la
 
 export const streamText = async (prompt: string, creativity: AiCreativity, onChunk: (chunk: string) => void, signal?: AbortSignal): Promise<void> => {
     try {
+        assertOnline();
         if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
@@ -480,6 +551,7 @@ export const streamText = async (prompt: string, creativity: AiCreativity, onChu
 
 export const streamAiHelpResponse = async (question: string, onChunk: (chunk: string) => void, temperature: number, signal?: AbortSignal): Promise<void> => {
     try {
+        assertOnline();
          if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }
@@ -515,6 +587,7 @@ export const streamAiHelpResponse = async (question: string, onChunk: (chunk: st
 
 export const generateImage = async (prompt: string, signal?: AbortSignal): Promise<string> => {
     try {
+        assertOnline();
          if (signal?.aborted) {
             throw new DOMException('Aborted', 'AbortError');
         }

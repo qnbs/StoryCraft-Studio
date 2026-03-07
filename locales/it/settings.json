@@ -180,5 +180,8 @@
     "settings.backup.frequency.weekly": "Weekly",
     "settings.backup.frequency.monthly": "Monthly",
     "settings.backup.maxBackups": "Maximum Backups",
-    "settings.backup.backupLocation": "Backup Location"
+    "settings.backup.backupLocation": "Backup Location",
+    "settings.language.french": "Francese",
+    "settings.language.spanish": "Spagnolo",
+    "settings.language.italian": "Italiano"
 }

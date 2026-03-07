@@ -44,13 +44,26 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
     useEffect(() => {
-        document.body.classList.remove('light-theme', 'dark-theme');
-        document.body.classList.add(settings.theme === 'light' ? 'light-theme' : 'dark-theme');
-        
-        // Update meta theme-color for mobile browsers
-        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-        if (themeColorMeta) {
-            themeColorMeta.setAttribute('content', settings.theme === 'light' ? '#ffffff' : '#020617');
+        const applyTheme = (isDark: boolean) => {
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(isDark ? 'dark-theme' : 'light-theme');
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            if (themeColorMeta) {
+                themeColorMeta.setAttribute('content', isDark ? '#020617' : '#ffffff');
+            }
+        };
+
+        if (settings.theme === 'auto') {
+            // System-Präferenz auslesen
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            applyTheme(mq.matches);
+
+            // Auf Änderungen der System-Einstellung reagieren
+            const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
+            mq.addEventListener('change', handler);
+            return () => mq.removeEventListener('change', handler);
+        } else {
+            applyTheme(settings.theme === 'dark');
         }
     }, [settings.theme]);
     

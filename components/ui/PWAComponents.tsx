@@ -23,20 +23,27 @@ export const OfflineIndicator: FC = () => {
       aria-live="polite"
       className="
         fixed bottom-4 right-4 z-[9999]
-        flex items-center gap-2
-        px-3 py-1.5
-        rounded-full
+        flex flex-col gap-1
+        px-4 py-3
+        rounded-xl
         bg-amber-500/20 border border-amber-500/40
         text-amber-400 text-xs font-medium
         shadow-lg backdrop-blur-sm
         animate-fade-in-up
+        max-w-xs
       "
     >
-      <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-      </span>
-      Offline
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+        </span>
+        <span className="font-semibold">Offline</span>
+      </div>
+      <p className="text-amber-300/80 leading-tight">
+        KI-Funktionen nicht verfügbar.<br />
+        Schreiben, Speichern &amp; Snapshots funktionieren weiterhin.
+      </p>
     </div>
   );
 };

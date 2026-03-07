@@ -42,5 +42,17 @@
     "export.format.double": "Double",
     "export.format.single": "Single",
     "export.format.titlePage": "Include Title Page",
-    "export.toggleSection": "Toggle visibility for {{title}}"
+    "export.toggleSection": "Toggle visibility for {{title}}",
+    "export.importProject": "Importer un projet",
+    "export.exportProject": "Exporter le projet",
+    "export.importModalTitle": "Importer un projet",
+    "export.exportModalTitle": "Exporter le projet",
+    "export.importFormat": "Format d'import",
+    "export.exportFormat": "Format d'export",
+    "export.import": "Importer",
+    "export.export": "Exporter",
+    "export.importSuccess": "Projet importé avec succès",
+    "export.exportSuccess": "Projet exporté avec succès",
+    "export.importFailed": "Échec de l'importation",
+    "export.exportFailed": "Échec de l'exportation"
 }

@@ -42,5 +42,11 @@
     "writer.studio.result.replace": "Replace",
     "writer.studio.result.retry": "Retry",
     "writer.studio.result.prev": "Prev",
-    "writer.studio.result.next": "Next"
+    "writer.studio.result.next": "Next",
+    "writer.studio.tools.critic.title": "Editor (Crítico)",
+    "writer.studio.tools.critic.instruction": "Sé mi editor y crítico profesional.",
+    "writer.studio.tools.plotholes.title": "Detector de agujeros en la trama",
+    "writer.studio.tools.plotholes.instruction": "Encuentra lagunas lógicas o inconsistencias en la trama.",
+    "writer.studio.tools.consistency.title": "Verificación de coherencia",
+    "writer.studio.tools.consistency.instruction": "Compara el texto con los personajes y el lore del mundo para encontrar contradicciones."
 }

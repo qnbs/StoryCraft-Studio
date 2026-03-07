@@ -18,11 +18,6 @@ export interface Character {
   relationships: string;
 }
 
-export interface WorldLocation {
-  id: string;
-  name: string;
-  description: string;
-}
 export interface CharacterRelationship {
   id: string;
   fromCharacterId: string;
@@ -63,15 +58,6 @@ export interface WritingSession {
   notes?: string;
 }
 
-export interface WritingGoal {
-  id: string;
-  type: 'daily' | 'weekly' | 'monthly' | 'total';
-  target: number;
-  current: number;
-  period: string; // YYYY-MM-DD for daily, YYYY-MM for monthly, etc.
-  achieved: boolean;
-}
-
 export interface World {
   id: string;
   name: string;
@@ -99,6 +85,7 @@ export interface StorySection {
   worldIds?: string[]; // Linked worlds
   wordCount?: number;
   status?: 'draft' | 'outline' | 'first-draft' | 'revised' | 'final';
+  act?: 1 | 2 | 3; // Akt-Zugehörigkeit für Swimlanes
 }
 
 export interface StoryProject {
@@ -157,10 +144,13 @@ export interface KeyboardShortcut {
 }
 
 export interface WritingGoal {
-  type: 'words' | 'time' | 'sessions';
+  id?: string;
+  type: 'words' | 'time' | 'sessions' | 'daily' | 'weekly' | 'monthly' | 'total';
   target: number;
-  period: 'daily' | 'weekly' | 'monthly';
-  enabled: boolean;
+  current?: number;
+  period: 'daily' | 'weekly' | 'monthly' | string;
+  achieved?: boolean;
+  enabled?: boolean;
 }
 
 export interface AdvancedAiSettings {
