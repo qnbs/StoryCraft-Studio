@@ -1,8 +1,24 @@
-import { EntityState } from '@reduxjs/toolkit';
-import { Type } from '@google/genai';
-import { ProjectData } from './features/project/projectSlice'; // Import ProjectData type
+import { EntityState } from "@reduxjs/toolkit";
+import { Type } from "@google/genai";
+import { ProjectData } from "./features/project/projectSlice"; // Import ProjectData type
 
-export type View = 'dashboard' | 'manuscript' | 'writer' | 'templates' | 'outline' | 'characters' | 'world' | 'export' | 'settings' | 'help' | 'sceneboard' | 'analytics' | 'zen' | 'characterGraph' | 'consistencyChecker' | 'critic';
+export type View =
+  | "dashboard"
+  | "manuscript"
+  | "writer"
+  | "templates"
+  | "outline"
+  | "characters"
+  | "world"
+  | "export"
+  | "settings"
+  | "help"
+  | "sceneboard"
+  | "analytics"
+  | "zen"
+  | "characterGraph"
+  | "consistencyChecker"
+  | "critic";
 
 export interface Character {
   id: string;
@@ -22,7 +38,15 @@ export interface CharacterRelationship {
   id: string;
   fromCharacterId: string;
   toCharacterId: string;
-  type: 'family' | 'romantic' | 'friend' | 'enemy' | 'mentor' | 'rival' | 'ally' | 'acquaintance';
+  type:
+    | "family"
+    | "romantic"
+    | "friend"
+    | "enemy"
+    | "mentor"
+    | "rival"
+    | "ally"
+    | "acquaintance";
   description?: string;
   strength: number; // 1-10
 }
@@ -32,7 +56,14 @@ export interface WorldLocation {
   name: string;
   description: string;
   coordinates?: { lat: number; lng: number };
-  type: 'city' | 'village' | 'forest' | 'mountain' | 'castle' | 'temple' | 'other';
+  type:
+    | "city"
+    | "village"
+    | "forest"
+    | "mountain"
+    | "castle"
+    | "temple"
+    | "other";
   population?: number;
   significance?: string;
 }
@@ -84,7 +115,7 @@ export interface StorySection {
   characterIds?: string[]; // Linked characters
   worldIds?: string[]; // Linked worlds
   wordCount?: number;
-  status?: 'draft' | 'outline' | 'first-draft' | 'revised' | 'final';
+  status?: "draft" | "outline" | "first-draft" | "revised" | "final";
   act?: 1 | 2 | 3; // Akt-Zugehörigkeit für Swimlanes
 }
 
@@ -100,8 +131,8 @@ export interface StoryProject {
     targetDate: string | null;
   };
   writingHistory?: {
-      date: string; // YYYY-MM-DD
-      words: number;
+    date: string; // YYYY-MM-DD
+    words: number;
   }[];
 }
 
@@ -109,32 +140,48 @@ export interface Template {
   id: string;
   name: string;
   description: string;
-  type: 'Genre' | 'Structure';
+  type: "Genre" | "Structure";
   tags: string[];
   arcDescription: string;
   sections: { titleKey: string }[];
 }
 
 export interface OutlineSection {
-  id:string;
+  id: string;
   title: string;
   description: string;
   isTwist?: boolean;
 }
 
 // Settings Types
-export type Theme = 'dark' | 'light' | 'auto';
-export type EditorFont = 'serif' | 'sans-serif' | 'monospace' | 'custom';
-export type AiCreativity = 'Focused' | 'Balanced' | 'Imaginative';
-export type AiModel = 'gemini-1.5-flash' | 'gemini-1.5-pro' | 'claude-3-haiku' | 'claude-3-sonnet' | 'gpt-4o-mini' | 'gpt-4o';
-export type NotificationFrequency = 'never' | 'daily' | 'weekly' | 'monthly';
-export type BackupFrequency = 'manual' | 'daily' | 'weekly' | 'monthly';
-export type SyncProvider = 'none' | 'google-drive' | 'dropbox' | 'onedrive' | 'icloud';
+export type Theme = "dark" | "light" | "auto";
+export type EditorFont = "serif" | "sans-serif" | "monospace" | "custom";
+export type AiCreativity = "Focused" | "Balanced" | "Imaginative";
+export type AiModel =
+  | "gemini-1.5-flash"
+  | "gemini-1.5-pro"
+  | "claude-3-haiku"
+  | "claude-3-sonnet"
+  | "gpt-4o-mini"
+  | "gpt-4o"
+  | "ollama/llama3"
+  | "ollama/mistral"
+  | "ollama/gemma3"
+  | "ollama/custom";
+export type AIProvider = "gemini" | "openai" | "anthropic" | "ollama";
+export type NotificationFrequency = "never" | "daily" | "weekly" | "monthly";
+export type BackupFrequency = "manual" | "daily" | "weekly" | "monthly";
+export type SyncProvider =
+  | "none"
+  | "google-drive"
+  | "dropbox"
+  | "onedrive"
+  | "icloud";
 
 export interface CustomFont {
   name: string;
   url: string;
-  format: 'woff' | 'woff2' | 'ttf' | 'otf';
+  format: "woff" | "woff2" | "ttf" | "otf";
 }
 
 export interface KeyboardShortcut {
@@ -145,16 +192,24 @@ export interface KeyboardShortcut {
 
 export interface WritingGoal {
   id?: string;
-  type: 'words' | 'time' | 'sessions' | 'daily' | 'weekly' | 'monthly' | 'total';
+  type:
+    | "words"
+    | "time"
+    | "sessions"
+    | "daily"
+    | "weekly"
+    | "monthly"
+    | "total";
   target: number;
   current?: number;
-  period: 'daily' | 'weekly' | 'monthly' | string;
+  period: "daily" | "weekly" | "monthly" | string;
   achieved?: boolean;
   enabled?: boolean;
 }
 
 export interface AdvancedAiSettings {
   model: AiModel;
+  provider: AIProvider;
   temperature: number;
   maxTokens: number;
   topP: number;
@@ -162,6 +217,7 @@ export interface AdvancedAiSettings {
   presencePenalty: number;
   customPrompts: Record<string, string>;
   rateLimit: number; // requests per minute
+  ollamaBaseUrl: string;
 }
 
 export interface AccessibilitySettings {
@@ -170,7 +226,7 @@ export interface AccessibilitySettings {
   largeText: boolean;
   screenReader: boolean;
   focusIndicators: boolean;
-  colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+  colorBlindMode: "none" | "protanopia" | "deuteranopia" | "tritanopia";
 }
 
 export interface PrivacySettings {
@@ -244,38 +300,88 @@ export interface ThemeCustomization {
 }
 
 export interface Settings {
-    // Basic Settings
-    theme: Theme;
-    editorFont: EditorFont;
-    fontSize: number;
-    lineSpacing: number;
-    aiCreativity: AiCreativity;
-    paragraphSpacing: number;
-    indentFirstLine: boolean;
+  // Basic Settings
+  theme: Theme;
+  editorFont: EditorFont;
+  fontSize: number;
+  lineSpacing: number;
+  aiCreativity: AiCreativity;
+  paragraphSpacing: number;
+  indentFirstLine: boolean;
 
-    // Advanced Settings
-    customFont?: CustomFont;
-    keyboardShortcuts: KeyboardShortcut[];
-    writingGoals: WritingGoal[];
-    advancedAi: AdvancedAiSettings;
-    accessibility: AccessibilitySettings;
-    privacy: PrivacySettings;
-    performance: PerformanceSettings;
-    notifications: NotificationSettings;
-    collaboration: CollaborationSettings;
-    integrations: IntegrationSettings;
-    advancedEditor: AdvancedEditorSettings;
-    backup: BackupSettings;
-    themeCustomization: ThemeCustomization;
+  // Advanced Settings
+  customFont?: CustomFont;
+  keyboardShortcuts: KeyboardShortcut[];
+  writingGoals: WritingGoal[];
+  advancedAi: AdvancedAiSettings;
+  accessibility: AccessibilitySettings;
+  privacy: PrivacySettings;
+  performance: PerformanceSettings;
+  notifications: NotificationSettings;
+  collaboration: CollaborationSettings;
+  integrations: IntegrationSettings;
+  advancedEditor: AdvancedEditorSettings;
+  backup: BackupSettings;
+  themeCustomization: ThemeCustomization;
 
-    // Legacy support
-    language?: string;
+  // Legacy support
+  language?: string;
 }
 
 // Help Types
 export interface HelpArticle {
   title: string;
   content: string;
+}
+
+// ─── Version Control Types ──────────────────────────────────────────────────
+
+export interface VersionSnapshot {
+  id: string;
+  branchId: string;
+  label: string;
+  timestamp: string;
+  manuscriptSnapshot: string; // LZ-string compressed JSON of StorySection[]
+  wordCount: number;
+  parentId?: string;
+}
+
+export interface VersionBranch {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  createdAt: string;
+  headSnapshotId?: string;
+}
+
+// ─── Community Template Types ────────────────────────────────────────────────
+
+export interface CommunityTemplate {
+  id: string;
+  name: string;
+  description: string;
+  type: "Genre" | "Structure";
+  tags: string[];
+  arcDescription: string;
+  author: string;
+  stars?: number;
+  sections: { title: string }[];
+}
+
+// ─── Collaboration Types ─────────────────────────────────────────────────────
+
+export interface CollaborationUser {
+  id: string;
+  name: string;
+  color: string;
+  cursor?: number;
+}
+
+export interface CollaborationRoom {
+  roomId: string;
+  users: CollaborationUser[];
+  isConnected: boolean;
 }
 
 export interface HelpCategory {
@@ -295,82 +401,82 @@ export interface ProjectSnapshot {
 
 // AI Types
 export interface GeminiSchema {
-    type: Type;
-    items?: GeminiSchema;
-    properties?: Record<string, GeminiSchema>;
-    required?: string[];
-    description?: string;
+  type: Type;
+  items?: GeminiSchema;
+  properties?: Record<string, GeminiSchema>;
+  required?: string[];
+  description?: string;
 }
 
 export interface OutlineGenerationParams {
-    genre: string;
-    idea: string;
-    characters?: string;
-    setting?: string;
-    pacing?: string;
-    numChapters: number;
-    includeTwist: boolean;
-    lang: string;
+  genre: string;
+  idea: string;
+  characters?: string;
+  setting?: string;
+  pacing?: string;
+  numChapters: number;
+  includeTwist: boolean;
+  lang: string;
 }
 
 export interface CustomTemplateParams {
-    customConcept: string;
-    customElements: string;
-    numSections: number;
-    lang: string;
+  customConcept: string;
+  customElements: string;
+  numSections: number;
+  lang: string;
 }
 
 // Speech Recognition Types
 interface ISpeechRecognitionConstructor {
-    new (): ISpeechRecognition;
+  new (): ISpeechRecognition;
 }
 
 declare global {
-    interface Window {
-        SpeechRecognition: ISpeechRecognitionConstructor;
-        webkitSpeechRecognition: ISpeechRecognitionConstructor;
-    }
+  interface Window {
+    SpeechRecognition: ISpeechRecognitionConstructor;
+    webkitSpeechRecognition: ISpeechRecognitionConstructor;
+  }
 }
 
 export interface ISpeechRecognitionEvent {
-    resultIndex: number;
-    results: {
-        [key: number]: {
-            isFinal: boolean;
-            [key: number]: {
-                transcript: string;
-            };
-        };
-        length: number;
+  resultIndex: number;
+  results: {
+    [key: number]: {
+      isFinal: boolean;
+      [key: number]: {
+        transcript: string;
+      };
     };
+    length: number;
+  };
 }
 
 export interface ISpeechRecognitionError {
-    error: string;
-    message?: string;
+  error: string;
+  message?: string;
 }
 
 export interface ISpeechRecognition {
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    start: () => void;
-    stop: () => void;
-    onresult: (event: ISpeechRecognitionEvent) => void;
-    onend: () => void;
-    onerror: (event: ISpeechRecognitionError) => void;
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: (event: ISpeechRecognitionEvent) => void;
+  onend: () => void;
+  onerror: (event: ISpeechRecognitionError) => void;
 }
 
 // Persistence Types
 export interface PersistedRootState {
-    project?: {
-        present?: { data: ProjectData };
-        data?: ProjectData;
-        past?: unknown[];
-        future?: unknown[];
-        _latestUnfiltered?: unknown;
-    };
-    settings?: Settings;
-    status?: unknown;
-    writer?: unknown;
+  project?: {
+    present?: { data: ProjectData };
+    data?: ProjectData;
+    past?: unknown[];
+    future?: unknown[];
+    _latestUnfiltered?: unknown;
+  };
+  settings?: Settings;
+  status?: unknown;
+  writer?: unknown;
 }

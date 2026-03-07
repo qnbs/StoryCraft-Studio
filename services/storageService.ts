@@ -1,4 +1,4 @@
-import { StoryProject, Settings } from '../types';
+import { StoryProject, Settings } from "../types";
 
 // Storage interface for different backends
 export interface StorageBackend {
@@ -21,6 +21,11 @@ export interface StorageBackend {
   getGeminiApiKey(): Promise<string | null>;
   clearGeminiApiKey(): Promise<void>;
 
+  // Generic provider API key (openai, anthropic, etc.)
+  saveApiKey(provider: string, apiKey: string): Promise<void>;
+  getApiKey(provider: string): Promise<string | null>;
+  clearApiKey(provider: string): Promise<void>;
+
   // Snapshots
   saveSnapshot(snapshotId: string, data: any): Promise<void>;
   getSnapshotData(snapshotId: string): Promise<any>;
@@ -29,8 +34,8 @@ export interface StorageBackend {
 }
 
 // Import existing services
-import { dbService } from './dbService';
-import { fileSystemService } from './fileSystemService';
+import { dbService } from "./dbService";
+import { fileSystemService } from "./fileSystemService";
 
 // Storage manager that chooses the appropriate backend
 class StorageManager {
@@ -44,17 +49,20 @@ class StorageManager {
 
   private async initializeBackend() {
     // Check if we're running in Tauri
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== "undefined" && window.__TAURI__) {
       try {
         await fileSystemService.initialize();
         this.backend = fileSystemService;
-        console.log('Using file system storage backend');
+        console.log("Using file system storage backend");
       } catch (error) {
-        console.warn('Failed to initialize file system storage, falling back to IndexedDB:', error);
+        console.warn(
+          "Failed to initialize file system storage, falling back to IndexedDB:",
+          error,
+        );
         this.backend = dbService;
       }
     } else {
-      console.log('Using IndexedDB storage backend');
+      console.log("Using IndexedDB storage backend");
       this.backend = dbService;
     }
   }
@@ -102,6 +110,18 @@ class StorageManager {
 
   async clearGeminiApiKey(): Promise<void> {
     return (this.backend as any).clearGeminiApiKey?.();
+  }
+
+  async saveApiKey(provider: string, apiKey: string): Promise<void> {
+    return this.backend.saveApiKey(provider, apiKey);
+  }
+
+  async getApiKey(provider: string): Promise<string | null> {
+    return this.backend.getApiKey(provider);
+  }
+
+  async clearApiKey(provider: string): Promise<void> {
+    return this.backend.clearApiKey(provider);
   }
 
   async saveSnapshot(snapshotId: string, data: any): Promise<void> {

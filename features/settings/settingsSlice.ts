@@ -56,6 +56,7 @@ const defaultSettings: Settings = {
   ],
   advancedAi: {
     model: "gemini-1.5-flash",
+    provider: "gemini",
     temperature: 0.7,
     maxTokens: 4096,
     topP: 0.9,
@@ -63,6 +64,7 @@ const defaultSettings: Settings = {
     presencePenalty: 0.0,
     customPrompts: {},
     rateLimit: 60,
+    ollamaBaseUrl: "http://localhost:11434",
   },
   accessibility: {
     highContrast: false,

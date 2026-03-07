@@ -210,6 +210,89 @@ class IndexedDBService implements StorageBackend {
     });
   }
 
+  // === GENERIC PROVIDER API KEY STORAGE ===
+  // Uses same encryption pattern as Gemini key, keyed by provider name.
+
+  async saveApiKey(provider: string, apiKey: string): Promise<void> {
+    if (!apiKey?.trim()) throw new Error("API key cannot be empty");
+    return retryDb(async () => {
+      const cryptoKey = await this.getLocalCryptoKey();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(apiKey.trim());
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        cryptoKey,
+        encoded,
+      );
+      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      return new Promise((resolve, reject) => {
+        const r1 = store.put(
+          Array.from(new Uint8Array(encrypted)),
+          `api_key_${provider}_enc`,
+        );
+        const r2 = store.put(Array.from(iv), `api_key_${provider}_iv`);
+        let done = 0;
+        const ok = () => {
+          done++;
+          if (done === 2) resolve();
+        };
+        r1.onsuccess = ok;
+        r2.onsuccess = ok;
+        r1.onerror = () => reject(getUserFriendlyDbError(r1.error));
+        r2.onerror = () => reject(getUserFriendlyDbError(r2.error));
+      });
+    });
+  }
+
+  async getApiKey(provider: string): Promise<string | null> {
+    return retryDb(async () => {
+      try {
+        const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+        const [encArr, ivArr] = await Promise.all([
+          new Promise<number[] | undefined>((res, rej) => {
+            const r = store.get(`api_key_${provider}_enc`);
+            r.onsuccess = () => res(r.result as number[] | undefined);
+            r.onerror = () => rej(getUserFriendlyDbError(r.error));
+          }),
+          new Promise<number[] | undefined>((res, rej) => {
+            const r = store.get(`api_key_${provider}_iv`);
+            r.onsuccess = () => res(r.result as number[] | undefined);
+            r.onerror = () => rej(getUserFriendlyDbError(r.error));
+          }),
+        ]);
+        if (!encArr || !ivArr) return null;
+        const cryptoKey = await this.getLocalCryptoKey();
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: new Uint8Array(ivArr) },
+          cryptoKey,
+          new Uint8Array(encArr),
+        );
+        return new TextDecoder().decode(decrypted);
+      } catch {
+        return null;
+      }
+    });
+  }
+
+  async clearApiKey(provider: string): Promise<void> {
+    return retryDb(async () => {
+      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      return new Promise<void>((resolve, reject) => {
+        const r1 = store.delete(`api_key_${provider}_enc`);
+        const r2 = store.delete(`api_key_${provider}_iv`);
+        let done = 0;
+        const ok = () => {
+          done++;
+          if (done === 2) resolve();
+        };
+        r1.onsuccess = ok;
+        r2.onsuccess = ok;
+        r1.onerror = () => reject(getUserFriendlyDbError(r1.error));
+        r2.onerror = () => reject(getUserFriendlyDbError(r2.error));
+      });
+    });
+  }
+
   // === EXISTING DB METHODS ===
 
   async initDB(): Promise<void> {

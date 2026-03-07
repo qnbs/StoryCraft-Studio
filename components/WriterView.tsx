@@ -13,10 +13,14 @@ import {
   useWriterViewContext,
 } from "../contexts/WriterViewContext";
 import { Textarea } from "./ui/Textarea";
-import { useAppSelector } from "../app/hooks";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
 import { Checkbox } from "./ui/Checkbox";
 import { Input } from "./ui/Input";
 import { useTTS } from "../hooks/useTTS";
+import {
+  versionControlActions,
+  selectIsPanelOpen,
+} from "../features/versionControl/versionControlSlice";
 
 // --- SUB-COMPONENTS ---
 
@@ -787,6 +791,8 @@ const AiScratchpad: FC = React.memo(() => {
 
 const WriterViewUI: FC = () => {
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
+  const isVCPanelOpen = useAppSelector(selectIsPanelOpen);
   const [activeMobileTab, setActiveMobileTab] = useState<
     "context" | "tools" | "result"
   >("tools");
@@ -833,6 +839,13 @@ const WriterViewUI: FC = () => {
           className={`text-xs px-2 py-1 rounded border transition-colors ${focusMode ? "border-indigo-500 text-indigo-400 bg-indigo-500/10" : "border-[var(--border-primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-secondary)]"}`}
         >
           {focusMode ? "⊠ Fokus beenden" : "⊡ Fokus-Modus"}
+        </button>
+        <button
+          onClick={() => dispatch(versionControlActions.togglePanel())}
+          title="Version Control (Branches &amp; Snapshots)"
+          className={`text-xs px-2 py-1 rounded border transition-colors ${isVCPanelOpen ? "border-indigo-500 text-indigo-400 bg-indigo-500/10" : "border-[var(--border-primary)] text-[var(--foreground-muted)] hover:text-[var(--foreground-primary)] hover:bg-[var(--background-secondary)]"}`}
+        >
+          ⎇ Versionen
         </button>
       </div>
 

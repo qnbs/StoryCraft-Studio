@@ -1,39 +1,50 @@
-// Dynamic imports for Tauri APIs to avoid build issues
-let tauriApis: any = null;
+// Dynamic imports for Tauri v2 plugin APIs — fail gracefully in browser
+let tauriApis: {
+  readTextFile: (path: string) => Promise<string>;
+  writeTextFile: (path: string, content: string) => Promise<void>;
+  mkdir: (path: string, opts?: { recursive?: boolean }) => Promise<void>;
+  exists: (path: string) => Promise<boolean>;
+  readDir: (
+    path: string,
+  ) => Promise<{ name?: string; isDirectory?: boolean }[]>;
+  remove: (path: string, opts?: { recursive?: boolean }) => Promise<void>;
+  open: (opts?: Record<string, unknown>) => Promise<string | null>;
+  save: (opts?: Record<string, unknown>) => Promise<string | null>;
+  appDataDir: () => Promise<string>;
+  join: (...parts: string[]) => Promise<string>;
+  invoke: (cmd: string, args?: Record<string, unknown>) => Promise<unknown>;
+} | null = null;
 
 async function loadTauriApis() {
   if (tauriApis) return tauriApis;
-
   try {
-    const [core, dialog, fs, path] = await Promise.all([
-      import('@tauri-apps/api/core'),
-      import('@tauri-apps/api/dialog'),
-      import('@tauri-apps/api/fs'),
-      import('@tauri-apps/api/path')
+    const [coreModule, fsModule, dialogModule, pathModule] = await Promise.all([
+      import("@tauri-apps/api/core"),
+      import("@tauri-apps/plugin-fs"),
+      import("@tauri-apps/plugin-dialog"),
+      import("@tauri-apps/api/path"),
     ]);
-
     tauriApis = {
-      invoke: core.invoke,
-      open: dialog.open,
-      save: dialog.save,
-      readTextFile: fs.readTextFile,
-      writeTextFile: fs.writeTextFile,
-      createDir: fs.createDir,
-      exists: fs.exists,
-      readDir: fs.readDir,
-      removeFile: fs.removeFile,
-      appDataDir: path.appDataDir,
-      join: path.join
+      invoke: coreModule.invoke as typeof tauriApis.invoke,
+      readTextFile: fsModule.readTextFile,
+      writeTextFile: fsModule.writeTextFile,
+      mkdir: fsModule.mkdir,
+      exists: fsModule.exists,
+      readDir: fsModule.readDir as typeof tauriApis.readDir,
+      remove: fsModule.remove,
+      open: dialogModule.open as typeof tauriApis.open,
+      save: dialogModule.save as typeof tauriApis.save,
+      appDataDir: pathModule.appDataDir,
+      join: pathModule.join,
     };
-  } catch (error) {
-    throw new Error('Tauri APIs not available in this environment');
+    return tauriApis;
+  } catch {
+    throw new Error("Tauri APIs not available in this environment");
   }
-
-  return tauriApis;
 }
 
-import { StoryProject, Character, World, Template, Settings } from '../types';
-import { StorageBackend } from './storageService';
+import { StoryProject, Character, World, Template, Settings } from "../types";
+import { StorageBackend } from "./storageService";
 
 class FileSystemService implements StorageBackend {
   private appDataPath: string | null = null;
@@ -43,7 +54,7 @@ class FileSystemService implements StorageBackend {
       const apis = await loadTauriApis();
       this.appDataPath = await apis.appDataDir();
     } catch (error) {
-      console.error('Failed to get app data directory:', error);
+      console.error("Failed to get app data directory:", error);
       throw error;
     }
   }
@@ -63,14 +74,14 @@ class FileSystemService implements StorageBackend {
   async saveProject(project: StoryProject): Promise<void> {
     const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const projectPath = await apis.join(appDataPath, 'projects', project.id);
+    const projectPath = await apis.join(appDataPath, "projects", project.id);
 
     // Ensure project directory exists
     if (!(await apis.exists(projectPath))) {
-      await apis.createDir(projectPath, { recursive: true });
+      await apis.mkdir(projectPath, { recursive: true });
     }
 
-    const projectFile = await apis.join(projectPath, 'project.json');
+    const projectFile = await apis.join(projectPath, "project.json");
     await apis.writeTextFile(projectFile, JSON.stringify(project, null, 2));
   }
 
@@ -78,7 +89,12 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const projectFile = await apis.join(appDataPath, 'projects', projectId, 'project.json');
+      const projectFile = await apis.join(
+        appDataPath,
+        "projects",
+        projectId,
+        "project.json",
+      );
 
       if (!(await apis.exists(projectFile))) {
         return null;
@@ -87,7 +103,7 @@ class FileSystemService implements StorageBackend {
       const content = await apis.readTextFile(projectFile);
       return JSON.parse(content);
     } catch (error) {
-      console.error('Failed to load project:', error);
+      console.error("Failed to load project:", error);
       return null;
     }
   }
@@ -96,16 +112,18 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const projectsPath = await apis.join(appDataPath, 'projects');
+      const projectsPath = await apis.join(appDataPath, "projects");
 
       if (!(await apis.exists(projectsPath))) {
         return [];
       }
 
       const entries = await apis.readDir(projectsPath);
-      return entries.filter(entry => entry.isDirectory).map(entry => entry.name);
+      return entries
+        .filter((entry) => entry.name)
+        .map((entry) => entry.name as string);
     } catch (error) {
-      console.error('Failed to list projects:', error);
+      console.error("Failed to list projects:", error);
       return [];
     }
   }
@@ -113,12 +131,11 @@ class FileSystemService implements StorageBackend {
   async deleteProject(projectId: string): Promise<void> {
     const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const projectPath = await apis.join(appDataPath, 'projects', projectId);
+    const projectPath = await apis.join(appDataPath, "projects", projectId);
 
     // For simplicity, we'll just remove the project.json file
-    const projectFile = await apis.join(projectPath, 'project.json');
-    if (await apis.exists(projectFile)) {
-      await apis.removeFile(projectFile);
+    if (await apis.exists(projectPath)) {
+      await apis.remove(projectPath, { recursive: true });
     }
   }
 
@@ -126,15 +143,15 @@ class FileSystemService implements StorageBackend {
   async saveImage(id: string, base64Data: string): Promise<void> {
     const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const imagesPath = await apis.join(appDataPath, 'images');
+    const imagesPath = await apis.join(appDataPath, "images");
 
     if (!(await apis.exists(imagesPath))) {
-      await apis.createDir(imagesPath, { recursive: true });
+      await apis.mkdir(imagesPath, { recursive: true });
     }
 
     const imageFile = await apis.join(imagesPath, `${id}.png`);
     // Remove data URL prefix if present
-    const cleanBase64 = base64Data.replace(/^data:image\/png;base64,/, '');
+    const cleanBase64 = base64Data.replace(/^data:image\/png;base64,/, "");
     await apis.writeTextFile(imageFile, cleanBase64);
   }
 
@@ -142,7 +159,7 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const imageFile = await apis.join(appDataPath, 'images', `${id}.png`);
+      const imageFile = await apis.join(appDataPath, "images", `${id}.png`);
 
       if (!(await apis.exists(imageFile))) {
         return null;
@@ -151,7 +168,7 @@ class FileSystemService implements StorageBackend {
       const base64Data = await apis.readTextFile(imageFile);
       return `data:image/png;base64,${base64Data}`;
     } catch (error) {
-      console.error('Failed to load image:', error);
+      console.error("Failed to load image:", error);
       return null;
     }
   }
@@ -160,13 +177,13 @@ class FileSystemService implements StorageBackend {
   async saveSettings(settings: Settings): Promise<void> {
     const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const configPath = await apis.join(appDataPath, 'config');
+    const configPath = await apis.join(appDataPath, "config");
 
     if (!(await apis.exists(configPath))) {
-      await apis.createDir(configPath, { recursive: true });
+      await apis.mkdir(configPath, { recursive: true });
     }
 
-    const settingsFile = await apis.join(configPath, 'settings.json');
+    const settingsFile = await apis.join(configPath, "settings.json");
     await apis.writeTextFile(settingsFile, JSON.stringify(settings, null, 2));
   }
 
@@ -174,7 +191,11 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const settingsFile = await apis.join(appDataPath, 'config', 'settings.json');
+      const settingsFile = await apis.join(
+        appDataPath,
+        "config",
+        "settings.json",
+      );
 
       if (!(await apis.exists(settingsFile))) {
         return null;
@@ -183,39 +204,65 @@ class FileSystemService implements StorageBackend {
       const content = await apis.readTextFile(settingsFile);
       return JSON.parse(content);
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error("Failed to load settings:", error);
       return null;
     }
   }
 
   // Gemini API key storage
   async saveGeminiApiKey(apiKey: string): Promise<void> {
-    const apis = await this.getApis();
-    const appDataPath = await this.ensureAppDataPath();
-    const configPath = await apis.join(appDataPath, 'config');
-
-    if (!(await apis.exists(configPath))) {
-      await apis.createDir(configPath, { recursive: true });
-    }
-
-    const keyFile = await apis.join(configPath, 'gemini_key.txt');
-    await apis.writeTextFile(keyFile, apiKey);
+    return this.saveApiKey("gemini", apiKey);
   }
 
   async getGeminiApiKey(): Promise<string | null> {
+    return this.getApiKey("gemini");
+  }
+
+  async clearGeminiApiKey(): Promise<void> {
+    return this.clearApiKey("gemini");
+  }
+
+  // Generic provider API key — stored as plaintext in app data dir (Tauri is sandboxed)
+  async saveApiKey(provider: string, apiKey: string): Promise<void> {
+    const apis = await this.getApis();
+    const configPath = await apis.join(
+      await this.ensureAppDataPath(),
+      "config",
+    );
+    if (!(await apis.exists(configPath)))
+      await apis.mkdir(configPath, { recursive: true });
+    await apis.writeTextFile(
+      await apis.join(configPath, `${provider}_key.txt`),
+      apiKey,
+    );
+  }
+
+  async getApiKey(provider: string): Promise<string | null> {
     try {
       const apis = await this.getApis();
-      const appDataPath = await this.ensureAppDataPath();
-      const keyFile = await apis.join(appDataPath, 'config', 'gemini_key.txt');
-
-      if (!(await apis.exists(keyFile))) {
-        return null;
-      }
-
+      const keyFile = await apis.join(
+        await this.ensureAppDataPath(),
+        "config",
+        `${provider}_key.txt`,
+      );
+      if (!(await apis.exists(keyFile))) return null;
       return await apis.readTextFile(keyFile);
-    } catch (error) {
-      console.error('Failed to load Gemini API key:', error);
+    } catch {
       return null;
+    }
+  }
+
+  async clearApiKey(provider: string): Promise<void> {
+    try {
+      const apis = await this.getApis();
+      const keyFile = await apis.join(
+        await this.ensureAppDataPath(),
+        "config",
+        `${provider}_key.txt`,
+      );
+      if (await apis.exists(keyFile)) await apis.remove(keyFile);
+    } catch {
+      /* ignore */
     }
   }
 
@@ -223,10 +270,10 @@ class FileSystemService implements StorageBackend {
   async saveSnapshot(snapshotId: string, data: any): Promise<void> {
     const apis = await this.getApis();
     const appDataPath = await this.ensureAppDataPath();
-    const snapshotsPath = await apis.join(appDataPath, 'snapshots');
+    const snapshotsPath = await apis.join(appDataPath, "snapshots");
 
     if (!(await apis.exists(snapshotsPath))) {
-      await apis.createDir(snapshotsPath, { recursive: true });
+      await apis.mkdir(snapshotsPath, { recursive: true });
     }
 
     const snapshotFile = await apis.join(snapshotsPath, `${snapshotId}.json`);
@@ -237,7 +284,11 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const snapshotFile = await apis.join(appDataPath, 'snapshots', `${snapshotId}.json`);
+      const snapshotFile = await apis.join(
+        appDataPath,
+        "snapshots",
+        `${snapshotId}.json`,
+      );
 
       if (!(await apis.exists(snapshotFile))) {
         return null;
@@ -246,7 +297,7 @@ class FileSystemService implements StorageBackend {
       const content = await apis.readTextFile(snapshotFile);
       return JSON.parse(content);
     } catch (error) {
-      console.error('Failed to load snapshot:', error);
+      console.error("Failed to load snapshot:", error);
       return null;
     }
   }
@@ -255,7 +306,7 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const snapshotsPath = await apis.join(appDataPath, 'snapshots');
+      const snapshotsPath = await apis.join(appDataPath, "snapshots");
 
       if (!(await apis.exists(snapshotsPath))) {
         return [];
@@ -263,10 +314,10 @@ class FileSystemService implements StorageBackend {
 
       const entries = await apis.readDir(snapshotsPath);
       return entries
-        .filter(entry => entry.name.endsWith('.json'))
-        .map(entry => entry.name.replace('.json', ''));
+        .filter((entry) => entry.name.endsWith(".json"))
+        .map((entry) => entry.name.replace(".json", ""));
     } catch (error) {
-      console.error('Failed to list snapshots:', error);
+      console.error("Failed to list snapshots:", error);
       return [];
     }
   }
@@ -275,39 +326,46 @@ class FileSystemService implements StorageBackend {
     try {
       const apis = await this.getApis();
       const appDataPath = await this.ensureAppDataPath();
-      const snapshotFile = await apis.join(appDataPath, 'snapshots', `${snapshotId}.json`);
+      const snapshotFile = await apis.join(
+        appDataPath,
+        "snapshots",
+        `${snapshotId}.json`,
+      );
 
       if (await apis.exists(snapshotFile)) {
-        await apis.removeFile(snapshotFile);
+        await apis.remove(snapshotFile);
       }
     } catch (error) {
-      console.error('Failed to delete snapshot:', error);
+      console.error("Failed to delete snapshot:", error);
     }
   }
 
   // Import/Export functionality
-  async exportProject(project: StoryProject, format: 'json' | 'markdown' | 'docx' = 'json'): Promise<void> {
+  async exportProject(
+    project: StoryProject,
+    format: "json" | "markdown" | "docx" = "json",
+  ): Promise<void> {
     const apis = await this.getApis();
     let fileName: string;
     let content: string;
     let extension: string;
 
     switch (format) {
-      case 'json':
-        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
+      case "json":
+        fileName = `${project.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
         content = JSON.stringify(project, null, 2);
-        extension = 'json';
+        extension = "json";
         break;
-      case 'markdown':
-        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
+      case "markdown":
+        fileName = `${project.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
         content = this.convertToMarkdown(project);
-        extension = 'md';
+        extension = "md";
         break;
-      case 'docx':
+      case "docx":
         // For docx, we'll save as markdown for now and handle conversion later
-        fileName = `${project.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
+        fileName = `${project.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
         content = this.convertToMarkdown(project);
-        extension = 'md';
+        extension = "md";
         break;
       default:
         throw new Error(`Unsupported export format: ${format}`);
@@ -315,10 +373,12 @@ class FileSystemService implements StorageBackend {
 
     const filePath = await apis.save({
       defaultPath: `${fileName}.${extension}`,
-      filters: [{
-        name: format.toUpperCase(),
-        extensions: [extension]
-      }]
+      filters: [
+        {
+          name: format.toUpperCase(),
+          extensions: [extension],
+        },
+      ],
     });
 
     if (filePath) {
@@ -331,10 +391,10 @@ class FileSystemService implements StorageBackend {
     const filePath = await apis.open({
       multiple: false,
       filters: [
-        { name: 'JSON', extensions: ['json'] },
-        { name: 'Markdown', extensions: ['md', 'markdown'] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
+        { name: "JSON", extensions: ["json"] },
+        { name: "Markdown", extensions: ["md", "markdown"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
     });
 
     if (!filePath || Array.isArray(filePath)) {
@@ -343,54 +403,62 @@ class FileSystemService implements StorageBackend {
 
     const content = await apis.readTextFile(filePath);
 
-    if (filePath.endsWith('.json')) {
+    if (filePath.endsWith(".json")) {
       return JSON.parse(content);
-    } else if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+    } else if (filePath.endsWith(".md") || filePath.endsWith(".markdown")) {
       return this.parseMarkdownProject(content);
     }
 
-    throw new Error('Unsupported file format');
+    throw new Error("Unsupported file format");
   }
 
   private convertToMarkdown(project: StoryProject): string {
     let markdown = `---
 title: "${project.title}"
-author: "${project.author || ''}"
-description: "${project.description || ''}"
+author: "${project.author || ""}"
+description: "${project.description || ""}"
 created: "${project.createdAt}"
 updated: "${project.updatedAt}"
 ---
 
 # ${project.title}
 
-${project.description || ''}
+${project.description || ""}
 
 ## Characters
 
-${project.characters.map(char => `### ${char.name}
+${project.characters
+  .map(
+    (char) => `### ${char.name}
 
-${char.backstory || ''}
+${char.backstory || ""}
 
-**Personality:** ${char.personalityTraits || ''}
-**Motivation:** ${char.motivation || ''}
-**Appearance:** ${char.appearance || ''}
+**Personality:** ${char.personalityTraits || ""}
+**Motivation:** ${char.motivation || ""}
+**Appearance:** ${char.appearance || ""}
 
-`).join('\n')}
+`,
+  )
+  .join("\n")}
 
 ## Worlds
 
-${project.worlds.map(world => `### ${world.name}
+${project.worlds
+  .map(
+    (world) => `### ${world.name}
 
-${world.description || ''}
+${world.description || ""}
 
-**Setting:** ${world.setting || ''}
-**Atmosphere:** ${world.atmosphere || ''}
+**Setting:** ${world.setting || ""}
+**Atmosphere:** ${world.atmosphere || ""}
 
-`).join('\n')}
+`,
+  )
+  .join("\n")}
 
 ## Manuscript
 
-${project.manuscript || 'No manuscript content yet.'}
+${project.manuscript || "No manuscript content yet."}
 
 `;
 
@@ -399,35 +467,35 @@ ${project.manuscript || 'No manuscript content yet.'}
 
   private parseMarkdownProject(content: string): StoryProject {
     // Simple markdown parser - in a real implementation, you'd use a proper markdown parser
-    const lines = content.split('\n');
-    let title = 'Imported Project';
-    let description = '';
-    let author = '';
-    let manuscript = '';
+    const lines = content.split("\n");
+    let title = "Imported Project";
+    let description = "";
+    let author = "";
+    let manuscript = "";
 
     let inFrontmatter = false;
     let inManuscript = false;
 
     for (const line of lines) {
-      if (line.trim() === '---') {
+      if (line.trim() === "---") {
         inFrontmatter = !inFrontmatter;
         continue;
       }
 
       if (inFrontmatter) {
-        if (line.startsWith('title:')) {
-          title = line.split(':')[1].trim().replace(/"/g, '');
-        } else if (line.startsWith('author:')) {
-          author = line.split(':')[1].trim().replace(/"/g, '');
-        } else if (line.startsWith('description:')) {
-          description = line.split(':')[1].trim().replace(/"/g, '');
+        if (line.startsWith("title:")) {
+          title = line.split(":")[1].trim().replace(/"/g, "");
+        } else if (line.startsWith("author:")) {
+          author = line.split(":")[1].trim().replace(/"/g, "");
+        } else if (line.startsWith("description:")) {
+          description = line.split(":")[1].trim().replace(/"/g, "");
         }
-      } else if (line.startsWith('## Manuscript')) {
+      } else if (line.startsWith("## Manuscript")) {
         inManuscript = true;
-      } else if (inManuscript && line.startsWith('## ')) {
+      } else if (inManuscript && line.startsWith("## ")) {
         inManuscript = false;
       } else if (inManuscript) {
-        manuscript += line + '\n';
+        manuscript += line + "\n";
       }
     }
 
@@ -443,15 +511,15 @@ ${project.manuscript || 'No manuscript content yet.'}
       manuscript: manuscript.trim(),
       templates: [],
       settings: {
-        theme: 'dark',
-        editorFont: 'serif',
-        aiCreativity: 'Balanced',
-        aiModel: 'gemini-1.5-flash',
+        theme: "dark",
+        editorFont: "serif",
+        aiCreativity: "Balanced",
+        aiModel: "gemini-1.5-flash",
         advancedAi: {
-          model: 'gemini-1.5-flash',
-          temperature: 0.7
-        }
-      }
+          model: "gemini-1.5-flash",
+          temperature: 0.7,
+        },
+      },
     };
   }
 }

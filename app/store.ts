@@ -39,6 +39,8 @@ const loggerMiddleware: Middleware = (store) => (next) => (action) => {
   return next(action);
 };
 
+import versionControlReducer from "../features/versionControl/versionControlSlice";
+
 const combinedReducer = combineReducers({
   project: undoable(projectReducer, {
     limit: 100,
@@ -47,6 +49,7 @@ const combinedReducer = combineReducers({
   settings: settingsReducer,
   status: statusReducer,
   writer: writerReducer,
+  versionControl: versionControlReducer,
 });
 
 // A sophisticated higher-order reducer to augment redux-undo's behavior
