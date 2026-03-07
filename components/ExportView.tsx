@@ -5,7 +5,7 @@ import { Select } from './ui/Select';
 import { Spinner } from './ui/Spinner';
 import { ICONS } from '../constants';
 import { useExportView } from '../hooks/useExportView';
-import { exportEpubViaApi } from '../services/epubApiService';
+import { exportEpub } from '../services/epubApiService';
 import { ExportViewContext, useExportViewContext } from '../contexts/ExportViewContext';
 import { useAppSelector } from '../app/hooks';
 import { Textarea } from './ui/Textarea';
@@ -36,27 +36,24 @@ const ExportControls: FC = () => {
     const [epubLoading, setEpubLoading] = React.useState(false);
     const [epubError, setEpubError] = React.useState<string | null>(null);
 
-    const handleApiEpubExport = async () => {
+    const handleEpubExport = async () => {
         setEpubError(null);
         setEpubLoading(true);
         try {
-            const chapters = project.manuscript.map(section => ({ title: section.title, content: section.content || '' }));
-            const epubBlob = await exportEpubViaApi({
+            const chapters = project.manuscript.map(section => ({
+                title: section.title,
+                content: section.content || '',
+            }));
+            await exportEpub({
                 title: project.title,
                 author: project.author || '',
-                synopsis,
+                synopsis: synopsis || undefined,
                 chapters,
+                lang: 'de',
             });
-            const url = URL.createObjectURL(epubBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${project.title}.epub`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        } catch (e: any) {
-            setEpubError('EPUB-Export fehlgeschlagen: ' + (e?.message || e?.toString()));
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setEpubError('EPUB-Export fehlgeschlagen: ' + msg);
         } finally {
             setEpubLoading(false);
         }
@@ -129,9 +126,9 @@ const ExportControls: FC = () => {
                 <div className="p-4 space-y-3">
                     <Button onClick={handleDownload} className="w-full"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">{ICONS.EXPORT}</svg>{t('export.options.downloadButton')}</Button>
                     <Button onClick={handleCopyToClipboard} variant="secondary" className="w-full">{copied ? t('export.options.copied') : t('common.copyToClipboard')}</Button>
-                    <Button onClick={handleApiEpubExport} variant="secondary" className="w-full" disabled={epubLoading}>
-                        {epubLoading ? <Spinner className="w-4 h-4 mr-2"/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>}
-                        EPUB Export (Server)
+                    <Button onClick={handleEpubExport} variant="secondary" className="w-full" disabled={epubLoading}>
+                        {epubLoading ? <Spinner className="w-4 h-4 mr-2"/> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0118 18a8.967 8.967 0 01-6 2.292m0-14.25v14.25" /></svg>}
+                        EPUB 3.0 exportieren
                     </Button>
                     {epubError && <p className="text-red-500 text-sm">{epubError}</p>}
                 </div>

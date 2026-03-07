@@ -2,7 +2,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Character } from '../../types';
 
-export type WriterTool = 'continue' | 'improve' | 'changeTone' | 'dialogue' | 'brainstorm' | 'synopsis' | 'grammarCheck';
+export type WriterTool = 'continue' | 'improve' | 'changeTone' | 'dialogue' | 'brainstorm' | 'synopsis' | 'grammarCheck' | 'imagePrompt';
 
 export interface WriterState {
     activeTool: WriterTool;

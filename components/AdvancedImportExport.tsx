@@ -23,6 +23,9 @@ export const AdvancedImportExport: React.FC = () => {
   const [importFormat, setImportFormat] = useState<'json' | 'markdown' | 'docx'>('json');
   const [exportFormat, setExportFormat] = useState<'json' | 'markdown' | 'docx'>('json');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPasteSection, setShowPasteSection] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteTitle, setPasteTitle] = useState('');
 
   const handleImport = async () => {
     if (!project) return;
@@ -57,6 +60,29 @@ export const AdvancedImportExport: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePasteImport = () => {
+    if (!pasteText.trim() || !project) return;
+    const newSection = {
+      id: `paste-${Date.now()}`,
+      title: pasteTitle.trim() || 'Eingefügter Inhalt',
+      content: pasteText.trim(),
+    };
+    dispatch(projectActions.setManuscript([...project.manuscript, newSection]));
+    toast.success(t('export.importSuccess'), newSection.title);
+    setPasteText('');
+    setPasteTitle('');
+    setShowPasteSection(false);
+  };
+
+  const handleCopyForNotion = () => {
+    if (!project) return;
+    const md = project.manuscript
+      .map(s => `# ${s.title}\n\n${s.content}`)
+      .join('\n\n---\n\n');
+    navigator.clipboard.writeText(md);
+    toast.success('Markdown kopiert — in Notion oder Google Docs einfügen');
   };
 
   const handleDocxImport = async (file: File) => {
@@ -128,6 +154,57 @@ export const AdvancedImportExport: React.FC = () => {
           {t('export.exportProject')}
         </Button>
       </div>
+
+      {/* Google Docs / Notion Section */}
+      <Card className="mt-4">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">Google Docs / Notion</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPasteSection(!showPasteSection)}
+            >
+              {showPasteSection ? '▲ Einklappen' : '▼ Text einfügen'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {showPasteSection && (
+            <div className="space-y-3 mb-3">
+              <input
+                type="text"
+                placeholder="Kapiteltitel (optional)"
+                value={pasteTitle}
+                onChange={(e) => setPasteTitle(e.target.value)}
+                className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--input-background)] text-[var(--foreground)] text-sm"
+              />
+              <textarea
+                placeholder="Text aus Google Docs oder Notion hier einfügen (Strg+V)…"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--input-background)] text-[var(--foreground)] text-sm resize-y font-mono"
+              />
+              <Button
+                onClick={handlePasteImport}
+                disabled={!pasteText.trim()}
+                className="w-full"
+              >
+                Als Kapitel importieren
+              </Button>
+            </div>
+          )}
+          <Button
+            variant="secondary"
+            onClick={handleCopyForNotion}
+            disabled={!project?.manuscript.length}
+            className="w-full"
+          >
+            Als Markdown für Notion / Google Docs kopieren
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Import Modal */}
       <Modal

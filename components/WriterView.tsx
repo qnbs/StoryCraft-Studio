@@ -13,6 +13,7 @@ import { Textarea } from './ui/Textarea';
 import { useAppSelector } from '../app/hooks';
 import { Checkbox } from './ui/Checkbox';
 import { Input } from './ui/Input';
+import { useTTS } from '../hooks/useTTS';
 
 // --- SUB-COMPONENTS ---
 
@@ -115,6 +116,7 @@ const ToolsPanel: FC = React.memo(() => {
         { id: 'critic', title: t('writer.studio.tools.critic.title'), icon: ICONS.CHECK },
         { id: 'plotholes', title: t('writer.studio.tools.plotholes.title'), icon: ICONS.CHECK },
         { id: 'consistency', title: t('writer.studio.tools.consistency.title'), icon: ICONS.CHECK },
+        { id: 'imagePrompt', title: 'Bild-Prompt', icon: ICONS.PHOTO },
     ];
     
     const handleToneSelect = (val: string) => {
@@ -159,6 +161,17 @@ const ToolsPanel: FC = React.memo(() => {
             case 'plotholes': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.plotholes.instruction')}</p>;
             case 'consistency': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.consistency.instruction')}</p>;
             case 'grammarCheck': return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.grammarCheck.instruction')}</p>
+            case 'imagePrompt': return (
+                <div className="space-y-2">
+                    <p className="text-sm text-[var(--foreground-muted)]">
+                        Generiert einen optimierten <strong>DALL·E 3 / Midjourney</strong>-Prompt aus der aktuellen Szene oder Textauswahl.
+                    </p>
+                    <div className="text-xs text-[var(--foreground-muted)] bg-[var(--background-tertiary)]/50 border border-[var(--border-primary)] rounded p-2 space-y-1">
+                        <p>💡 <strong>Tipp:</strong> Markiere einen bestimmten Textabschnitt für einen fokussierten Szenen-Prompt.</p>
+                        <p>🎨 Der generierte Prompt funktioniert direkt in DALL·E 3 und Midjourney.</p>
+                    </div>
+                </div>
+            );
             default: return <p className="text-sm text-[var(--foreground-muted)]">{t('writer.studio.tools.continue.instruction')}</p>;
         }
     }
@@ -241,10 +254,12 @@ const ToolsPanel: FC = React.memo(() => {
 
 
 const AiScratchpad: FC = React.memo(() => {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { writerState, handleAccept, handleGenerate, handleNavigateHistory, handleUpdateScratchpad, dispatch } = useWriterViewContext();
     const { generationHistory, activeHistoryIndex, isLoading, activeTool } = writerState;
     const currentResult = generationHistory[activeHistoryIndex] || '';
+    const { speak, stop, isSpeaking, isSupported: ttsSupported } = useTTS();
+    const ttsLang = language === 'de' ? 'de-DE' : 'en-US';
     
     // Auto-scroll logic
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -286,6 +301,19 @@ const AiScratchpad: FC = React.memo(() => {
                             </div>
                              <div className="flex items-center space-x-2">
                                  {isLoading ? null : <Button onClick={handleGenerate} variant="secondary" size="sm" disabled={isLoading}>{t('writer.studio.result.retry')}</Button>}
+                                 {ttsSupported && (
+                                     <Button
+                                         onClick={() => isSpeaking ? stop() : speak(currentResult, ttsLang)}
+                                         variant="ghost" size="sm"
+                                         title={isSpeaking ? 'Vorlesen stoppen' : 'Vorlesen'}
+                                         disabled={!currentResult || isLoading}
+                                     >
+                                         {isSpeaking
+                                             ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" /></svg>
+                                             : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                                         }
+                                     </Button>
+                                 )}
                                  <Button onClick={() => navigator.clipboard.writeText(currentResult)} variant="ghost" size="sm" title={t('common.copyToClipboard')}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg></Button>
                              </div>
                          </div>

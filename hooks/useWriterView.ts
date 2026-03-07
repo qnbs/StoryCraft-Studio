@@ -115,6 +115,28 @@ Prüfe diesen Text:
 ${content}
 """
 `;
+
+            case 'imagePrompt':
+                const sceneText = selection.text || content.substring(0, 2000);
+                return `You are an expert AI image prompt engineer for Midjourney and DALL·E 3.
+
+Analyze the following scene from a story and generate ONE detailed, optimized image prompt that captures the mood, setting, characters, and atmosphere.
+
+Scene:
+"""
+${sceneText}
+"""
+
+Output ONLY the image prompt — no explanation, no preamble. Format:
+- For DALL·E 3: start with "A [style] [scene description], [lighting], [mood], [details], [art style], [camera angle if relevant]"
+- For Midjourney: append "::2 [art style] --ar 16:9 --q 2 --stylize 750" at the end
+
+Generate a single prompt that works for both tools. Be specific, vivid, and include:
+- Art style (e.g., cinematic photography, digital painting, oil painting)
+- Lighting (e.g., golden hour, dramatic shadows, soft diffused light)
+- Mood/atmosphere (e.g., tense, ethereal, melancholic)
+- Key visual details of characters and environment
+- Camera perspective if relevant`;
             
             default: return '';
         }
