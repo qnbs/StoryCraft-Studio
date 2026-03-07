@@ -1,21 +1,8 @@
 import React, { FC, useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import ForceGraph2D, { NodeObject, LinkObject } from 'react-force-graph-2d';
 import { Card, CardContent, CardHeader } from './ui/Card';
-import { Button } from './ui/Button';
-import { Spinner } from './ui/Spinner';
 import { useCharacterGraphView } from '../hooks/useCharacterGraphView';
 import { CharacterGraphViewContext, useCharacterGraphViewContext } from '../contexts/CharacterGraphViewContext';
-
-// Deterministische Kreis-Layout-Funktion (kein Math.random() → kein Re-render-Crash)
-function computeCircleLayout(count: number, radius = 280, centerX = 400, centerY = 300) {
-    if (count === 0) return [];
-    return Array.from({ length: count }, (_, i) => {
-        const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-        return {
-            x: centerX + radius * Math.cos(angle),
-            y: centerY + radius * Math.sin(angle),
-        };
-    });
-}
 
 const RELATIONSHIP_COLORS: Record<string, string> = {
     family: '#ef4444',
@@ -32,57 +19,65 @@ function getRelationshipColor(type: string): string {
     return RELATIONSHIP_COLORS[type] || '#6b7280';
 }
 
-// Leichtgewichtiger SVG-Graph ohne externe Abhängigkeit
-const CharacterGraphSVG: FC = () => {
-    const { t, characters, relationships, onAddRelationship, onUpdateRelationship } = useCharacterGraphViewContext();
-    const svgRef = useRef<SVGSVGElement>(null);
-    const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 800, h: 600 });
-    const [isPanning, setIsPanning] = useState(false);
-    const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-    const [selectedNode, setSelectedNode] = useState<string | null>(null);
+type GraphNode = NodeObject & { id: string; name: string; role: string };
+type GraphLink = LinkObject & { type: string; strength: number };
 
-    // Positionen deterministisch berechnen; bei >30 Chars engere Kreise
-    const positions = useMemo(() => {
-        const count = characters.length;
-        const radius = count > 20 ? 350 : count > 10 ? 280 : 200;
-        const layout = computeCircleLayout(count, radius, 400, 320);
-        const map: Record<string, { x: number; y: number }> = {};
-        characters.forEach((char, i) => { map[char.id] = layout[i]; });
-        return map;
-    }, [characters]);
+// ForceGraph2D-basierte Darstellung mit Physics-Layout
+const CharacterForceGraph: FC = () => {
+    const { characters, relationships } = useCharacterGraphViewContext();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
-    const zoom = useCallback((delta: number) => {
-        setViewBox(vb => {
-            const factor = delta > 0 ? 1.15 : 0.87;
-            const newW = Math.max(200, Math.min(2000, vb.w * factor));
-            const newH = Math.max(150, Math.min(1500, vb.h * factor));
-            return { ...vb, w: newW, h: newH };
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(entries => {
+            const { width, height } = entries[0].contentRect;
+            if (width > 0 && height > 0) setDimensions({ width, height });
         });
+        ro.observe(el);
+        return () => ro.disconnect();
     }, []);
 
-    const handleWheel = useCallback((e: React.WheelEvent) => {
-        e.preventDefault();
-        zoom(e.deltaY);
-    }, [zoom]);
+    const graphData = useMemo(() => ({
+        nodes: characters.map((c) => ({ id: c.id, name: c.name, role: (c as Record<string, unknown>).role as string ?? '' })),
+        links: relationships.map((r) => ({
+            source: r.fromCharacterId,
+            target: r.toCharacterId,
+            type: r.type,
+            strength: r.strength ?? 5,
+        })),
+    }), [characters, relationships]);
 
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.target === svgRef.current || (e.target as Element).tagName === 'svg') {
-            setIsPanning(true);
-            setPanStart({ x: e.clientX, y: e.clientY });
+    const nodeCanvasObject = useCallback((node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        const n = node as GraphNode;
+        const x = node.x ?? 0;
+        const y = node.y ?? 0;
+        const r = 18;
+
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#4f46e5';
+        ctx.fill();
+        ctx.strokeStyle = '#818cf8';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const initials = n.name.slice(0, 2).toUpperCase();
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(8, 13 / globalScale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials, x, y);
+
+        if (globalScale >= 0.6) {
+            const label = n.name.length > 14 ? n.name.slice(0, 13) + '\u2026' : n.name;
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = `${Math.max(6, 10 / globalScale)}px sans-serif`;
+            ctx.textBaseline = 'top';
+            ctx.fillText(label, x, y + r + 3);
         }
     }, []);
-
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        if (!isPanning) return;
-        const dx = (e.clientX - panStart.x) * (viewBox.w / (svgRef.current?.clientWidth || 800));
-        const dy = (e.clientY - panStart.y) * (viewBox.h / (svgRef.current?.clientHeight || 600));
-        setViewBox(vb => ({ ...vb, x: vb.x - dx, y: vb.y - dy }));
-        setPanStart({ x: e.clientX, y: e.clientY });
-    }, [isPanning, panStart, viewBox]);
-
-    const handleMouseUp = useCallback(() => setIsPanning(false), []);
-
-    const resetView = useCallback(() => setViewBox({ x: 0, y: 0, w: 800, h: 600 }), []);
 
     if (characters.length === 0) {
         return (
@@ -96,104 +91,39 @@ const CharacterGraphSVG: FC = () => {
     }
 
     return (
-        <div className="relative w-full h-full">
-            {/* Zoom-Buttons */}
-            <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
-                <button onClick={() => zoom(-1)} className="w-8 h-8 rounded bg-[var(--background-secondary)] border border-[var(--border-primary)] text-[var(--foreground-primary)] hover:bg-[var(--background-tertiary)] font-bold text-lg flex items-center justify-center">+</button>
-                <button onClick={() => zoom(1)} className="w-8 h-8 rounded bg-[var(--background-secondary)] border border-[var(--border-primary)] text-[var(--foreground-primary)] hover:bg-[var(--background-tertiary)] font-bold text-lg flex items-center justify-center">−</button>
-                <button onClick={resetView} title="Ansicht zurücksetzen" className="w-8 h-8 rounded bg-[var(--background-secondary)] border border-[var(--border-primary)] text-[var(--foreground-muted)] hover:bg-[var(--background-tertiary)] text-xs flex items-center justify-center">⊙</button>
-            </div>
-
-            <svg
-                ref={svgRef}
-                className="w-full h-full cursor-grab select-none"
-                style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
-                viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-            >
-                <defs>
-                    <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
-                        <polygon points="0 0, 6 2, 0 4" fill="#6b7280" />
-                    </marker>
-                </defs>
-
-                {/* Kanten / Beziehungen */}
-                {relationships.map(rel => {
-                    const from = positions[rel.fromCharacterId];
-                    const to = positions[rel.toCharacterId];
-                    if (!from || !to) return null;
-                    const color = getRelationshipColor(rel.type);
-                    const mx = (from.x + to.x) / 2;
-                    const my = (from.y + to.y) / 2;
-                    return (
-                        <g key={rel.id}>
-                            <line
-                                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                                stroke={color}
-                                strokeWidth={Math.max(1, (rel.strength || 5) / 3)}
-                                strokeOpacity={0.7}
-                                markerEnd="url(#arrowhead)"
-                            />
-                            <text x={mx} y={my - 4} textAnchor="middle" fontSize="9" fill={color} opacity={0.9}>
-                                {rel.type}
-                            </text>
-                        </g>
-                    );
-                })}
-
-                {/* Knoten / Charaktere */}
-                {characters.map(char => {
-                    const pos = positions[char.id];
-                    if (!pos) return null;
-                    const isSelected = selectedNode === char.id;
-                    const r = isSelected ? 32 : 28;
-                    const letters = char.name.slice(0, 2).toUpperCase();
-                    return (
-                        <g key={char.id} onClick={() => setSelectedNode(isSelected ? null : char.id)} style={{ cursor: 'pointer' }}>
-                            <circle
-                                cx={pos.x} cy={pos.y} r={r + 4}
-                                fill="var(--background-secondary)"
-                                stroke={isSelected ? 'var(--background-interactive)' : 'var(--border-primary)'}
-                                strokeWidth={isSelected ? 3 : 1.5}
-                            />
-                            <circle
-                                cx={pos.x} cy={pos.y} r={r}
-                                fill={isSelected ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.12)'}
-                            />
-                            <text x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="12" fontWeight="bold" fill="var(--foreground-primary)">
-                                {letters}
-                            </text>
-                            <text x={pos.x} y={pos.y + r + 14} textAnchor="middle" fontSize="10" fill="var(--foreground-secondary)">
-                                {char.name.length > 12 ? char.name.slice(0, 11) + '…' : char.name}
-                            </text>
-                        </g>
-                    );
-                })}
-            </svg>
-
-            {/* Hinweis bei vielen Charakteren */}
-            {characters.length > 30 && (
-                <div className="absolute bottom-2 left-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1">
-                    {characters.length} Charaktere – Scroll zum Zoomen, Ziehen zum Verschieben
-                </div>
-            )}
+        <div ref={containerRef} className="w-full h-full" style={{ minHeight: 400 }}>
+            <ForceGraph2D
+                graphData={graphData}
+                width={dimensions.width}
+                height={dimensions.height}
+                backgroundColor="rgba(0,0,0,0)"
+                nodeCanvasObject={nodeCanvasObject}
+                nodeCanvasObjectMode={() => 'replace'}
+                nodeRelSize={18}
+                nodeLabel={(node) => (node as GraphNode).name}
+                linkColor={(link) => getRelationshipColor((link as GraphLink).type) + 'cc'}
+                linkWidth={(link) => Math.max(0.5, ((link as GraphLink).strength ?? 5) / 2.5)}
+                linkDirectionalArrowLength={5}
+                linkDirectionalArrowRelPos={1}
+                linkLabel={(link) => (link as GraphLink).type}
+                warmupTicks={80}
+                cooldownTime={4000}
+                d3AlphaDecay={0.03}
+                d3VelocityDecay={0.3}
+            />
         </div>
     );
 };
 
 const CharacterGraphUI: FC = () => {
-    const { t, characters, relationships, onAddRelationship, onUpdateRelationship } = useCharacterGraphViewContext();
+    const { t, characters, relationships, onUpdateRelationship } = useCharacterGraphViewContext();
 
     return (
         <div className="h-full flex flex-col">
             <div className="mb-4 flex items-center justify-between flex-shrink-0">
                 <h1 className="text-2xl font-bold text-[var(--foreground-primary)]">{t('characterGraph.title')}</h1>
                 <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)]">
-                    <span>{characters.length} Charaktere · {relationships.length} Beziehungen</span>
+                    <span>{characters.length} Charaktere &middot; {relationships.length} Beziehungen</span>
                 </div>
             </div>
 
@@ -202,7 +132,7 @@ const CharacterGraphUI: FC = () => {
                 <div className="lg:col-span-3">
                     <Card className="h-full min-h-[400px]">
                         <CardContent className="p-0 h-full min-h-[400px] rounded-xl overflow-hidden">
-                            <CharacterGraphSVG />
+                            <CharacterForceGraph />
                         </CardContent>
                     </Card>
                 </div>
@@ -238,7 +168,7 @@ const CharacterGraphUI: FC = () => {
                                             <div className="flex items-center gap-1">
                                                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                                                 <span className="font-medium text-[var(--foreground-primary)] truncate">{fromChar?.name}</span>
-                                                <span className="text-[var(--foreground-muted)]">→</span>
+                                                <span className="text-[var(--foreground-muted)]">&rarr;</span>
                                                 <span className="font-medium text-[var(--foreground-primary)] truncate">{toChar?.name}</span>
                                             </div>
                                             <div className="flex items-center gap-2">

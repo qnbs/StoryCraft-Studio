@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { useAppDispatch, useAppSelector, useAppSelectorShallow } from '../app/hooks';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
 import { projectActions, generateLoglineSuggestionsThunk, proofreadTextThunk } from '../features/project/projectSlice';
 import { useTranslation } from './useTranslation';

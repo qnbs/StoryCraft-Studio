@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from './useTranslation';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { useAppDispatch, useAppSelector, useAppSelectorShallow } from '../app/hooks';
 import { selectProjectData, selectManuscript, selectAllCharacters } from '../features/project/projectSelectors';
 import { writerActions, WriterState } from '../features/writer/writerSlice';
 import { projectActions, streamGenerationThunk } from '../features/project/projectSlice';
@@ -11,7 +11,7 @@ export const useWriterView = () => {
     const project = useAppSelector(selectProjectData);
     const characters = useAppSelector(selectAllCharacters);
     const manuscript = useAppSelector(selectManuscript);
-    const writerState = useAppSelector((state) => state.writer);
+    const writerState = useAppSelectorShallow((state) => state.writer);
 
     const { activeTool, selection, dialogueCharacters, scenario, brainstormContext, tone, style, isLoading, generationHistory, activeHistoryIndex } = writerState;
     
@@ -139,11 +139,14 @@ ${content}
         if (!prompt) return;
 
         dispatch(writerActions.startLoading());
+        dispatch(writerActions.clearResultStream()); // Live-Preview reset
         let fullStream = "";
         
         const onChunk = (chunk: string) => {
             fullStream += chunk;
+            // Dual-update: history für Accept-Button, resultStream für Live-Preview
             dispatch(writerActions.updateCurrentHistoryItem(fullStream));
+            dispatch(writerActions.appendResultStream(chunk));
         };
         
         dispatch(writerActions.addHistory("")); // Add empty item to start
@@ -154,13 +157,12 @@ ${content}
             onChunk, 
             signal: abortControllerRef.current.signal 
         }))
-        .unwrap() // Unwrap to handle errors locally if needed
+        .unwrap()
         .catch((err) => {
             if (err.name !== 'AbortError') {
                 console.error("Generation failed", err);
                 dispatch(writerActions.updateCurrentHistoryItem("Error generating content. Please try again later or check your API key."));
             } else {
-                // User cancelled
                 dispatch(writerActions.updateCurrentHistoryItem(fullStream + " [Cancelled]"));
             }
         })

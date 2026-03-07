@@ -1,6 +1,7 @@
 import { ProjectSnapshot } from '../types';
 import { ProjectData } from '../features/project/projectSlice';
 import { Settings } from '../types';
+import LZString from 'lz-string';
 
 const DB_NAME = 'storycraft-db';
 const DB_VERSION = 5; // v5: RAG vectors store added
@@ -8,6 +9,34 @@ const APP_DATA_STORE = 'app-data-store';
 const SNAPSHOTS_STORE = 'snapshots-store';
 const IMAGES_STORE = 'images-store';
 const RAG_VECTORS_STORE = 'rag-vectors-store';
+
+// LZ-String threshold: compress payloads >10 KB
+const COMPRESS_THRESHOLD_BYTES = 10_240;
+
+// Serialize + compress, transparently decompress on read
+function compressData<T>(data: T): string | T {
+    try {
+        const json = JSON.stringify(data);
+        if (json.length < COMPRESS_THRESHOLD_BYTES) return data; // small enough, skip
+        const compressed = LZString.compressToUTF16(json);
+        // prefix so we can identify compressed values
+        return '\x00lz1\x00' + compressed;
+    } catch {
+        return data;
+    }
+}
+
+function decompressData<T>(raw: any): T {
+    if (typeof raw === 'string' && raw.startsWith('\x00lz1\x00')) {
+        try {
+            const decompressed = LZString.decompressFromUTF16(raw.slice(5));
+            return JSON.parse(decompressed ?? '{}') as T;
+        } catch {
+            return raw as unknown as T;
+        }
+    }
+    return raw as T;
+}
 
 // Secure API Key Storage Records
 const GEMINI_API_KEY_RECORD = 'gemini_api_key_encrypted_v1';
@@ -243,7 +272,9 @@ class IndexedDBService implements StorageBackend {
   async saveSlice(sliceName: 'project' | 'settings', data: PersistedProjectState | Settings): Promise<void> {
     return new Promise(async (resolve, reject) => {
         const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
-        const request = store.put(data, sliceName);
+        // Compress large state objects (project data can exceed 100 KB)
+        const payload = compressData(data);
+        const request = store.put(payload, sliceName);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
     });
@@ -326,11 +357,11 @@ class IndexedDBService implements StorageBackend {
         }
         
         projectRequest.onsuccess = () => {
-            project = projectRequest.result;
+            project = decompressData(projectRequest.result);
             onComplete();
         };
         settingsRequest.onsuccess = () => {
-            settings = settingsRequest.result;
+            settings = decompressData(settingsRequest.result);
             onComplete();
         };
 
@@ -390,7 +421,8 @@ class IndexedDBService implements StorageBackend {
       date: new Date().toISOString(),
       name: name || 'Automatic Snapshot',
       wordCount,
-      data,
+      // Compress snapshot payload – snapshots can be very large
+      data: compressData(data),
     };
     
     const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
@@ -403,7 +435,8 @@ class IndexedDBService implements StorageBackend {
 
   async listSnapshots(): Promise<ProjectSnapshot[]> {
       const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
-      const request = store.openCursor(null, 'prev'); // Get newest first
+      // IDBKeyRange: iterate in reverse (newest first) using cursor direction 'prev'
+      const request = store.openCursor(null, 'prev');
       const snapshots: ProjectSnapshot[] = [];
 
       return new Promise((resolve, reject) => {
@@ -425,7 +458,10 @@ class IndexedDBService implements StorageBackend {
       const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
       return new Promise((resolve, reject) => {
           const request = store.get(id);
-          request.onsuccess = () => resolve(request.result.data);
+          request.onsuccess = () => {
+              const raw = request.result?.data;
+              resolve(decompressData<ProjectData>(raw));
+          };
           request.onerror = () => reject(request.error);
       });
   }
@@ -438,18 +474,25 @@ class IndexedDBService implements StorageBackend {
           request.onerror = () => reject(request.error);
       });
   }
-  
-  private async pruneAutoSnapshots(): Promise<void> {
-    const snapshots = await this.listSnapshots();
-    const autoSnapshots = snapshots
-        .filter(s => s.name === 'Automatic Snapshot')
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    if (autoSnapshots.length > this.MAX_AUTO_SNAPSHOTS) {
-        const snapshotsToDelete = autoSnapshots.slice(this.MAX_AUTO_SNAPSHOTS);
-        for (const snapshot of snapshotsToDelete) {
-            await this.deleteSnapshot(snapshot.id);
-        }
+  private async pruneAutoSnapshots(): Promise<void> {
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
+    // Use IDBKeyRange to get all keys efficiently (no full data fetch needed)
+    const allKeys: number[] = await new Promise((resolve, reject) => {
+        const req = store.getAllKeys();
+        req.onsuccess = () => resolve(req.result as number[]);
+        req.onerror = () => reject(req.error);
+    });
+
+    if (allKeys.length <= this.MAX_AUTO_SNAPSHOTS) return;
+
+    // Keys are auto-increment ints → oldest first; delete oldest excess
+    const toDelete = allKeys
+        .sort((a, b) => a - b)
+        .slice(0, allKeys.length - this.MAX_AUTO_SNAPSHOTS);
+
+    for (const key of toDelete) {
+        await this.deleteSnapshot(key);
     }
   }
 }

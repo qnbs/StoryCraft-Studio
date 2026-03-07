@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
-import { useAppSelector, useAppDispatch } from '../app/hooks';
+import { useAppSelector, useAppDispatch, useAppSelectorShallow } from '../app/hooks';
 import { projectActions } from '../features/project/projectSlice';
 import { selectAllCharacters } from '../features/project/projectSelectors';
 import { StorySection } from '../types';
@@ -8,7 +8,7 @@ import { StorySection } from '../types';
 export const useSceneBoardView = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const project = useAppSelector((state) => state.project.present.data);
+  const project = useAppSelectorShallow((state) => state.project.present.data);
   const characters = selectAllCharacters({ project: { present: { data: project } } } as any);
 
   const sections = useMemo(() => {

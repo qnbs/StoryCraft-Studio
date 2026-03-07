@@ -1,22 +1,9 @@
 
-import React, { FC, useEffect, useState, useCallback } from 'react';
+import React, { FC, useEffect, useState, lazy, Suspense } from 'react';
 import { useAppSelector, useAppDispatch } from './app/hooks';
 import { useApp } from './hooks/useApp';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './components/Dashboard';
-import { ManuscriptView } from './components/ManuscriptView';
-import { WriterView } from './components/WriterView';
-import { TemplateView } from './components/TemplateView';
-import { OutlineGeneratorView } from './components/OutlineGeneratorView';
-import { CharacterView } from './components/CharacterView';
-import { WorldView } from './components/WorldView';
-import { ExportView } from './components/ExportView';
-import { SettingsView } from './components/SettingsView';
-import { SceneBoardView } from './components/SceneBoardView';
-import { CharacterGraphView } from './components/CharacterGraphView';
-import { ConsistencyCheckerView } from './components/ConsistencyCheckerView';
-import { CriticView } from './components/CriticView';
 import { I18nProvider } from './contexts/I18nContext';
 import { useTranslation } from './hooks/useTranslation';
 import { AppContext } from './contexts/AppContext';
@@ -27,6 +14,30 @@ import { ToastProvider } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CommandPalette } from './components/CommandPalette';
 import { PWAInstallBanner, PWAUpdateToast, OfflineIndicator } from './components/ui/PWAComponents';
+
+// ── Lazy-geladene Views (Code-Splitting → separate JS-Chunks) ─────────────────
+const Dashboard             = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const ManuscriptView        = lazy(() => import('./components/ManuscriptView').then(m => ({ default: m.ManuscriptView })));
+const WriterView            = lazy(() => import('./components/WriterView').then(m => ({ default: m.WriterView })));
+const TemplateView          = lazy(() => import('./components/TemplateView').then(m => ({ default: m.TemplateView })));
+const OutlineGeneratorView  = lazy(() => import('./components/OutlineGeneratorView').then(m => ({ default: m.OutlineGeneratorView })));
+const CharacterView         = lazy(() => import('./components/CharacterView').then(m => ({ default: m.CharacterView })));
+const WorldView             = lazy(() => import('./components/WorldView').then(m => ({ default: m.WorldView })));
+const ExportView            = lazy(() => import('./components/ExportView').then(m => ({ default: m.ExportView })));
+const SettingsView          = lazy(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView })));
+const HelpView              = lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })));
+const SceneBoardView        = lazy(() => import('./components/SceneBoardView').then(m => ({ default: m.SceneBoardView })));
+const CharacterGraphView    = lazy(() => import('./components/CharacterGraphView').then(m => ({ default: m.CharacterGraphView })));
+const ConsistencyCheckerView = lazy(() => import('./components/ConsistencyCheckerView').then(m => ({ default: m.ConsistencyCheckerView })));
+const CriticView            = lazy(() => import('./components/CriticView').then(m => ({ default: m.CriticView })));
+const WelcomePortal         = lazy(() => import('./components/WelcomePortal').then(m => ({ default: m.WelcomePortal })));
+
+// Fallback während eine View geladen wird
+const ViewLoader: FC = () => (
+    <div className="flex h-full w-full items-center justify-center">
+        <Spinner className="w-10 h-10 text-indigo-500" />
+    </div>
+);
 
 interface AppProps {
     isNewUser: boolean;
@@ -91,21 +102,21 @@ const App: FC<AppProps> = ({ isNewUser }) => {
 
     const renderView = () => {
         switch (currentView) {
-            case 'dashboard': return <Dashboard onNavigate={handleNavigate} />;
-            case 'manuscript': return <ManuscriptView />;
-            case 'writer': return <WriterView />;
-            case 'templates': return <TemplateView onNavigate={handleNavigate} />;
-            case 'outline': return <OutlineGeneratorView onNavigate={handleNavigate} />;
-            case 'characters': return <CharacterView />;
-            case 'world': return <WorldView />;
-            case 'export': return <ExportView />;
-            case 'settings': return <SettingsView />;
-            case 'help': return <HelpView />;
-            case 'sceneboard': return <SceneBoardView />;
-            case 'characterGraph': return <CharacterGraphView />;
+            case 'dashboard':          return <Dashboard onNavigate={handleNavigate} />;
+            case 'manuscript':         return <ManuscriptView />;
+            case 'writer':             return <WriterView />;
+            case 'templates':          return <TemplateView onNavigate={handleNavigate} />;
+            case 'outline':            return <OutlineGeneratorView onNavigate={handleNavigate} />;
+            case 'characters':         return <CharacterView />;
+            case 'world':              return <WorldView />;
+            case 'export':             return <ExportView />;
+            case 'settings':           return <SettingsView />;
+            case 'help':               return <HelpView />;
+            case 'sceneboard':         return <SceneBoardView />;
+            case 'characterGraph':     return <CharacterGraphView />;
             case 'consistencyChecker': return <ConsistencyCheckerView />;
-            case 'critic': return <CriticView />;
-            default: return <Dashboard onNavigate={handleNavigate} />;
+            case 'critic':             return <CriticView />;
+            default:                   return <Dashboard onNavigate={handleNavigate} />;
         }
     };
 
@@ -118,7 +129,11 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     }
     
     if (isPortalActive) {
-        return <WelcomePortal onExit={appState.handlePortalExit} />;
+        return (
+            <Suspense fallback={<div className="flex h-[100dvh] w-screen items-center justify-center bg-[var(--background-primary)]"><Spinner className="w-16 h-16" /></div>}>
+                <WelcomePortal onExit={appState.handlePortalExit} />
+            </Suspense>
+        );
     }
 
     return (
@@ -134,7 +149,9 @@ const App: FC<AppProps> = ({ isNewUser }) => {
                     />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 scroll-smooth overscroll-none">
                         <ErrorBoundary>
-                            {renderView()}
+                            <Suspense fallback={<ViewLoader />}>
+                                {renderView()}
+                            </Suspense>
                         </ErrorBoundary>
                     </main>
                 </div>

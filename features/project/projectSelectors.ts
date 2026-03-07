@@ -56,3 +56,53 @@ export const selectOutline = createSelector(
     [selectProjectData],
     (data) => data?.outline || []
 );
+
+// --- Scene Board / Relationships ---
+export const selectRelationships = createSelector(
+    [selectProjectData],
+    (data) => data?.relationships || []
+);
+
+export const selectStorySections = createSelector(
+    [selectProjectData],
+    (data) => data?.manuscript || []
+);
+
+// --- Writing History / Goals ---
+export const selectWritingHistory = createSelector(
+    [selectProjectData],
+    (data) => data?.writingHistory || []
+);
+
+export const selectProjectGoals = createSelector(
+    [selectProjectData],
+    (data) => data?.projectGoals ?? { totalWordCount: 50000, targetDate: null }
+);
+
+// --- Aggregated Stats (verhindert Neuberechnung bei jedem Render) ---
+export const selectTotalWordCount = createSelector(
+    [selectManuscript],
+    (manuscript) =>
+        manuscript.reduce((acc, s) => acc + (s.content?.trim().split(/\s+/).filter(Boolean).length ?? 0), 0)
+);
+
+// Memoised character list for graph rendering
+export const selectCharactersForGraph = createSelector(
+    [selectAllCharacters, selectRelationships],
+    (characters, relationships) => ({ characters, relationships })
+);
+
+// --- Settings-derived selectors (re-render prevention) ---
+export const selectTheme = (state: RootState) => state.settings.theme;
+export const selectAiCreativity = (state: RootState) => state.settings.aiCreativity;
+export const selectLanguage = (state: RootState) => state.settings.language;
+export const selectEditorSettings = createSelector(
+    (state: RootState) => state.settings,
+    (s) => ({
+        editorFont: s.editorFont,
+        fontSize: s.fontSize,
+        lineSpacing: s.lineSpacing,
+        paragraphSpacing: s.paragraphSpacing,
+        indentFirstLine: s.indentFirstLine,
+    })
+);

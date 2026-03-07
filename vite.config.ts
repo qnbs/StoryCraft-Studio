@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // Repository name für GitHub Pages
 const REPO_NAME = 'StoryCraft-Studio';
@@ -35,7 +36,50 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      // register-sw.ts übernimmt die manuelle Registrierung
+      injectRegister: false,
+      registerType: 'prompt',
+      // Workbox generiert den Service Worker mit Precaching
+      strategies: 'generateSW',
+      // sw.js wird im Build-Output generiert (überschreibt public/sw.js)
+      filename: 'sw.js',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,ico,woff,woff2,png,webp}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            // i18n-Locale-Dateien: CacheFirst (selten veraltet)
+            urlPattern: /\/locales\/.*\.json$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'storycraft-i18n',
+              expiration: { maxAgeSeconds: 30 * 24 * 60 * 60, maxEntries: 60 },
+            },
+          },
+          {
+            // Gemini API: NetworkOnly (KI-Antworten dürfen nie gecacht werden)
+            urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\//,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Google Fonts: CacheFirst
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'storycraft-fonts',
+              expiration: { maxAgeSeconds: 60 * 24 * 60 * 60, maxEntries: 20 },
+            },
+          },
+        ],
+      },
+      // Manifest bereits in public/manifest.json eingebunden
+      manifest: false,
+    }),
+  ],
   
   resolve: {
     alias: {
@@ -68,6 +112,8 @@ export default defineConfig({
           'redux-vendor': ['@reduxjs/toolkit', 'react-redux', 'redux-undo'],
           'ai-vendor': ['@google/genai'],
           'export-vendor': ['jspdf', 'docx', 'jszip'],
+          'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'graph-vendor': ['react-force-graph-2d'],
         },
       },
     },

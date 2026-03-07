@@ -97,7 +97,14 @@ const writerSlice = createSlice({
             state.selectedSectionId = action.payload;
             // Also reset selection when section changes
             state.selection = { start: 0, end: 0, text: '' };
-        }
+        },
+        // Streaming Live-Preview: chunks werden inkrementell angehängt
+        appendResultStream: (state, action: PayloadAction<string>) => {
+            state.resultStream += action.payload;
+        },
+        clearResultStream: (state) => {
+            state.resultStream = '';
+        },
     }
 });
 

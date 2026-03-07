@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Theme, EditorFont, AiCreativity, StoryProject, ProjectSnapshot } from '../types';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { useAppDispatch, useAppSelector, useAppSelectorShallow } from '../app/hooks';
 import { settingsActions } from '../features/settings/settingsSlice';
 import { projectActions, importProjectThunk, restoreSnapshotThunk } from '../features/project/projectSlice';
 import { selectProjectData, selectAllCharacters, selectAllWorlds } from '../features/project/projectSelectors';
