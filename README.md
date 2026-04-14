@@ -24,7 +24,7 @@
 
 **🚀 [Launch StoryCraft Studio in your Browser!](https://qnbs.github.io/StoryCraft-Studio/) 🚀**
 
-✨ *Try it right now — no installation, no account required. All data is saved securely in your browser's IndexedDB.* ✨
+✨ _Try it right now — no installation, no account required. All data is saved securely in your browser's IndexedDB._ ✨
 
 ---
 
@@ -49,7 +49,7 @@
 
 In a world of generic text editors and bloated writing software, StoryCraft Studio carves its own niche by focusing on a holistic, AI-augmented narrative design process.
 
-- **✍️ From Macro to Micro:** Most tools focus only on writing. We cover the *entire* creative lifecycle — from high-level plot structure and world-building down to sentence-by-sentence prose refinement.
+- **✍️ From Macro to Micro:** Most tools focus only on writing. We cover the _entire_ creative lifecycle — from high-level plot structure and world-building down to sentence-by-sentence prose refinement.
 - **🧠 Intelligent Partnership:** The AI is not a ghostwriter — it's a Socratic partner, a tireless brainstormer, and a creative muse. It's designed to break blocks and expand your own potential, not replace it.
 - **🔒 Ultimate Privacy & Ownership:** Your story is your most valuable asset. A 100% local, offline-first architecture with IndexedDB means your data never leaves your machine. No clouds, no accounts, no compromises.
 - **🔬 Built-in Quality Tools:** Go beyond writing with the AI Critic, Plot-Hole Detector, and RAG Consistency Checker — tools that help you catch narrative weaknesses before your readers do.
@@ -59,55 +59,68 @@ In a world of generic text editors and bloated writing software, StoryCraft Stud
 ## 🚀 Features: A Comprehensive Creative Suite
 
 ### 📊 Dynamic Project Dashboard
+
 Your mission control. Track word counts against custom goals, visualize project statistics, manage your title and logline with AI assistance, and access all views from a single hub.
 
 ### ✍️ Three-Panel Manuscript Editor
+
 A focused, distraction-free writing environment. The central editor is flanked by a draggable chapter **Navigator** and a project **Inspector**. An advanced overlay provides real-time highlighting and linking for `@character` and `#world` mentions, turning your manuscript into a living document.
 
-### 🎬 Scene Board *(Visual Story Planning)*
+### 🎬 Scene Board _(Visual Story Planning)_
+
 A kanban-style drag-and-drop board for visual story planning. Organize your scenes across custom lanes, see your plot structure at a glance, and rearrange sections to check pacing and narrative flow without touching the manuscript.
 
-### 🕸️ Character Relationship Graph *(Interactive Visualization)*
+### 🕸️ Character Relationship Graph _(Interactive Visualization)_
+
 An interactive, force-directed graph that visualizes all relationships between your characters. See at a glance who knows whom, who is in conflict, and how your cast interconnects — invaluable for complex multi-POV narratives.
 
 ### 📚 Intelligent Story Template Library
+
 Jumpstart your creativity with a library of classic structures (Three-Act, Hero's Journey, Save the Cat! Beat Sheet, Fichtean Curve) and genre templates (Fantasy, Thriller, Horror, Romance, Space Opera, and more). **Remix any template** by dragging, editing, or adding sections. **Personalize with AI** to generate chapter-specific prompts based on your unique concept.
 
 ### 🤖 AI Outline Generator
+
 The ultimate cure for the blank page. Provide a concept and let the AI architect a detailed, chapter-by-chapter outline. Advanced controls let you specify genre, pacing, key characters, setting, and even mandate a specific plot twist. The result is a fully interactive, editable structure you can apply to your manuscript with one click.
 
 ### 👥 Advanced Character Dossiers
+
 Breathe life into your cast. Use the **AI Profile Generator** to create compelling backstories, motivations, and personality traits from a single concept. Generate a unique **AI character portrait** in a choice of styles (realistic, anime, cartoon, comic book). Manage relationships and character arcs with dedicated fields.
 
 ### 🌍 Expansive World-Building Atlas
+
 Construct the universe of your story. Define your world's history and lore, create interactive timelines and location lists, and let the **AI World Generation** feature write rich, consistent world-building content. Generate an atmospheric **ambiance image** to capture your world's visual identity.
 
-### ✨ AI Writing Studio *(10 Specialized AI Tools)*
+### ✨ AI Writing Studio _(10 Specialized AI Tools)_
+
 Your tireless creative co-pilot, available at every stage:
 
-| Tool | What it does |
-|---|---|
-| **Continue Writing** | Seamlessly continues from your last sentence in your voice |
-| **Improve Writing** | Rewrites selected prose for clarity, flow, and impact |
-| **Change Tone** | Shifts the register of any passage (darker, funnier, more formal, …) |
-| **Generate Dialogue** | Creates authentic, in-character conversations |
-| **Brainstorm Ideas** | Generates creative plot possibilities for what comes next |
-| **Generate Synopsis** | Creates a concise, polished summary of any section |
-| **Grammar & Style Check** | Catches errors and suggests stylistic improvements |
-| **AI Critic** | Delivers an honest, structured literary critique of your prose |
-| **Plot-Hole Detector** | Analyzes your manuscript for logical inconsistencies and continuity errors |
-| **Consistency Checker** | Cross-references your text against your character and world data via RAG |
+| Tool                      | What it does                                                               |
+| ------------------------- | -------------------------------------------------------------------------- |
+| **Continue Writing**      | Seamlessly continues from your last sentence in your voice                 |
+| **Improve Writing**       | Rewrites selected prose for clarity, flow, and impact                      |
+| **Change Tone**           | Shifts the register of any passage (darker, funnier, more formal, …)       |
+| **Generate Dialogue**     | Creates authentic, in-character conversations                              |
+| **Brainstorm Ideas**      | Generates creative plot possibilities for what comes next                  |
+| **Generate Synopsis**     | Creates a concise, polished summary of any section                         |
+| **Grammar & Style Check** | Catches errors and suggests stylistic improvements                         |
+| **AI Critic**             | Delivers an honest, structured literary critique of your prose             |
+| **Plot-Hole Detector**    | Analyzes your manuscript for logical inconsistencies and continuity errors |
+| **Consistency Checker**   | Cross-references your text against your character and world data via RAG   |
 
-### 🔍 RAG Consistency Checker *(Advanced)*
-A dedicated view using **Retrieval-Augmented Generation (RAG)** to give the AI deep, contextualized knowledge of your *entire* project. It cross-checks your manuscript against character profiles and world-building notes to surface subtle inconsistencies and continuity errors that a read-through would miss.
+### 🔍 RAG Consistency Checker _(Advanced)_
+
+A dedicated view using **Retrieval-Augmented Generation (RAG)** to give the AI deep, contextualized knowledge of your _entire_ project. It cross-checks your manuscript against character profiles and world-building notes to surface subtle inconsistencies and continuity errors that a read-through would miss.
 
 ### 🗣️ Voice Dictation
+
 Built-in speech-to-text via the browser's Web Speech API. Dictate scenes hands-free directly into the manuscript editor.
 
 ### ⌨️ Command Palette
+
 A keyboard-first command palette (⌘K / Ctrl+K) for instant navigation, AI actions, and project management — all without leaving the keyboard.
 
 ### 🎨 Highly Customizable Workspace
+
 - **Dark / Light** themes
 - Adjustable **font family, size, line height**, and **paragraph spacing**
 - **Indent first line** toggle for traditional novel formatting
@@ -115,27 +128,32 @@ A keyboard-first command palette (⌘K / Ctrl+K) for instant navigation, AI acti
 - Full **Accessibility settings** (high contrast, reduced motion, color-blind modes)
 
 ### 💾 Robust Offline-First Data Management
+
 - **Auto-save** to IndexedDB on every change (debounced, non-blocking)
 - **Snapshot system** — automatic and manual project backups, restorable to any point
 - **Import / Export** project files as JSON backups
 - **Undo / Redo** with a 100-step history (Redux-Undo)
 
 ### 📤 Polished Export Suite
+
 - **Markdown** (`.md`), **Plain Text** (`.txt`), **PDF** (with titlepage, configurable font and spacing)
 - **AI Synopsis** — generate a one-page synopsis before exporting
 - Selective content inclusion (title & logline, characters, worlds, manuscript)
 
 ### 📱 Progressive Web App (PWA) v3.0
+
 - **Offline-first** — all assets cached via Service Worker
 - **Installable** on desktop and mobile (iOS & Android)
 - **App shortcuts** for quick access from the home screen icon
 - Update notifications and background sync support
 
 ### 🌐 Full Multi-Language Support
+
 Fully localized to:
+
 - 🇩🇪 **German** (Deutsch) — complete
 - 🇬🇧 **English** — complete
-- 🇫🇷 French, 🇪🇸 Spanish, 🇮🇹 Italian *(in progress)*
+- 🇫🇷 French, 🇪🇸 Spanish, 🇮🇹 Italian _(in progress)_
 
 Language selection persists across sessions via `localStorage`.
 
@@ -152,26 +170,26 @@ Language selection persists across sessions via `localStorage`.
 
 ## 🛠️ Technology Deep Dive
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **UI Framework** | React 19 + TypeScript | Component-based, fully type-safe UI |
-| **Build Tool** | Vite 6 | Instant dev server, optimized production builds with manual chunking |
-| **State Management** | Redux Toolkit + Redux-Undo | Predictable global state with 100-step undo history |
-| **Styling** | Tailwind CSS + CSS Variables | Utility-first design with theme-aware custom properties |
-| **AI Integration** | Google Gemini API (`@google/genai`) | Multimodal generative AI for all creative features |
-| **Storage** | IndexedDB (custom `dbService`) | Large-capacity, async, offline-first local persistence |
-| **Encryption** | Web Crypto API (AES-256-GCM) | Client-side API key encryption before IndexedDB storage |
-| **PDF Export** | jsPDF | Client-side, configurable PDF document generation |
-| **Document Export** | docx + jszip | Word-compatible `.docx` generation |
-| **PWA** | Service Worker + Web App Manifest v3 | Offline support, installability, app shortcuts |
-| **i18n** | Custom React Context system | JSON locale files, EN fallback, `localStorage` persistence |
-| **Visualization** | Force-directed graph | Interactive character relationship network |
+| Layer                | Technology                           | Purpose                                                              |
+| -------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| **UI Framework**     | React 19 + TypeScript                | Component-based, fully type-safe UI                                  |
+| **Build Tool**       | Vite 6                               | Instant dev server, optimized production builds with manual chunking |
+| **State Management** | Redux Toolkit + Redux-Undo           | Predictable global state with 100-step undo history                  |
+| **Styling**          | Tailwind CSS + CSS Variables         | Utility-first design with theme-aware custom properties              |
+| **AI Integration**   | Google Gemini API (`@google/genai`)  | Multimodal generative AI for all creative features                   |
+| **Storage**          | IndexedDB (custom `dbService`)       | Large-capacity, async, offline-first local persistence               |
+| **Encryption**       | Web Crypto API (AES-256-GCM)         | Client-side API key encryption before IndexedDB storage              |
+| **PDF Export**       | jsPDF                                | Client-side, configurable PDF document generation                    |
+| **Document Export**  | docx + jszip                         | Word-compatible `.docx` generation                                   |
+| **PWA**              | Service Worker + Web App Manifest v3 | Offline support, installability, app shortcuts                       |
+| **i18n**             | Custom React Context system          | JSON locale files, EN fallback, `localStorage` persistence           |
+| **Visualization**    | Force-directed graph                 | Interactive character relationship network                           |
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 StoryCraft-Studio/
 ├── components/           # All UI view components
 │   └── ui/               # Reusable generic components (Button, Modal, Toast, …)
@@ -206,6 +224,7 @@ All AI features require a free Google Gemini API key.
 4. **Click Save** — the key is encrypted with AES-256-GCM and stored only in your browser's IndexedDB
 
 **Security best practices:**
+
 - ✅ Your key never leaves your device
 - ✅ Encrypted at rest via the Web Crypto API
 - ✅ No key is ever stored in source code or build artifacts
@@ -241,9 +260,11 @@ npm run preview
 ### 🌐 Custom Domain Setup
 
 1. Create a `CNAME` file in `public/` with your domain:
+
    ```bash
    echo "storycraft.yourdomain.com" > public/CNAME
    ```
+
 2. Configure DNS at your registrar:
    - **Subdomain** → CNAME → `your-username.github.io`
    - **Apex domain** → A records to `185.199.108.153` – `185.199.111.153`
@@ -252,11 +273,11 @@ npm run preview
 
 ### 🛠 Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| Blank page after deploy | Verify `base` in `vite.config.ts` matches your repo name |
-| Assets not loading (404) | Check `manifest.json` `start_url`; verify `404.html` is in `public/` |
-| AI features not working | Check API key in Settings; verify it starts with `AIza` and has quota |
+| Problem                   | Solution                                                              |
+| ------------------------- | --------------------------------------------------------------------- |
+| Blank page after deploy   | Verify `base` in `vite.config.ts` matches your repo name              |
+| Assets not loading (404)  | Check `manifest.json` `start_url`; verify `404.html` is in `public/`  |
+| AI features not working   | Check API key in Settings; verify it starts with `AIza` and has quota |
 | Language resets on reload | Clear site data and re-select — should now persist via `localStorage` |
 
 ---
@@ -289,54 +310,65 @@ StoryCraft Studio ist eine hochmoderne, KI-gestützte Anwendung für Autoren, Dr
 ## 🚀 Funktionen
 
 ### 📊 Dynamisches Projekt-Dashboard
+
 Ihre Kommandozentrale. Wortziele verfolgen, Projektstatistiken einsehen, Titel und Logline mit KI verwalten — alles auf einen Blick.
 
 ### ✍️ Drei-Fenster-Manuskript-Editor
+
 Ablenkungsfreie Schreibumgebung mit Kapitel-**Navigator** und Projekt-**Inspektor**. Echtzeit-Hervorhebung für `@Charakter`- und `#Welt`-Erwähnungen.
 
-### 🎬 Szenen-Board *(Visuelle Story-Planung)*
+### 🎬 Szenen-Board _(Visuelle Story-Planung)_
+
 Kanban-Board zum Drag-and-Drop-Anordnen von Szenen. Tempo und Struktur visuell erkunden.
 
-### 🕸️ Charakter-Beziehungsgraph *(Interaktive Visualisierung)*
+### 🕸️ Charakter-Beziehungsgraph _(Interaktive Visualisierung)_
+
 Kräftebasierter Graph aller Charakter-Beziehungen — unverzichtbar für komplexe Mehrfach-Handlungsstränge.
 
 ### 📚 Intelligente Story-Vorlagen
+
 Klassische Strukturen (Drei-Akt, Heldenreise, Save the Cat!, Fichtean-Kurve) und Genre-Vorlagen. Anpassen und mit KI personalisieren.
 
 ### 🤖 KI-Gliederungsgenerator
+
 Detaillierte, interaktive Kapitelgliederung aus einer Idee — mit Genre, Tempo, Wendungen.
 
 ### 👥 Charakter-Dossiers
+
 KI-Profilgenerator, `@Beziehungen, Charakterentwicklung, KI-generierte Porträts in verschiedenen Stilen.
 
 ### 🌍 Weltenbau-Atlas
+
 KI-generierte Lore, Zeitachsen, Orte, atmosphärische Stimmungsbilder.
 
-### ✨ KI-Schreibstudio *(10 spezialisierte Werkzeuge)*
+### ✨ KI-Schreibstudio _(10 spezialisierte Werkzeuge)_
 
-| Werkzeug | Funktion |
-|---|---|
-| **Weiterschreiben** | Nahtlose Fortsetzung in Ihrem Stil |
-| **Verbessern** | Klarheit, Fluss und Wirkung verbessern |
-| **Ton ändern** | Stimmung und Register anpassen |
-| **Dialog generieren** | Figurengerechte Gespräche |
-| **Ideen brainstormen** | Kreative Plot-Möglichkeiten |
-| **Synopse generieren** | Präzise Zusammenfassung |
-| **Grammatik & Stil** | Fehler erkennen und stilistisch verbessern |
-| **KI-Kritiker** | Strukturierte literarische Kritik |
-| **Handlungsloch-Detektor** | Logische Widersprüche aufdecken |
+| Werkzeug                    | Funktion                                             |
+| --------------------------- | ---------------------------------------------------- |
+| **Weiterschreiben**         | Nahtlose Fortsetzung in Ihrem Stil                   |
+| **Verbessern**              | Klarheit, Fluss und Wirkung verbessern               |
+| **Ton ändern**              | Stimmung und Register anpassen                       |
+| **Dialog generieren**       | Figurengerechte Gespräche                            |
+| **Ideen brainstormen**      | Kreative Plot-Möglichkeiten                          |
+| **Synopse generieren**      | Präzise Zusammenfassung                              |
+| **Grammatik & Stil**        | Fehler erkennen und stilistisch verbessern           |
+| **KI-Kritiker**             | Strukturierte literarische Kritik                    |
+| **Handlungsloch-Detektor**  | Logische Widersprüche aufdecken                      |
 | **Konsistenz-Prüfer (RAG)** | Manuskript gegen Charakter- und Weltdaten abgleichen |
 
 ### 🔍 RAG-Konsistenz-Prüfer
+
 Nutzt **Retrieval-Augmented Generation** für tiefgehende Konsistenzprüfung über das gesamte Projekt.
 
 ### 📱 Progressive Web App (PWA) v3.0
+
 Installierbar auf Desktop und Smartphone. Offline-fähig. App-Shortcuts vom Home-Bildschirm.
 
 ### 🌐 Mehrsprachigkeit
+
 - 🇩🇪 **Deutsch** — vollständig
 - 🇬🇧 **Englisch** — vollständig
-- 🇫🇷 Französisch, 🇪🇸 Spanisch, 🇮🇹 Italienisch *(in Bearbeitung)*
+- 🇫🇷 Französisch, 🇪🇸 Spanisch, 🇮🇹 Italienisch _(in Bearbeitung)_
 
 Sprachauswahl dauerhaft in `localStorage` gespeichert.
 
@@ -353,18 +385,18 @@ Sprachauswahl dauerhaft in `localStorage` gespeichert.
 
 ## 🛠️ Technologie-Stack
 
-| Schicht | Technologie |
-|---|---|
-| UI-Framework | React 19 + TypeScript |
-| Build | Vite 6 |
-| Zustandsverwaltung | Redux Toolkit + Redux-Undo |
-| Styling | Tailwind CSS + CSS-Variablen |
-| KI | Google Gemini API |
-| Speicher | IndexedDB (eigener dbService) |
-| Verschlüsselung | Web Crypto API (AES-256-GCM) |
-| PDF-Export | jsPDF |
-| PWA | Service Worker + Manifest v3 |
-| i18n | Eigenes Context-System mit localStorage-Persistenz |
+| Schicht            | Technologie                                        |
+| ------------------ | -------------------------------------------------- |
+| UI-Framework       | React 19 + TypeScript                              |
+| Build              | Vite 6                                             |
+| Zustandsverwaltung | Redux Toolkit + Redux-Undo                         |
+| Styling            | Tailwind CSS + CSS-Variablen                       |
+| KI                 | Google Gemini API                                  |
+| Speicher           | IndexedDB (eigener dbService)                      |
+| Verschlüsselung    | Web Crypto API (AES-256-GCM)                       |
+| PDF-Export         | jsPDF                                              |
+| PWA                | Service Worker + Manifest v3                       |
+| i18n               | Eigenes Context-System mit localStorage-Persistenz |
 
 ---
 
