@@ -45,7 +45,6 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint -- --max-warnings 0
-        continue-on-error: true   # Informational until all lint issues resolved
 
   # ----------------------------------------------------------
   # 2. TYPECHECK
@@ -66,7 +65,6 @@ jobs:
 
       - name: Run tsc --noEmit
         run: npm run typecheck
-        continue-on-error: true   # Shows errors but doesn't block deploy
 
   # ----------------------------------------------------------
   # 3. UNIT TESTS

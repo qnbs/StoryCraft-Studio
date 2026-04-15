@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // Repository name für GitHub Pages
 const REPO_NAME = 'StoryCraft-Studio';
 
-// Custom Domain Detection: 
+// Custom Domain Detection:
 // Wenn public/CNAME existiert und einen Wert hat, verwende '/' als base
 // Sonst nutze den Repository-Namen für GitHub Pages Subpath
 function getBasePath(): string {
@@ -30,12 +30,12 @@ function getBasePath(): string {
 export default defineConfig({
   // Fix: Statischer Base-Pfad fr GitHub Pages
   base: '/StoryCraft-Studio/',
-  
+
   server: {
     port: 3000,
     host: '0.0.0.0',
   },
-  
+
   plugins: [
     react(),
     VitePWA({
@@ -80,13 +80,13 @@ export default defineConfig({
       manifest: false,
     }),
   ],
-  
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
-    }
+    },
   },
-  
+
   build: {
     target: 'es2022',
     minify: 'esbuild',
@@ -98,14 +98,14 @@ export default defineConfig({
         '@tauri-apps/api/core',
         '@tauri-apps/api/dialog',
         '@tauri-apps/api/fs',
-        '@tauri-apps/api/path'
+        '@tauri-apps/api/path',
       ],
       output: {
         // Asset-Hashing für Cache-Busting
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-        
+
         // Code-Splitting für bessere Ladezeiten
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
@@ -114,6 +114,9 @@ export default defineConfig({
           'export-vendor': ['jspdf', 'docx', 'jszip'],
           'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
           'graph-vendor': ['react-force-graph-2d'],
+          'map-vendor': ['leaflet', 'react-leaflet'],
+          'canvas-vendor': ['konva', 'react-konva'],
+          'chart-vendor': ['recharts'],
         },
       },
     },

@@ -239,6 +239,101 @@ The CI pipeline will automatically run lint, typecheck, tests, and build on ever
 
 ---
 
+## How to Add a New AI Provider
+
+StoryCraft Studio uses a multi-provider AI architecture. To add a new provider (e.g., Ollama, OpenAI):
+
+### 1. Create the Service
+
+Create `services/yourProviderService.ts` following the pattern in `geminiService.ts`:
+
+```typescript
+// services/ollamaService.ts
+export const generateText = async (
+  prompt: string,
+  creativity: AiCreativity,
+  signal?: AbortSignal
+): Promise<string> => {
+  // Your provider's API call here
+};
+
+export const generateJson = async <T>(
+  prompt: string,
+  creativity: AiCreativity,
+  schema: GeminiSchema,
+  signal?: AbortSignal
+): Promise<T> => {
+  // Your provider's structured output call
+};
+```
+
+### 2. Register in aiProviderService
+
+Update `services/aiProviderService.ts` to include your provider in the registry:
+
+```typescript
+import * as ollamaService from './ollamaService';
+
+const providers = {
+  gemini: geminiService,
+  ollama: ollamaService,
+  // Add your provider here
+};
+```
+
+### 3. Add Settings
+
+Extend `features/settings/settingsSlice.ts` with provider-specific settings, and update `components/SettingsView.tsx` with the UI controls.
+
+### 4. Add Tests
+
+Create `tests/unit/yourProviderService.test.ts` with mocked API calls.
+
+---
+
+## How to Add a New AI Writing Tool
+
+Writing tools appear in the Writer view dropdown. To add a new tool:
+
+### 1. Add the Tool Type
+
+In `types.ts`, add to the `WritingToolType` union (or equivalent):
+
+```typescript
+export type WritingToolType = 'continue' | 'improve' | ... | 'yourNewTool';
+```
+
+### 2. Add the Prompt
+
+In `services/geminiService.ts`, add a case in `getPrompts()`:
+
+```typescript
+case 'yourNewTool':
+  return {
+    prompt: `Your prompt template with ${params.text}`,
+    schema: yourOutputSchema,
+  };
+```
+
+### 3. Add i18n Keys
+
+Add translation keys in all 5 locale files (`locales/{de,en,es,fr,it}/writer.json`):
+
+```json
+{
+  "tools": {
+    "yourNewTool": "Your Tool Name",
+    "yourNewToolDescription": "Description of what it does"
+  }
+}
+```
+
+### 4. Wire Up the UI
+
+The tool will automatically appear in `WriterView` if added to the tool list in `hooks/useWriterView.ts`.
+
+---
+
 ## License
 
 [MIT](LICENSE)

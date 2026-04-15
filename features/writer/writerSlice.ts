@@ -1,18 +1,18 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Character } from "../../types";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Character } from '../../types';
 
 export type WriterTool =
-  | "continue"
-  | "improve"
-  | "changeTone"
-  | "dialogue"
-  | "brainstorm"
-  | "synopsis"
-  | "grammarCheck"
-  | "imagePrompt"
-  | "critic"
-  | "plotholes"
-  | "consistency";
+  | 'continue'
+  | 'improve'
+  | 'changeTone'
+  | 'dialogue'
+  | 'brainstorm'
+  | 'synopsis'
+  | 'grammarCheck'
+  | 'imagePrompt'
+  | 'critic'
+  | 'plotholes'
+  | 'consistency';
 
 export interface WriterState {
   activeTool: WriterTool;
@@ -30,22 +30,22 @@ export interface WriterState {
 }
 
 const initialState: WriterState = {
-  activeTool: "continue",
-  selection: { start: 0, end: 0, text: "" },
+  activeTool: 'continue',
+  selection: { start: 0, end: 0, text: '' },
   dialogueCharacters: [],
-  scenario: "",
-  brainstormContext: "",
-  tone: "",
-  style: "",
+  scenario: '',
+  brainstormContext: '',
+  tone: '',
+  style: '',
   isLoading: false,
   generationHistory: [],
   activeHistoryIndex: -1,
-  resultStream: "",
+  resultStream: '',
   selectedSectionId: null,
 };
 
 const writerSlice = createSlice({
-  name: "writer",
+  name: 'writer',
   initialState,
   reducers: {
     setActiveTool: (state, action: PayloadAction<WriterTool>) => {
@@ -53,16 +53,11 @@ const writerSlice = createSlice({
       state.generationHistory = [];
       state.activeHistoryIndex = -1;
     },
-    setSelection: (
-      state,
-      action: PayloadAction<{ start: number; end: number; text: string }>,
-    ) => {
+    setSelection: (state, action: PayloadAction<{ start: number; end: number; text: string }>) => {
       state.selection = action.payload;
     },
     toggleDialogueCharacter: (state, action: PayloadAction<Character>) => {
-      const index = state.dialogueCharacters.findIndex(
-        (c) => c.id === action.payload.id,
-      );
+      const index = state.dialogueCharacters.findIndex((c) => c.id === action.payload.id);
       if (index > -1) {
         state.dialogueCharacters.splice(index, 1);
       } else {
@@ -88,19 +83,19 @@ const writerSlice = createSlice({
       state.isLoading = false;
     },
     addHistory: (state, action: PayloadAction<string>) => {
-      state.generationHistory = [action.payload, ...state.generationHistory];
+      state.generationHistory = [action.payload, ...state.generationHistory].slice(0, 50);
       state.activeHistoryIndex = 0;
     },
     clearHistory: (state) => {
       state.generationHistory = [];
       state.activeHistoryIndex = -1;
     },
-    navigateHistory: (state, action: PayloadAction<"prev" | "next">) => {
-      if (action.payload === "prev" && state.activeHistoryIndex > 0) {
+    navigateHistory: (state, action: PayloadAction<'prev' | 'next'>) => {
+      if (action.payload === 'prev' && state.activeHistoryIndex > 0) {
         state.activeHistoryIndex--;
       }
       if (
-        action.payload === "next" &&
+        action.payload === 'next' &&
         state.activeHistoryIndex < state.generationHistory.length - 1
       ) {
         state.activeHistoryIndex++;
@@ -114,14 +109,14 @@ const writerSlice = createSlice({
     setSelectedSectionId: (state, action: PayloadAction<string | null>) => {
       state.selectedSectionId = action.payload;
       // Also reset selection when section changes
-      state.selection = { start: 0, end: 0, text: "" };
+      state.selection = { start: 0, end: 0, text: '' };
     },
     // Streaming Live-Preview: chunks werden inkrementell angehängt
     appendResultStream: (state, action: PayloadAction<string>) => {
       state.resultStream += action.payload;
     },
     clearResultStream: (state) => {
-      state.resultStream = "";
+      state.resultStream = '';
     },
   },
 });

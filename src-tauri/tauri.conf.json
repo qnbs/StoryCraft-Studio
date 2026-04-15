@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "storycraft-studio",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "version": "1.0.0",
+  "identifier": "com.storycraft.studio",
   "build": {
     "frontendDist": "../build",
     "devUrl": "http://localhost:3000",
@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com wss://y-webrtc-signaling.fly.dev; img-src 'self' data: blob:; media-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
     }
   },
   "bundle": {

@@ -7,18 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Set restrictive Content Security Policy for Tauri desktop app (`src-tauri/tauri.conf.json`)
+- Narrowed Tauri capabilities to granular permissions (fs read/write, dialog open/save, shell open)
+- Fixed Tauri identifier from `com.tauri.dev` to `com.storycraft.studio`
+- Synced Tauri version to `1.0.0` (was `0.1.0`)
+- Added AbortController support to all 14 AI-calling async thunks in projectSlice
+- Added signal parameter to `checkConsistency`, `analyzeAsCritic`, `detectPlotHoles` service functions
+- Activated retry logic in geminiService (was defined but never called)
+- Added PSK-based room isolation for P2P collaboration (SHA-256 room ID derivation)
+- API key decrypt failures now return explicit `DECRYPT_FAILED` status with UI recovery flow
+
 ### Fixed
 
 - Hardcoded `'en'` language in `useConsistencyCheckerView` and `useCriticView` hooks now dynamically reads from user settings
 - Missing `src-tauri/target/` entry in `.gitignore`
 - Removed duplicate empty `.prettierrc` file (`.prettierrc.json` is authoritative)
 - Fixed 50+ Markdown lint errors in `README.md` (MD022, MD031, MD032, MD040, MD060)
+- Removed `as any` type casts in `app/hooks.ts` (shallowEqual) and `app/store.ts` (preloadedState)
+- Auto-save now validates state before writing to IndexedDB (null-check, 5MB size warning)
 
 ### Added
 
-- `CHANGELOG.md` following Keep a Changelog standard
-- `.github/copilot-instructions.md` with project-specific coding guidelines
-- `AUDIT.md` with comprehensive codebase audit findings and recommendations
+- Per-view error boundaries with `key={currentView}` auto-reset and "Reset View" button
+- AbortController + cleanup in useConsistencyCheckerView and useCriticView hooks
+- Generation history capped at 50 entries (FIFO) in writerSlice
+- Room password input field in CollaborationPanel for PSK-based collaboration
+- Decrypt failure warning banner in ApiKeySection with re-entry prompt
+- `ROADMAP.md` with Ollama/Local-AI strategy, model comparison table, and feature roadmap
+- `TODO.md` with prioritized task tracker
+- Unit tests: geminiService, projectSlice, writerSlice, settingsSlice, dbService, listenerMiddleware, collaborationService (80 tests total)
+- Coverage thresholds (50%) in vitest.config.ts
+- Manual chunks for leaflet, konva, recharts in Vite build config
+
+### Changed
+
+- Redux logger middleware now opt-in via `localStorage.getItem('debugRedux')`
+- CI pipeline: ESLint and typecheck switched from soft-fail to hard-fail mode
+- ErrorBoundary component now accepts `onReset` callback prop
+- `AUDIT.md` updated with resolution status for addressed findings
 
 ## [1.0.0] - 2025-01-01
 

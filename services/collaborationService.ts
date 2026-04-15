@@ -10,13 +10,13 @@
  *   collaborationService.disconnect();
  */
 
-import * as Y from "yjs";
-import { WebrtcProvider } from "y-webrtc";
-import type { Awareness } from "y-protocols/awareness";
-import { CollaborationUser } from "../types";
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
+import type { Awareness } from 'y-protocols/awareness';
+import { CollaborationUser } from '../types';
 
 // Free public signaling servers for y-webrtc
-const SIGNALING_SERVERS = ["wss://y-webrtc-signaling.fly.dev"];
+const SIGNALING_SERVERS = ['wss://y-webrtc-signaling.fly.dev'];
 
 export interface AwarenessState {
   user: CollaborationUser;
@@ -28,11 +28,23 @@ class CollaborationService {
   private _roomId: string | null = null;
   private readonly listeners = new Set<() => void>();
 
+  /** Hash projectId + password into a deterministic room name for PSK isolation. */
+  private async deriveRoomId(projectId: string, password?: string): Promise<string> {
+    const raw = password ? `${projectId}:${password}` : projectId;
+    const data = new TextEncoder().encode(raw);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const hex = Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+      .slice(0, 16);
+    return `storycraft-${hex}`;
+  }
+
   /** Connect to a collaboration room for the given project. */
-  connect(projectId: string, user: CollaborationUser): void {
+  async connect(projectId: string, user: CollaborationUser, password?: string): Promise<void> {
     if (this.provider) this.disconnect();
 
-    this._roomId = `storycraft-${projectId}`;
+    this._roomId = await this.deriveRoomId(projectId, password);
     this.doc = new Y.Doc();
 
     this.provider = new WebrtcProvider(this._roomId, this.doc, {
@@ -40,10 +52,10 @@ class CollaborationService {
     });
 
     // Publish our identity to peers
-    this.provider.awareness.setLocalStateField("user", user);
+    this.provider.awareness.setLocalStateField('user', user);
 
     // Notify all listeners when awareness changes (connected users update)
-    this.provider.awareness.on("change", () => {
+    this.provider.awareness.on('change', () => {
       this.listeners.forEach((l) => l());
     });
   }
@@ -69,7 +81,7 @@ class CollaborationService {
 
   /** Get (or create) a shared Y.Text document by name. */
   getSharedText(name: string): Y.Text {
-    if (!this.doc) throw new Error("Not connected to a collaboration room.");
+    if (!this.doc) throw new Error('Not connected to a collaboration room.');
     return this.doc.getText(name);
   }
 
@@ -87,21 +99,17 @@ class CollaborationService {
   getConnectedUsers(): CollaborationUser[] {
     if (!this.provider) return [];
     const users: CollaborationUser[] = [];
-    this.provider.awareness
-      .getStates()
-      .forEach((state: Record<string, unknown>) => {
-        if (state.user) users.push(state.user as CollaborationUser);
-      });
+    this.provider.awareness.getStates().forEach((state: Record<string, unknown>) => {
+      if (state.user) users.push(state.user as CollaborationUser);
+    });
     return users;
   }
 
   /** Update the local user's info (e.g., cursor position). */
   updateUserState(patch: Partial<CollaborationUser>): void {
     if (!this.provider) return;
-    const current =
-      (this.provider.awareness.getLocalState() as AwarenessState | null)
-        ?.user ?? {};
-    this.provider.awareness.setLocalStateField("user", {
+    const current = (this.provider.awareness.getLocalState() as AwarenessState | null)?.user ?? {};
+    this.provider.awareness.setLocalStateField('user', {
       ...current,
       ...patch,
     });

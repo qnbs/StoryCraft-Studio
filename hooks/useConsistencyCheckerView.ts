@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import {
   selectAllCharacters,
@@ -20,10 +20,21 @@ export const useConsistencyCheckerView = () => {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [checkResult, setCheckResult] = useState<string>('');
   const [isChecking, setIsChecking] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const runCheck = useCallback(
     async (characterId: string) => {
       if (!projectData) return;
+
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       setIsChecking(true);
       try {
@@ -34,13 +45,16 @@ export const useConsistencyCheckerView = () => {
           projectData.manuscript,
           projectData.relationships || [],
           aiCreativity,
-          language
+          language,
+          controller.signal
         );
         setCheckResult(result);
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         setCheckResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setIsChecking(false);
+        abortControllerRef.current = null;
       }
     },
     [characters, worlds, projectData, language, aiCreativity]

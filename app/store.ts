@@ -4,42 +4,50 @@ import {
   createStore,
   AnyAction,
   Middleware,
-} from "@reduxjs/toolkit";
+} from '@reduxjs/toolkit';
 import projectReducer, {
   importProjectThunk,
   projectActions,
   restoreSnapshotThunk,
-} from "../features/project/projectSlice";
-import settingsReducer from "../features/settings/settingsSlice";
-import statusReducer from "../features/status/statusSlice";
-import writerReducer from "../features/writer/writerSlice";
-import undoable from "redux-undo";
-import { listenerMiddleware } from "./listenerMiddleware";
-import { PersistedRootState } from "../types";
+} from '../features/project/projectSlice';
+import settingsReducer from '../features/settings/settingsSlice';
+import statusReducer from '../features/status/statusSlice';
+import writerReducer from '../features/writer/writerSlice';
+import undoable from 'redux-undo';
+import { listenerMiddleware } from './listenerMiddleware';
+import { PersistedRootState } from '../types';
 
 // A sophisticated filter to prevent async thunk actions from populating the undo history.
 const filterUndoableActions = (action: AnyAction) => {
-  const isThunkAction = ["/pending", "/fulfilled", "/rejected"].some((suffix) =>
-    action.type.endsWith(suffix),
+  const isThunkAction = ['/pending', '/fulfilled', '/rejected'].some((suffix) =>
+    action.type.endsWith(suffix)
   );
   // Also filter out ephemeral UI actions if any
   return !isThunkAction;
 };
 
-// Custom Lightweight Logger Middleware (Development Only)
+// Custom Lightweight Logger Middleware (Development Only, opt-in via localStorage)
+const isLoggerEnabled = () => {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem('debugRedux') === 'true';
+  } catch {
+    return false;
+  }
+};
+
 const loggerMiddleware: Middleware = (store) => (next) => (action) => {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production' && isLoggerEnabled()) {
     console.group((action as AnyAction).type);
-    console.info("dispatching", action);
+    console.info('dispatching', action);
     const result = next(action);
-    console.log("next state", store.getState());
+    console.log('next state', store.getState());
     console.groupEnd();
     return result;
   }
   return next(action);
 };
 
-import versionControlReducer from "../features/versionControl/versionControlSlice";
+import versionControlReducer from '../features/versionControl/versionControlSlice';
 
 const combinedReducer = combineReducers({
   project: undoable(projectReducer, {
@@ -55,7 +63,7 @@ const combinedReducer = combineReducers({
 // A sophisticated higher-order reducer to augment redux-undo's behavior
 export const rootReducer = (
   state: ReturnType<typeof combinedReducer> | undefined,
-  action: AnyAction,
+  action: AnyAction
 ) => {
   let nextState = state;
 
@@ -86,13 +94,13 @@ export const rootReducer = (
 export const setupStore = (preloadedState?: PersistedRootState) => {
   return configureStore({
     reducer: rootReducer,
-    preloadedState: preloadedState as any, // Redux expects partial state matching generic, our specific persisted type is compatible but needs cast due to strictness
+    preloadedState: preloadedState as Partial<RootState> | undefined,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: {
           // Ignore these paths in the state which might have non-serializable data if necessary
           // (Though we aim for full serializability)
-          ignoredActions: ["persist/PERSIST"],
+          ignoredActions: ['persist/PERSIST'],
         },
       })
         .prepend(listenerMiddleware.middleware)

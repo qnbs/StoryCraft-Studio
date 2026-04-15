@@ -1,9 +1,9 @@
-import { useDispatch, useSelector, TypedUseSelectorHook, shallowEqual } from 'react-redux'
-import type { RootState, AppDispatch } from './store'
+import { useDispatch, useSelector, TypedUseSelectorHook, shallowEqual } from 'react-redux';
+import type { RootState, AppDispatch } from './store';
 
 // Use throughout your app instead of plain `useDispatch` and `useSelector`
-export const useAppDispatch = () => useDispatch<AppDispatch>()
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 /**
  * Shallow-equal variant — verhindert Re-Renders wenn ein Objekt/Array
@@ -11,4 +11,4 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
  * Ideal für Selektoren, die Objekte oder abgeleitete Arrays zurückgeben.
  */
 export const useAppSelectorShallow = <T>(selector: (state: RootState) => T): T =>
-    useSelector(selector, shallowEqual as any)
+  useSelector(selector, shallowEqual);

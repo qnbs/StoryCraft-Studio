@@ -1,13 +1,13 @@
-import { ProjectSnapshot, Settings } from "../types";
-import { ProjectData } from "../features/project/projectSlice";
-import LZString from "lz-string";
+import { ProjectSnapshot, Settings } from '../types';
+import { ProjectData } from '../features/project/projectSlice';
+import LZString from 'lz-string';
 
-const DB_NAME = "storycraft-db";
+const DB_NAME = 'storycraft-db';
 const DB_VERSION = 5; // v5: RAG vectors store added
-const APP_DATA_STORE = "app-data-store";
-const SNAPSHOTS_STORE = "snapshots-store";
-const IMAGES_STORE = "images-store";
-const RAG_VECTORS_STORE = "rag-vectors-store";
+const APP_DATA_STORE = 'app-data-store';
+const SNAPSHOTS_STORE = 'snapshots-store';
+const IMAGES_STORE = 'images-store';
+const RAG_VECTORS_STORE = 'rag-vectors-store';
 
 // LZ-String threshold: compress payloads >10 KB
 const COMPRESS_THRESHOLD_BYTES = 10_240;
@@ -19,17 +19,17 @@ function compressData<T>(data: T): string | T {
     if (json.length < COMPRESS_THRESHOLD_BYTES) return data; // small enough, skip
     const compressed = LZString.compressToUTF16(json);
     // prefix so we can identify compressed values
-    return "\x00lz1\x00" + compressed;
+    return '\x00lz1\x00' + compressed;
   } catch {
     return data;
   }
 }
 
 function decompressData<T>(raw: any): T {
-  if (typeof raw === "string" && raw.startsWith("\x00lz1\x00")) {
+  if (typeof raw === 'string' && raw.startsWith('\x00lz1\x00')) {
     try {
       const decompressed = LZString.decompressFromUTF16(raw.slice(5));
-      return JSON.parse(decompressed ?? "{}") as T;
+      return JSON.parse(decompressed ?? '{}') as T;
     } catch {
       return raw as unknown as T;
     }
@@ -38,8 +38,8 @@ function decompressData<T>(raw: any): T {
 }
 
 // Secure API Key Storage Records
-const GEMINI_API_KEY_RECORD = "gemini_api_key_encrypted_v1";
-const GEMINI_API_KEY_IV_RECORD = "gemini_api_key_iv_v1";
+const GEMINI_API_KEY_RECORD = 'gemini_api_key_encrypted_v1';
+const GEMINI_API_KEY_IV_RECORD = 'gemini_api_key_iv_v1';
 
 // Define structure of state stored in DB
 interface PersistedProjectState {
@@ -54,11 +54,7 @@ interface PersistedState {
 }
 
 // Hilfsfunktion für Retry bei IndexedDB
-async function retryDb<T>(
-  fn: () => Promise<T>,
-  retries = 2,
-  delayMs = 500,
-): Promise<T> {
+async function retryDb<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -67,13 +63,12 @@ async function retryDb<T>(
       lastError = err;
       // Nur bei temporären Fehlern erneut versuchen
       if (
-        err?.name === "QuotaExceededError" ||
-        err?.name === "InvalidStateError" ||
-        err?.name === "AbortError" ||
-        err?.name === "TransactionInactiveError"
+        err?.name === 'QuotaExceededError' ||
+        err?.name === 'InvalidStateError' ||
+        err?.name === 'AbortError' ||
+        err?.name === 'TransactionInactiveError'
       ) {
-        if (attempt < retries)
-          await new Promise((res) => setTimeout(res, delayMs));
+        if (attempt < retries) await new Promise((res) => setTimeout(res, delayMs));
       } else {
         break;
       }
@@ -83,23 +78,20 @@ async function retryDb<T>(
 }
 
 function getUserFriendlyDbError(error: any): string {
-  if (error?.name === "QuotaExceededError") {
-    return "Speicherplatz im Browser ist erschöpft. Bitte löschen Sie alte Projekte oder Snapshots.";
+  if (error?.name === 'QuotaExceededError') {
+    return 'Speicherplatz im Browser ist erschöpft. Bitte löschen Sie alte Projekte oder Snapshots.';
   }
-  if (
-    error?.name === "InvalidStateError" ||
-    error?.name === "TransactionInactiveError"
-  ) {
-    return "Interner Fehler beim Zugriff auf die Datenbank. Bitte Seite neu laden.";
+  if (error?.name === 'InvalidStateError' || error?.name === 'TransactionInactiveError') {
+    return 'Interner Fehler beim Zugriff auf die Datenbank. Bitte Seite neu laden.';
   }
-  if (error?.name === "AbortError") {
-    return "Datenbankoperation wurde abgebrochen.";
+  if (error?.name === 'AbortError') {
+    return 'Datenbankoperation wurde abgebrochen.';
   }
-  return error?.message || "Unbekannter Fehler beim Zugriff auf die Datenbank.";
+  return error?.message || 'Unbekannter Fehler beim Zugriff auf die Datenbank.';
 }
 
-import { StoryProject, Settings } from "../types";
-import { StorageBackend } from "./storageService";
+import { StoryProject, Settings } from '../types';
+import { StorageBackend } from './storageService';
 
 // Extend IndexedDBService to implement StorageBackend
 class IndexedDBService implements StorageBackend {
@@ -112,29 +104,22 @@ class IndexedDBService implements StorageBackend {
   private async getLocalCryptoKey(): Promise<CryptoKey> {
     // Generiere einen geräte-spezifischen Schlüssel basierend auf Origin
     const material = new TextEncoder().encode(
-      `${location.origin}|StoryCraftStudio|gemini-key-v1|${navigator.userAgent.slice(0, 50)}`,
+      `${location.origin}|StoryCraftStudio|gemini-key-v1|${navigator.userAgent.slice(0, 50)}`
     );
-    const hash = await crypto.subtle.digest("SHA-256", material);
-    return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, [
-      "encrypt",
-      "decrypt",
-    ]);
+    const hash = await crypto.subtle.digest('SHA-256', material);
+    return crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   }
 
   async saveGeminiApiKey(apiKey: string): Promise<void> {
     if (!apiKey || apiKey.trim().length === 0) {
-      throw new Error("API key cannot be empty");
+      throw new Error('API key cannot be empty');
     }
     return retryDb(async () => {
       const cryptoKey = await this.getLocalCryptoKey();
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const encodedKey = new TextEncoder().encode(apiKey.trim());
-      const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        cryptoKey,
-        encodedKey,
-      );
-      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encodedKey);
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
       return new Promise((resolve, reject) => {
         const encryptedArray = Array.from(new Uint8Array(encrypted));
         const ivArray = Array.from(iv);
@@ -156,7 +141,7 @@ class IndexedDBService implements StorageBackend {
   async getGeminiApiKey(): Promise<string | null> {
     return retryDb(async () => {
       try {
-        const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+        const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
         const [encryptedArray, ivArray] = await Promise.all([
           new Promise<number[] | undefined>((resolve, reject) => {
             const req = store.get(GEMINI_API_KEY_RECORD);
@@ -174,26 +159,26 @@ class IndexedDBService implements StorageBackend {
         }
         const cryptoKey = await this.getLocalCryptoKey();
         const decrypted = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv: new Uint8Array(ivArray) },
+          { name: 'AES-GCM', iv: new Uint8Array(ivArray) },
           cryptoKey,
-          new Uint8Array(encryptedArray),
+          new Uint8Array(encryptedArray)
         );
         return new TextDecoder().decode(decrypted);
       } catch (error) {
-        console.warn("Failed to decrypt API key:", error);
-        return null;
+        console.warn('Failed to decrypt API key:', error);
+        return 'DECRYPT_FAILED' as string;
       }
     });
   }
 
   async hasGeminiApiKey(): Promise<boolean> {
     const key = await this.getGeminiApiKey();
-    return Boolean(key && key.length > 0);
+    return Boolean(key && key.length > 0 && key !== 'DECRYPT_FAILED');
   }
 
   async clearGeminiApiKey(): Promise<void> {
     return retryDb(async () => {
-      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
       return new Promise((resolve, reject) => {
         const req1 = store.delete(GEMINI_API_KEY_RECORD);
         const req2 = store.delete(GEMINI_API_KEY_IV_RECORD);
@@ -214,22 +199,15 @@ class IndexedDBService implements StorageBackend {
   // Uses same encryption pattern as Gemini key, keyed by provider name.
 
   async saveApiKey(provider: string, apiKey: string): Promise<void> {
-    if (!apiKey?.trim()) throw new Error("API key cannot be empty");
+    if (!apiKey?.trim()) throw new Error('API key cannot be empty');
     return retryDb(async () => {
       const cryptoKey = await this.getLocalCryptoKey();
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const encoded = new TextEncoder().encode(apiKey.trim());
-      const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        cryptoKey,
-        encoded,
-      );
-      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded);
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
       return new Promise((resolve, reject) => {
-        const r1 = store.put(
-          Array.from(new Uint8Array(encrypted)),
-          `api_key_${provider}_enc`,
-        );
+        const r1 = store.put(Array.from(new Uint8Array(encrypted)), `api_key_${provider}_enc`);
         const r2 = store.put(Array.from(iv), `api_key_${provider}_iv`);
         let done = 0;
         const ok = () => {
@@ -247,7 +225,7 @@ class IndexedDBService implements StorageBackend {
   async getApiKey(provider: string): Promise<string | null> {
     return retryDb(async () => {
       try {
-        const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+        const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
         const [encArr, ivArr] = await Promise.all([
           new Promise<number[] | undefined>((res, rej) => {
             const r = store.get(`api_key_${provider}_enc`);
@@ -263,20 +241,22 @@ class IndexedDBService implements StorageBackend {
         if (!encArr || !ivArr) return null;
         const cryptoKey = await this.getLocalCryptoKey();
         const decrypted = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv: new Uint8Array(ivArr) },
+          { name: 'AES-GCM', iv: new Uint8Array(ivArr) },
           cryptoKey,
-          new Uint8Array(encArr),
+          new Uint8Array(encArr)
         );
         return new TextDecoder().decode(decrypted);
-      } catch {
-        return null;
+      } catch (err) {
+        // Distinguish between "no key stored" vs "decryption failed" (e.g. device change, cleared site data)
+        console.warn(`API key decryption failed for provider "${provider}":`, err);
+        return 'DECRYPT_FAILED' as string;
       }
     });
   }
 
   async clearApiKey(provider: string): Promise<void> {
     return retryDb(async () => {
-      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
       return new Promise<void>((resolve, reject) => {
         const r1 = store.delete(`api_key_${provider}_enc`);
         const r2 = store.delete(`api_key_${provider}_iv`);
@@ -311,7 +291,7 @@ class IndexedDBService implements StorageBackend {
         if (event.oldVersion < 2) {
           if (!db.objectStoreNames.contains(SNAPSHOTS_STORE)) {
             db.createObjectStore(SNAPSHOTS_STORE, {
-              keyPath: "id",
+              keyPath: 'id',
               autoIncrement: true,
             });
           }
@@ -327,12 +307,12 @@ class IndexedDBService implements StorageBackend {
         if (event.oldVersion < 5) {
           if (!db.objectStoreNames.contains(RAG_VECTORS_STORE)) {
             const vectorStore = db.createObjectStore(RAG_VECTORS_STORE, {
-              keyPath: "id",
+              keyPath: 'id',
             });
-            vectorStore.createIndex("projectId", "projectId", {
+            vectorStore.createIndex('projectId', 'projectId', {
               unique: false,
             });
-            vectorStore.createIndex("type", "type", { unique: false });
+            vectorStore.createIndex('type', 'type', { unique: false });
           }
         }
       };
@@ -344,7 +324,7 @@ class IndexedDBService implements StorageBackend {
           db.close();
           this.db = null;
           console.warn(
-            "IndexedDB: Datenbankversion geändert – Verbindung geschlossen. Bitte Seite neu laden.",
+            'IndexedDB: Datenbankversion geändert – Verbindung geschlossen. Bitte Seite neu laden.'
           );
         };
         this.db = db;
@@ -356,7 +336,7 @@ class IndexedDBService implements StorageBackend {
       (request as any).__handled = true;
 
       request.onerror = () => {
-        console.error("IndexedDB error:", request.error);
+        console.error('IndexedDB error:', request.error);
         reject(request.error);
       };
     });
@@ -364,7 +344,7 @@ class IndexedDBService implements StorageBackend {
 
   private async getObjectStore(
     storeName: string,
-    mode: IDBTransactionMode,
+    mode: IDBTransactionMode
   ): Promise<IDBObjectStore> {
     if (!this.db) {
       await this.initDB();
@@ -374,11 +354,11 @@ class IndexedDBService implements StorageBackend {
   }
 
   async saveSlice(
-    sliceName: "project" | "settings",
-    data: PersistedProjectState | Settings,
+    sliceName: 'project' | 'settings',
+    data: PersistedProjectState | Settings
   ): Promise<void> {
     return new Promise(async (resolve, reject) => {
-      const store = await this.getObjectStore(APP_DATA_STORE, "readwrite");
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readwrite');
       // Compress large state objects (project data can exceed 100 KB)
       const payload = compressData(data);
       const request = store.put(payload, sliceName);
@@ -399,18 +379,15 @@ class IndexedDBService implements StorageBackend {
         this.createSnapshot(projectData).then(() => this.pruneAutoSnapshots());
       }
     }
-    return this.saveSlice("project", data);
+    return this.saveSlice('project', data);
   }
 
   async saveSettings(data: Settings): Promise<void> {
-    return this.saveSlice("settings", data);
+    return this.saveSlice('settings', data);
   }
 
   // Helper to validate state structure and fix common issues
-  private validateAndFixState(
-    project: unknown,
-    settings: unknown,
-  ): PersistedState | undefined {
+  private validateAndFixState(project: unknown, settings: unknown): PersistedState | undefined {
     // If project is missing but we have settings, return partial to allow new user flow
     if (!project && !settings) return undefined;
 
@@ -418,9 +395,7 @@ class IndexedDBService implements StorageBackend {
 
     // Ensure Project Structure consistency
     if (validProject) {
-      const rawData = validProject.present
-        ? validProject.present.data
-        : validProject.data;
+      const rawData = validProject.present ? validProject.present.data : validProject.data;
       if (rawData) {
         // Ensure projectGoals exists
         if (!rawData.projectGoals) {
@@ -437,11 +412,11 @@ class IndexedDBService implements StorageBackend {
     let validSettings = settings as Settings;
     if (settings) {
       validSettings = {
-        theme: "dark",
-        editorFont: "serif",
+        theme: 'dark',
+        editorFont: 'serif',
         fontSize: 16,
         lineSpacing: 1.6,
-        aiCreativity: "Balanced",
+        aiCreativity: 'Balanced',
         paragraphSpacing: 1,
         indentFirstLine: false,
         ...(settings as Partial<Settings>),
@@ -453,9 +428,9 @@ class IndexedDBService implements StorageBackend {
 
   async loadState(): Promise<PersistedState | undefined> {
     return new Promise(async (resolve, reject) => {
-      const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
-      const projectRequest = store.get("project");
-      const settingsRequest = store.get("settings");
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
+      const projectRequest = store.get('project');
+      const settingsRequest = store.get('settings');
 
       let project: unknown;
       let settings: unknown;
@@ -484,7 +459,7 @@ class IndexedDBService implements StorageBackend {
 
   async hasSavedData(): Promise<boolean> {
     try {
-      const store = await this.getObjectStore(APP_DATA_STORE, "readonly");
+      const store = await this.getObjectStore(APP_DATA_STORE, 'readonly');
       const request = store.count();
       return new Promise((resolve) => {
         request.onsuccess = () => {
@@ -499,7 +474,7 @@ class IndexedDBService implements StorageBackend {
 
   // --- Image Store Methods ---
   async saveImage(id: string, base64: string): Promise<void> {
-    const store = await this.getObjectStore(IMAGES_STORE, "readwrite");
+    const store = await this.getObjectStore(IMAGES_STORE, 'readwrite');
     return new Promise((resolve, reject) => {
       const request = store.put(base64, id);
       request.onsuccess = () => resolve();
@@ -508,7 +483,7 @@ class IndexedDBService implements StorageBackend {
   }
 
   async getImage(id: string): Promise<string | undefined> {
-    const store = await this.getObjectStore(IMAGES_STORE, "readonly");
+    const store = await this.getObjectStore(IMAGES_STORE, 'readonly');
     return new Promise((resolve, reject) => {
       const request = store.get(id);
       request.onsuccess = () => resolve(request.result);
@@ -517,7 +492,7 @@ class IndexedDBService implements StorageBackend {
   }
 
   async deleteImage(id: string): Promise<void> {
-    const store = await this.getObjectStore(IMAGES_STORE, "readwrite");
+    const store = await this.getObjectStore(IMAGES_STORE, 'readwrite');
     return new Promise((resolve, reject) => {
       const request = store.delete(id);
       request.onsuccess = () => resolve();
@@ -529,19 +504,18 @@ class IndexedDBService implements StorageBackend {
 
   async createSnapshot(data: ProjectData, name?: string): Promise<void> {
     const wordCount = data.manuscript.reduce(
-      (sum, section) =>
-        sum + (section.content?.split(/\s+/).filter(Boolean).length || 0),
-      0,
+      (sum, section) => sum + (section.content?.split(/\s+/).filter(Boolean).length || 0),
+      0
     );
     const snapshotData = {
       date: new Date().toISOString(),
-      name: name || "Automatic Snapshot",
+      name: name || 'Automatic Snapshot',
       wordCount,
       // Compress snapshot payload – snapshots can be very large
       data: compressData(data),
     };
 
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
     return new Promise((resolve, reject) => {
       const request = store.add(snapshotData);
       request.onsuccess = () => resolve();
@@ -550,9 +524,9 @@ class IndexedDBService implements StorageBackend {
   }
 
   async listSnapshots(): Promise<ProjectSnapshot[]> {
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readonly");
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
     // IDBKeyRange: iterate in reverse (newest first) using cursor direction 'prev'
-    const request = store.openCursor(null, "prev");
+    const request = store.openCursor(null, 'prev');
     const snapshots: ProjectSnapshot[] = [];
 
     return new Promise((resolve, reject) => {
@@ -571,7 +545,7 @@ class IndexedDBService implements StorageBackend {
   }
 
   async getSnapshotData(id: number): Promise<ProjectData> {
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readonly");
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readonly');
     return new Promise((resolve, reject) => {
       const request = store.get(id);
       request.onsuccess = () => {
@@ -583,7 +557,7 @@ class IndexedDBService implements StorageBackend {
   }
 
   async deleteSnapshot(id: number): Promise<void> {
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
     return new Promise((resolve, reject) => {
       const request = store.delete(id);
       request.onsuccess = () => resolve();
@@ -592,7 +566,7 @@ class IndexedDBService implements StorageBackend {
   }
 
   private async pruneAutoSnapshots(): Promise<void> {
-    const store = await this.getObjectStore(SNAPSHOTS_STORE, "readwrite");
+    const store = await this.getObjectStore(SNAPSHOTS_STORE, 'readwrite');
     // Use IDBKeyRange to get all keys efficiently (no full data fetch needed)
     const allKeys: number[] = await new Promise((resolve, reject) => {
       const req = store.getAllKeys();
@@ -633,34 +607,24 @@ export interface StorageBackendMethods {
 }
 
 // Add StorageBackend implementation to IndexedDBService
-declare module "./dbService" {
+declare module './dbService' {
   interface IndexedDBService extends StorageBackendMethods {}
 }
 
 // Implement the methods
 IndexedDBService.prototype.saveProject = IndexedDBService.prototype.saveProject;
 IndexedDBService.prototype.loadProject = IndexedDBService.prototype.loadProject;
-IndexedDBService.prototype.listProjects =
-  IndexedDBService.prototype.listProjects;
-IndexedDBService.prototype.deleteProject =
-  IndexedDBService.prototype.deleteProject;
+IndexedDBService.prototype.listProjects = IndexedDBService.prototype.listProjects;
+IndexedDBService.prototype.deleteProject = IndexedDBService.prototype.deleteProject;
 IndexedDBService.prototype.saveImage = IndexedDBService.prototype.saveImage;
 IndexedDBService.prototype.getImage = IndexedDBService.prototype.getImage;
-IndexedDBService.prototype.saveSettings =
-  IndexedDBService.prototype.saveSettings;
-IndexedDBService.prototype.loadSettings =
-  IndexedDBService.prototype.loadSettings;
-IndexedDBService.prototype.saveGeminiApiKey =
-  IndexedDBService.prototype.saveGeminiApiKey;
-IndexedDBService.prototype.getGeminiApiKey =
-  IndexedDBService.prototype.getGeminiApiKey;
-IndexedDBService.prototype.saveSnapshot =
-  IndexedDBService.prototype.createSnapshot;
-IndexedDBService.prototype.getSnapshotData =
-  IndexedDBService.prototype.getSnapshotData;
-IndexedDBService.prototype.listSnapshots =
-  IndexedDBService.prototype.listSnapshots;
-IndexedDBService.prototype.deleteSnapshot =
-  IndexedDBService.prototype.deleteSnapshot;
+IndexedDBService.prototype.saveSettings = IndexedDBService.prototype.saveSettings;
+IndexedDBService.prototype.loadSettings = IndexedDBService.prototype.loadSettings;
+IndexedDBService.prototype.saveGeminiApiKey = IndexedDBService.prototype.saveGeminiApiKey;
+IndexedDBService.prototype.getGeminiApiKey = IndexedDBService.prototype.getGeminiApiKey;
+IndexedDBService.prototype.saveSnapshot = IndexedDBService.prototype.createSnapshot;
+IndexedDBService.prototype.getSnapshotData = IndexedDBService.prototype.getSnapshotData;
+IndexedDBService.prototype.listSnapshots = IndexedDBService.prototype.listSnapshots;
+IndexedDBService.prototype.deleteSnapshot = IndexedDBService.prototype.deleteSnapshot;
 
 export const dbService = new IndexedDBService();

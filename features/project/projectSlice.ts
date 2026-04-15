@@ -4,16 +4,16 @@ import {
   createEntityAdapter,
   PayloadAction,
   EntityState,
-} from "@reduxjs/toolkit";
-import { v4 as uuidv4 } from "uuid";
+} from '@reduxjs/toolkit';
+import { v4 as uuidv4 } from 'uuid';
 import {
   getPrompts,
   generateText,
   generateJson,
   generateImage,
   streamText,
-} from "../../services/geminiService";
-import { RootState } from "../../app/store";
+} from '../../services/geminiService';
+import { RootState } from '../../app/store';
 import {
   Character,
   World,
@@ -24,9 +24,9 @@ import {
   CharacterRelationship,
   WritingSession,
   WritingGoal,
-} from "../../types";
-import { dbService } from "../../services/dbService";
-import { storageService } from "../../services/storageService";
+} from '../../types';
+import { dbService } from '../../services/dbService';
+import { storageService } from '../../services/storageService';
 
 // --- Entity Adapters ---
 export const charactersAdapter = createEntityAdapter<Character>();
@@ -60,20 +60,18 @@ export interface ProjectData {
 interface ImportedProjectData {
   title: string;
   logline: string;
-  characters:
-    | Character[]
-    | { ids: string[]; entities: Record<string, Character> };
+  characters: Character[] | { ids: string[]; entities: Record<string, Character> };
   worlds: World[] | { ids: string[]; entities: Record<string, World> };
   outline?: OutlineSection[];
   manuscript?: StorySection[];
-  projectGoals?: ProjectData["projectGoals"];
-  writingHistory?: ProjectData["writingHistory"];
+  projectGoals?: ProjectData['projectGoals'];
+  writingHistory?: ProjectData['writingHistory'];
 }
 
 const initialState: { data: ProjectData } = {
   data: {
-    title: "",
-    logline: "",
+    title: '',
+    logline: '',
     characters: charactersAdapter.getInitialState(),
     worlds: worldsAdapter.getInitialState(),
     outline: [],
@@ -88,349 +86,326 @@ const initialState: { data: ProjectData } = {
 
 // --- Async Thunks ---
 export const generateLoglineSuggestionsThunk = createAsyncThunk(
-  "project/generateLogline",
-  async (lang: string, { getState }) => {
+  'project/generateLogline',
+  async (lang: string, { getState, signal }) => {
     const state = getState() as RootState;
     const project = state.project.present.data;
     const creativity = state.settings.aiCreativity;
 
-    const { prompt, schema } = getPrompts("logline", { project, lang });
-    const response = await generateJson<string[]>(prompt, creativity, schema);
+    const { prompt, schema } = getPrompts('logline', { project, lang });
+    const response = await generateJson<string[]>(prompt, creativity, schema, signal);
     return response;
-  },
+  }
 );
 
-export const importProjectThunk = createAsyncThunk(
-  "project/importProject",
-  async (file: File) => {
-    const text = await file.text();
-    const projectData = JSON.parse(text) as ImportedProjectData;
+export const importProjectThunk = createAsyncThunk('project/importProject', async (file: File) => {
+  const text = await file.text();
+  const projectData = JSON.parse(text) as ImportedProjectData;
 
-    const charactersState = charactersAdapter.getInitialState();
-    const worldsState = worldsAdapter.getInitialState();
+  const charactersState = charactersAdapter.getInitialState();
+  const worldsState = worldsAdapter.getInitialState();
 
-    const charactersToSet: Character[] = [];
-    const worldsToSet: World[] = [];
+  const charactersToSet: Character[] = [];
+  const worldsToSet: World[] = [];
 
-    let characterArray: (Character & { avatarBase64?: string })[] = [];
-    if (Array.isArray(projectData.characters)) {
-      characterArray = projectData.characters;
-    } else if (
-      projectData.characters &&
-      "ids" in projectData.characters &&
-      "entities" in projectData.characters
-    ) {
-      const { ids, entities } = projectData.characters;
-      characterArray = ids.map((id: string) => entities[id]);
+  let characterArray: (Character & { avatarBase64?: string })[] = [];
+  if (Array.isArray(projectData.characters)) {
+    characterArray = projectData.characters;
+  } else if (
+    projectData.characters &&
+    'ids' in projectData.characters &&
+    'entities' in projectData.characters
+  ) {
+    const { ids, entities } = projectData.characters;
+    characterArray = ids.map((id: string) => entities[id]);
+  }
+
+  for (const char of characterArray) {
+    const newChar = { ...char };
+    if (newChar.avatarBase64) {
+      await storageService.saveImage(newChar.id, newChar.avatarBase64);
+      newChar.hasAvatar = true;
+      delete newChar.avatarBase64;
     }
+    charactersToSet.push(newChar);
+  }
+  charactersAdapter.setAll(charactersState, charactersToSet);
 
-    for (const char of characterArray) {
-      const newChar = { ...char };
-      if (newChar.avatarBase64) {
-        await storageService.saveImage(newChar.id, newChar.avatarBase64);
-        newChar.hasAvatar = true;
-        delete newChar.avatarBase64;
-      }
-      charactersToSet.push(newChar);
+  let worldArray: (World & { ambianceImageBase64?: string })[] = [];
+  if (Array.isArray(projectData.worlds)) {
+    worldArray = projectData.worlds;
+  } else if (
+    projectData.worlds &&
+    'ids' in projectData.worlds &&
+    'entities' in projectData.worlds
+  ) {
+    const { ids, entities } = projectData.worlds;
+    worldArray = ids.map((id: string) => entities[id]);
+  }
+
+  for (const world of worldArray) {
+    const newWorld = { ...world };
+    if (newWorld.ambianceImageBase64) {
+      await storageService.saveImage(newWorld.id, newWorld.ambianceImageBase64);
+      newWorld.hasAmbianceImage = true;
+      delete newWorld.ambianceImageBase64;
     }
-    charactersAdapter.setAll(charactersState, charactersToSet);
+    worldsToSet.push(newWorld);
+  }
+  worldsAdapter.setAll(worldsState, worldsToSet);
 
-    let worldArray: (World & { ambianceImageBase64?: string })[] = [];
-    if (Array.isArray(projectData.worlds)) {
-      worldArray = projectData.worlds;
-    } else if (
-      projectData.worlds &&
-      "ids" in projectData.worlds &&
-      "entities" in projectData.worlds
-    ) {
-      const { ids, entities } = projectData.worlds;
-      worldArray = ids.map((id: string) => entities[id]);
-    }
-
-    for (const world of worldArray) {
-      const newWorld = { ...world };
-      if (newWorld.ambianceImageBase64) {
-        await storageService.saveImage(
-          newWorld.id,
-          newWorld.ambianceImageBase64,
-        );
-        newWorld.hasAmbianceImage = true;
-        delete newWorld.ambianceImageBase64;
-      }
-      worldsToSet.push(newWorld);
-    }
-    worldsAdapter.setAll(worldsState, worldsToSet);
-
-    return {
-      title: projectData.title,
-      logline: projectData.logline,
-      characters: charactersState,
-      worlds: worldsState,
-      outline: projectData.outline || [],
-      manuscript: projectData.manuscript || [],
-      projectGoals: projectData.projectGoals || initialState.data.projectGoals,
-      writingHistory: projectData.writingHistory || [],
-    } as ProjectData;
-  },
-);
+  return {
+    title: projectData.title,
+    logline: projectData.logline,
+    characters: charactersState,
+    worlds: worldsState,
+    outline: projectData.outline || [],
+    manuscript: projectData.manuscript || [],
+    projectGoals: projectData.projectGoals || initialState.data.projectGoals,
+    writingHistory: projectData.writingHistory || [],
+  } as ProjectData;
+});
 
 export const restoreSnapshotThunk = createAsyncThunk(
-  "project/restoreSnapshot",
+  'project/restoreSnapshot',
   async (snapshotId: number) => {
     const data = await storageService.getSnapshotData(snapshotId);
     return data;
-  },
+  }
 );
 
 export const generateCharacterProfileThunk = createAsyncThunk(
-  "project/generateCharacterProfile",
-  async (
-    { concept, lang }: { concept: string; lang: string },
-    { getState },
-  ) => {
+  'project/generateCharacterProfile',
+  async ({ concept, lang }: { concept: string; lang: string }, { getState, signal }) => {
     const state = getState() as RootState;
     // Pass thinking budget indirectly via prompt type config in geminiService
-    const { prompt, schema, thinkingBudget } = getPrompts("characterProfile", {
+    const { prompt, schema, thinkingBudget } = getPrompts('characterProfile', {
       concept,
       lang,
     });
-    return await generateJson<Omit<Character, "id">>(
+    return await generateJson<Omit<Character, 'id'>>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
-  },
+  }
 );
 
 export const regenerateCharacterFieldThunk = createAsyncThunk(
-  "project/regenerateCharacterField",
+  'project/regenerateCharacterField',
   async (
-    {
-      character,
-      field,
-      lang,
-    }: { character: Character; field: keyof Character; lang: string },
-    { getState },
+    { character, field, lang }: { character: Character; field: keyof Character; lang: string },
+    { getState, signal }
   ) => {
     const state = getState() as RootState;
-    const { prompt } = getPrompts("regenerateCharacterField", {
+    const { prompt } = getPrompts('regenerateCharacterField', {
       character,
       field,
       lang,
     });
-    const response = await generateText(prompt, state.settings.aiCreativity);
+    const response = await generateText(prompt, state.settings.aiCreativity, signal);
     return { field, value: response };
-  },
+  }
 );
 
 export const generateCharacterPortraitThunk = createAsyncThunk(
-  "project/generateCharacterPortrait",
-  async ({
-    characterId,
-    description,
-    style,
-    lang,
-  }: {
-    characterId: string;
-    description: string;
-    style?: string;
-    lang: string;
-  }) => {
-    const fullDescription = style
-      ? `${description}. Style: ${style}`
-      : description;
-    const { prompt } = getPrompts("characterPortrait", {
+  'project/generateCharacterPortrait',
+  async (
+    {
+      characterId,
+      description,
+      style,
+      lang,
+    }: {
+      characterId: string;
+      description: string;
+      style?: string;
+      lang: string;
+    },
+    { signal }
+  ) => {
+    const fullDescription = style ? `${description}. Style: ${style}` : description;
+    const { prompt } = getPrompts('characterPortrait', {
       description: fullDescription,
       lang,
     });
-    const base64 = await generateImage(prompt);
+    const base64 = await generateImage(prompt, signal);
     await storageService.saveImage(characterId, base64);
     return { characterId };
-  },
+  }
 );
 
 export const uploadCharacterImageThunk = createAsyncThunk(
-  "project/uploadCharacterImage",
+  'project/uploadCharacterImage',
   async ({ characterId, file }: { characterId: string; file: File }) => {
     return new Promise<{ characterId: string }>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = (reader.result as string).replace(
-          /^data:image\/\w+;base64,/,
-          "",
-        );
+        const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
         await storageService.saveImage(characterId, base64);
         resolve({ characterId });
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  },
+  }
 );
 
 export const generateWorldProfileThunk = createAsyncThunk(
-  "project/generateWorldProfile",
-  async (
-    { concept, lang }: { concept: string; lang: string },
-    { getState },
-  ) => {
+  'project/generateWorldProfile',
+  async ({ concept, lang }: { concept: string; lang: string }, { getState, signal }) => {
     const state = getState() as RootState;
-    const { prompt, schema, thinkingBudget } = getPrompts("worldProfile", {
+    const { prompt, schema, thinkingBudget } = getPrompts('worldProfile', {
       concept,
       lang,
     });
-    return await generateJson<Omit<World, "id">>(
+    return await generateJson<Omit<World, 'id'>>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
-  },
+  }
 );
 
 export const regenerateWorldFieldThunk = createAsyncThunk(
-  "project/regenerateWorldField",
+  'project/regenerateWorldField',
   async (
     { world, field, lang }: { world: World; field: keyof World; lang: string },
-    { getState },
+    { getState, signal }
   ) => {
     const state = getState() as RootState;
-    const { prompt } = getPrompts("regenerateWorldField", {
+    const { prompt } = getPrompts('regenerateWorldField', {
       world,
       field,
       lang,
     });
-    const response = await generateText(prompt, state.settings.aiCreativity);
+    const response = await generateText(prompt, state.settings.aiCreativity, signal);
     return { field, value: response };
-  },
+  }
 );
 
 export const generateWorldImageThunk = createAsyncThunk(
-  "project/generateWorldImage",
-  async ({
-    worldId,
-    description,
-    lang,
-  }: {
-    worldId: string;
-    description: string;
-    lang: string;
-  }) => {
-    const { prompt } = getPrompts("worldImage", { description, lang });
-    const base64 = await generateImage(prompt);
+  'project/generateWorldImage',
+  async (
+    {
+      worldId,
+      description,
+      lang,
+    }: {
+      worldId: string;
+      description: string;
+      lang: string;
+    },
+    { signal }
+  ) => {
+    const { prompt } = getPrompts('worldImage', { description, lang });
+    const base64 = await generateImage(prompt, signal);
     await storageService.saveImage(worldId, base64);
     return { worldId };
-  },
+  }
 );
 
 export const uploadWorldImageThunk = createAsyncThunk(
-  "project/uploadWorldImage",
+  'project/uploadWorldImage',
   async ({ worldId, file }: { worldId: string; file: File }) => {
     return new Promise<{ worldId: string }>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = (reader.result as string).replace(
-          /^data:image\/\w+;base64,/,
-          "",
-        );
+        const base64 = (reader.result as string).replace(/^data:image\/\w+;base64,/, '');
         await storageService.saveImage(worldId, base64);
         resolve({ worldId });
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  },
+  }
 );
 
 export const generateOutlineThunk = createAsyncThunk(
-  "project/generateOutline",
-  async (params: OutlineGenerationParams, { getState }) => {
+  'project/generateOutline',
+  async (params: OutlineGenerationParams, { getState, signal }) => {
     const state = getState() as RootState;
-    const { prompt, schema, thinkingBudget } = getPrompts("outline", params);
+    const { prompt, schema, thinkingBudget } = getPrompts('outline', params);
     return await generateJson<OutlineSection[]>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
-  },
+  }
 );
 
 export const regenerateOutlineSectionThunk = createAsyncThunk(
-  "project/regenerateOutlineSection",
+  'project/regenerateOutlineSection',
   async (
     {
       allSections,
       sectionToIndex,
       lang,
     }: { allSections: OutlineSection[]; sectionToIndex: number; lang: string },
-    { getState },
+    { getState, signal }
   ) => {
     const state = getState() as RootState;
-    const { prompt, schema, thinkingBudget } = getPrompts(
-      "regenerateOutlineSection",
-      { allSections, sectionToIndex, lang },
-    );
+    const { prompt, schema, thinkingBudget } = getPrompts('regenerateOutlineSection', {
+      allSections,
+      sectionToIndex,
+      lang,
+    });
     const response = await generateJson<OutlineSection>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
     return { index: sectionToIndex, newSection: response };
-  },
+  }
 );
 
 export const personalizeTemplateThunk = createAsyncThunk(
-  "project/personalizeTemplate",
+  'project/personalizeTemplate',
   async (
-    {
+    { sections, concept, lang }: { sections: { title: string }[]; concept: string; lang: string },
+    { getState, signal }
+  ) => {
+    const state = getState() as RootState;
+    const { prompt, schema, thinkingBudget } = getPrompts('personalizeTemplate', {
       sections,
       concept,
       lang,
-    }: { sections: { title: string }[]; concept: string; lang: string },
-    { getState },
-  ) => {
-    const state = getState() as RootState;
-    const { prompt, schema, thinkingBudget } = getPrompts(
-      "personalizeTemplate",
-      { sections, concept, lang },
-    );
+    });
     return await generateJson<{ title: string; prompt: string }[]>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
-  },
+  }
 );
 
 export const generateCustomTemplateThunk = createAsyncThunk(
-  "project/generateCustomTemplate",
-  async (params: CustomTemplateParams, { getState }) => {
+  'project/generateCustomTemplate',
+  async (params: CustomTemplateParams, { getState, signal }) => {
     const state = getState() as RootState;
-    const { prompt, schema, thinkingBudget } = getPrompts(
-      "customTemplate",
-      params,
-    );
+    const { prompt, schema, thinkingBudget } = getPrompts('customTemplate', params);
     return await generateJson<{ title: string }[]>(
       prompt,
       state.settings.aiCreativity,
       schema,
-      undefined,
-      thinkingBudget,
+      signal,
+      thinkingBudget
     );
-  },
+  }
 );
 
 export const streamGenerationThunk = createAsyncThunk(
-  "project/streamGeneration",
+  'project/streamGeneration',
   async (
     {
       prompt,
@@ -443,46 +418,50 @@ export const streamGenerationThunk = createAsyncThunk(
       onChunk: (chunk: string) => void;
       signal?: AbortSignal;
     },
-    { getState },
+    { getState }
   ) => {
     const state = getState() as RootState;
-    const fullPrompt = `${prompt}\n\nRespond in ${lang === "de" ? "German" : "English"}.`;
+    const fullPrompt = `${prompt}\n\nRespond in ${lang === 'de' ? 'German' : 'English'}.`;
     await streamText(fullPrompt, state.settings.aiCreativity, onChunk, signal);
-  },
+  }
 );
 
 export const generateSynopsisThunk = createAsyncThunk(
-  "project/generateSynopsis",
-  async (lang: string, { getState }) => {
+  'project/generateSynopsis',
+  async (lang: string, { getState, signal }) => {
     const state = getState() as RootState;
     const project = state.project.present.data;
     const creativity = state.settings.aiCreativity;
-    const { prompt, thinkingBudget } = getPrompts("synopsis", {
+    const { prompt, thinkingBudget } = getPrompts('synopsis', {
       project,
       lang,
     });
-    return await generateText(prompt, creativity, undefined, thinkingBudget);
-  },
+    return await generateText(prompt, creativity, signal, thinkingBudget);
+  }
 );
 
 export const proofreadTextThunk = createAsyncThunk(
-  "project/proofreadText",
-  async ({ text, lang }: { text: string; lang: string }, { getState }) => {
+  'project/proofreadText',
+  async ({ text, lang }: { text: string; lang: string }, { getState, signal }) => {
     const state = getState() as RootState;
     const creativity = state.settings.aiCreativity;
-    const { prompt, schema, thinkingBudget } = getPrompts("proofread", {
+    const { prompt, schema, thinkingBudget } = getPrompts('proofread', {
       text,
       lang,
     });
-    return await generateJson<
-      { original: string; suggestion: string; explanation: string }[]
-    >(prompt, creativity, schema, undefined, thinkingBudget);
-  },
+    return await generateJson<{ original: string; suggestion: string; explanation: string }[]>(
+      prompt,
+      creativity,
+      schema,
+      signal,
+      thinkingBudget
+    );
+  }
 );
 
 // --- Slice Definition ---
 const projectSlice = createSlice({
-  name: "project",
+  name: 'project',
   initialState,
   reducers: {
     // --- Project Meta ---
@@ -495,60 +474,49 @@ const projectSlice = createSlice({
     updateProjectGoal: (
       state,
       action: PayloadAction<{
-        key: "totalWordCount" | "targetDate";
+        key: 'totalWordCount' | 'targetDate';
         value: number | string | null;
-      }>,
+      }>
     ) => {
       if (state.data.projectGoals) {
-        if (action.payload.key === "totalWordCount") {
-          state.data.projectGoals.totalWordCount = action.payload
-            .value as number;
-        } else if (action.payload.key === "targetDate") {
-          state.data.projectGoals.targetDate = action.payload.value as
-            | string
-            | null;
+        if (action.payload.key === 'totalWordCount') {
+          state.data.projectGoals.totalWordCount = action.payload.value as number;
+        } else if (action.payload.key === 'targetDate') {
+          state.data.projectGoals.targetDate = action.payload.value as string | null;
         }
       }
     },
-    resetProject: (
-      state,
-      action: PayloadAction<{ title: string; logline: string }>,
-    ) => {
+    resetProject: (state, action: PayloadAction<{ title: string; logline: string }>) => {
       state.data = {
         ...initialState.data,
         title: action.payload.title,
         logline: action.payload.logline,
         characters: charactersAdapter.getInitialState(),
         worlds: worldsAdapter.getInitialState(),
-        manuscript: [
-          { id: `sec-${Date.now()}`, title: "Chapter 1", content: "" },
-        ],
+        manuscript: [{ id: `sec-${Date.now()}`, title: 'Chapter 1', content: '' }],
       };
     },
     // --- Characters ---
-    addCharacter: (
-      state,
-      action: PayloadAction<Partial<Character> & { name: string }>,
-    ) => {
+    addCharacter: (state, action: PayloadAction<Partial<Character> & { name: string }>) => {
       const newChar: Character = {
         id: uuidv4(),
         name: action.payload.name,
-        backstory: "",
-        motivation: "",
-        appearance: "",
-        personalityTraits: "",
-        flaws: "",
-        notes: "",
+        backstory: '',
+        motivation: '',
+        appearance: '',
+        personalityTraits: '',
+        flaws: '',
+        notes: '',
         hasAvatar: false,
-        characterArc: "",
-        relationships: "",
+        characterArc: '',
+        relationships: '',
         ...action.payload,
       };
       charactersAdapter.addOne(state.data.characters, newChar);
     },
     updateCharacter: (
       state,
-      action: PayloadAction<{ id: string; changes: Partial<Character> }>,
+      action: PayloadAction<{ id: string; changes: Partial<Character> }>
     ) => {
       charactersAdapter.updateOne(state.data.characters, {
         id: action.payload.id,
@@ -559,18 +527,15 @@ const projectSlice = createSlice({
       charactersAdapter.removeOne(state.data.characters, action.payload);
     },
     // --- Worlds ---
-    addWorld: (
-      state,
-      action: PayloadAction<Partial<World> & { name: string }>,
-    ) => {
+    addWorld: (state, action: PayloadAction<Partial<World> & { name: string }>) => {
       const newWorld: World = {
         id: uuidv4(),
         name: action.payload.name,
-        description: "",
-        geography: "",
-        magicSystem: "",
-        culture: "",
-        notes: "",
+        description: '',
+        geography: '',
+        magicSystem: '',
+        culture: '',
+        notes: '',
         hasAmbianceImage: false,
         timeline: [],
         locations: [],
@@ -578,10 +543,7 @@ const projectSlice = createSlice({
       };
       worldsAdapter.addOne(state.data.worlds, newWorld);
     },
-    updateWorld: (
-      state,
-      action: PayloadAction<{ id: string; changes: Partial<World> }>,
-    ) => {
+    updateWorld: (state, action: PayloadAction<{ id: string; changes: Partial<World> }>) => {
       worldsAdapter.updateOne(state.data.worlds, {
         id: action.payload.id,
         changes: action.payload.changes,
@@ -600,11 +562,9 @@ const projectSlice = createSlice({
     },
     updateManuscriptSection: (
       state,
-      action: PayloadAction<{ id: string; changes: Partial<StorySection> }>,
+      action: PayloadAction<{ id: string; changes: Partial<StorySection> }>
     ) => {
-      const index = state.data.manuscript.findIndex(
-        (s) => s.id === action.payload.id,
-      );
+      const index = state.data.manuscript.findIndex((s) => s.id === action.payload.id);
       if (index !== -1) {
         state.data.manuscript[index] = {
           ...state.data.manuscript[index],
@@ -612,14 +572,11 @@ const projectSlice = createSlice({
         };
       }
     },
-    addManuscriptSection: (
-      state,
-      action: PayloadAction<{ title: string; index?: number }>,
-    ) => {
+    addManuscriptSection: (state, action: PayloadAction<{ title: string; index?: number }>) => {
       const newSection: StorySection = {
         id: uuidv4(),
         title: action.payload.title,
-        content: "",
+        content: '',
       };
       if (action.payload.index !== undefined) {
         state.data.manuscript.splice(action.payload.index, 0, newSection);
@@ -628,9 +585,7 @@ const projectSlice = createSlice({
       }
     },
     deleteManuscriptSection: (state, action: PayloadAction<string>) => {
-      state.data.manuscript = state.data.manuscript.filter(
-        (s) => s.id !== action.payload,
-      );
+      state.data.manuscript = state.data.manuscript.filter((s) => s.id !== action.payload);
     },
     // --- Relationships ---
     addRelationship: (state, action: PayloadAction<CharacterRelationship>) => {
@@ -642,12 +597,10 @@ const projectSlice = createSlice({
       action: PayloadAction<{
         id: string;
         changes: Partial<CharacterRelationship>;
-      }>,
+      }>
     ) => {
       if (!state.data.relationships) state.data.relationships = [];
-      const index = state.data.relationships.findIndex(
-        (r) => r.id === action.payload.id,
-      );
+      const index = state.data.relationships.findIndex((r) => r.id === action.payload.id);
       if (index !== -1) {
         state.data.relationships[index] = {
           ...state.data.relationships[index],
@@ -657,14 +610,12 @@ const projectSlice = createSlice({
     },
     deleteRelationship: (state, action: PayloadAction<string>) => {
       if (!state.data.relationships) state.data.relationships = [];
-      state.data.relationships = state.data.relationships.filter(
-        (r) => r.id !== action.payload,
-      );
+      state.data.relationships = state.data.relationships.filter((r) => r.id !== action.payload);
     },
     // --- Scene Board ---
     updateSceneBoardLayout: (
       state,
-      action: PayloadAction<{ [sectionId: string]: { x: number; y: number } }>,
+      action: PayloadAction<{ [sectionId: string]: { x: number; y: number } }>
     ) => {
       state.data.sceneBoardLayout = {
         ...state.data.sceneBoardLayout,
@@ -678,12 +629,10 @@ const projectSlice = createSlice({
     },
     updateWritingGoal: (
       state,
-      action: PayloadAction<{ id: string; changes: Partial<WritingGoal> }>,
+      action: PayloadAction<{ id: string; changes: Partial<WritingGoal> }>
     ) => {
       if (!state.data.writingGoals) state.data.writingGoals = [];
-      const index = state.data.writingGoals.findIndex(
-        (g) => g.id === action.payload.id,
-      );
+      const index = state.data.writingGoals.findIndex((g) => g.id === action.payload.id);
       if (index !== -1) {
         state.data.writingGoals[index] = {
           ...state.data.writingGoals[index],

@@ -1,28 +1,27 @@
-import React, { FC, useState, useEffect, useCallback, useRef } from "react";
-import { v4 as uuid } from "uuid";
-import { collaborationService } from "../services/collaborationService";
-import { Button } from "./ui/Button";
-import { Input } from "./ui/Input";
-import { CollaborationUser } from "../types";
+import React, { FC, useState, useEffect, useCallback, useRef } from 'react';
+import { v4 as uuid } from 'uuid';
+import { collaborationService } from '../services/collaborationService';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { CollaborationUser } from '../types';
 
 // Preset user colors for avatar display
 const USER_COLORS = [
-  "#6366f1",
-  "#14b8a6",
-  "#f59e0b",
-  "#ec4899",
-  "#10b981",
-  "#3b82f6",
-  "#f97316",
-  "#84cc16",
+  '#6366f1',
+  '#14b8a6',
+  '#f59e0b',
+  '#ec4899',
+  '#10b981',
+  '#3b82f6',
+  '#f97316',
+  '#84cc16',
 ];
 
-const getRandomColor = () =>
-  USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+const getRandomColor = () => USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
 
 // Persistent user identity for the session
 function getLocalUser(): CollaborationUser {
-  const stored = sessionStorage.getItem("collab_user");
+  const stored = sessionStorage.getItem('collab_user');
   if (stored) {
     try {
       return JSON.parse(stored) as CollaborationUser;
@@ -32,20 +31,17 @@ function getLocalUser(): CollaborationUser {
   }
   const user: CollaborationUser = {
     id: uuid(),
-    name: "Anonym",
+    name: 'Anonym',
     color: getRandomColor(),
   };
-  sessionStorage.setItem("collab_user", JSON.stringify(user));
+  sessionStorage.setItem('collab_user', JSON.stringify(user));
   return user;
 }
 
 // ─── User Avatar ──────────────────────────────────────────────────────────────
 
-const UserAvatar: FC<{ user: CollaborationUser; size?: "sm" | "md" }> = ({
-  user,
-  size = "md",
-}) => {
-  const dim = size === "sm" ? "w-6 h-6 text-xs" : "w-8 h-8 text-sm";
+const UserAvatar: FC<{ user: CollaborationUser; size?: 'sm' | 'md' }> = ({ user, size = 'md' }) => {
+  const dim = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm';
   return (
     <div
       className={`${dim} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
@@ -66,15 +62,11 @@ interface CollaborationPanelProps {
   projectId: string;
 }
 
-export const CollaborationPanel: FC<CollaborationPanelProps> = ({
-  isOpen,
-  onClose,
-  projectId,
-}) => {
+export const CollaborationPanel: FC<CollaborationPanelProps> = ({ isOpen, onClose, projectId }) => {
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [localUser, setLocalUser] = useState<CollaborationUser>(getLocalUser);
-  const [customRoomId, setCustomRoomId] = useState("");
+  const [customRoomId, setCustomRoomId] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<CollaborationUser[]>([]);
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -86,20 +78,20 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
       // Focus the panel container after render
       requestAnimationFrame(() => panelRef.current?.focus());
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
+        if (e.key === 'Escape') {
           onClose();
           return;
         }
-        if (e.key !== "Tab") return;
+        if (e.key !== 'Tab') return;
         const panel = panelRef.current;
         if (!panel) return;
         const focusable = panel.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         if (focusable.length === 0) {
           e.preventDefault();
@@ -108,10 +100,7 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey) {
-          if (
-            document.activeElement === first ||
-            document.activeElement === panel
-          ) {
+          if (document.activeElement === first || document.activeElement === panel) {
             last.focus();
             e.preventDefault();
           }
@@ -120,14 +109,14 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
           e.preventDefault();
         }
       };
-      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-        document.body.style.overflow = "";
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
         previousFocusRef.current?.focus();
       };
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
   }, [isOpen, onClose]);
 
@@ -151,6 +140,8 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
     };
   }, []);
 
+  const [roomPassword, setRoomPassword] = useState('');
+
   const handleConnect = useCallback(async () => {
     setIsConnecting(true);
     setConnectionError(null);
@@ -159,14 +150,14 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
       const roomId = customRoomId.trim() || projectId;
       const user: CollaborationUser = {
         ...localUser,
-        name: displayName.trim() || "Anonym",
+        name: displayName.trim() || 'Anonym',
       };
 
       // Persist updated display name
       setLocalUser(user);
-      sessionStorage.setItem("collab_user", JSON.stringify(user));
+      sessionStorage.setItem('collab_user', JSON.stringify(user));
 
-      collaborationService.connect(roomId, user);
+      await collaborationService.connect(roomId, user, roomPassword.trim() || undefined);
 
       cleanupRef.current = () => collaborationService.disconnect();
 
@@ -176,11 +167,11 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
       setIsConnected(true);
       setConnectedUsers(collaborationService.getConnectedUsers());
     } catch (e) {
-      setConnectionError(e instanceof Error ? e.message : "Verbindungsfehler");
+      setConnectionError(e instanceof Error ? e.message : 'Verbindungsfehler');
     } finally {
       setIsConnecting(false);
     }
-  }, [customRoomId, projectId, localUser, displayName]);
+  }, [customRoomId, projectId, localUser, displayName, roomPassword]);
 
   const handleDisconnect = useCallback(() => {
     collaborationService.disconnect();
@@ -189,19 +180,14 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
     setConnectedUsers([]);
   }, []);
 
-  const currentRoomId =
-    collaborationService.roomId ?? `storycraft-${projectId}`;
+  const currentRoomId = collaborationService.roomId ?? `storycraft-${projectId}`;
 
   if (!isOpen) return null;
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} aria-hidden="true" />
 
       {/* Panel */}
       <section
@@ -261,8 +247,8 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
               🌐 P2P Echtzeit-Kollaboration
             </p>
             <p>
-              Teile die <strong>Raum-ID</strong> mit deinen Co-Autoren. Alle im
-              gleichen Raum sehen Änderungen live — ohne Server.
+              Teile die <strong>Raum-ID</strong> mit deinen Co-Autoren. Alle im gleichen Raum sehen
+              Änderungen live — ohne Server.
             </p>
           </div>
 
@@ -272,7 +258,7 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
               Deine Identität
             </h3>
             <div className="flex items-center gap-3">
-              <UserAvatar user={{ ...localUser, name: displayName || "A" }} />
+              <UserAvatar user={{ ...localUser, name: displayName || 'A' }} />
               <div className="flex-1">
                 <Input
                   placeholder="Dein Anzeigename"
@@ -305,9 +291,7 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
               {isConnected && (
                 <button
                   onClick={() => {
-                    navigator.clipboard
-                      .writeText(currentRoomId)
-                      .catch(() => {});
+                    navigator.clipboard.writeText(currentRoomId).catch(() => {});
                   }}
                   className="px-3 py-2 text-xs rounded-md bg-[var(--background-secondary)] hover:bg-[var(--background-tertiary)] text-[var(--foreground-secondary)] border border-[var(--border-primary)] transition-colors"
                   title="In Zwischenablage kopieren"
@@ -323,6 +307,25 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
             )}
           </section>
 
+          {/* Room Password (PSK) */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)] mb-3">
+              Raum-Passwort (optional)
+            </h3>
+            <Input
+              type="password"
+              placeholder="Geheimes Passwort für privaten Raum"
+              value={roomPassword}
+              onChange={(e) => setRoomPassword(e.target.value)}
+              disabled={isConnected}
+              className="font-mono text-sm"
+              autoComplete="off"
+            />
+            <p className="text-xs text-[var(--foreground-muted)] mt-1">
+              Alle Teilnehmer müssen dasselbe Passwort eingeben, um dem Raum beizutreten.
+            </p>
+          </section>
+
           {/* Error */}
           {connectionError && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
@@ -333,20 +336,12 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
           {/* Connect/Disconnect */}
           <div>
             {isConnected ? (
-              <Button
-                variant="danger"
-                onClick={handleDisconnect}
-                className="w-full"
-              >
+              <Button variant="danger" onClick={handleDisconnect} className="w-full">
                 Trennen
               </Button>
             ) : (
-              <Button
-                onClick={handleConnect}
-                disabled={isConnecting}
-                className="w-full"
-              >
-                {isConnecting ? "Verbinde …" : "Verbinden"}
+              <Button onClick={handleConnect} disabled={isConnecting} className="w-full">
+                {isConnecting ? 'Verbinde …' : 'Verbinden'}
               </Button>
             )}
           </div>
@@ -369,13 +364,9 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
                       className="flex items-center gap-3 p-2 rounded-lg bg-[var(--background-secondary)]"
                     >
                       <UserAvatar user={user} size="sm" />
-                      <span className="text-sm text-[var(--foreground-primary)]">
-                        {user.name}
-                      </span>
+                      <span className="text-sm text-[var(--foreground-primary)]">{user.name}</span>
                       {user.id === localUser.id && (
-                        <span className="ml-auto text-xs text-[var(--foreground-muted)]">
-                          (Du)
-                        </span>
+                        <span className="ml-auto text-xs text-[var(--foreground-muted)]">(Du)</span>
                       )}
                     </div>
                   ))}
@@ -388,10 +379,9 @@ export const CollaborationPanel: FC<CollaborationPanelProps> = ({
           <div className="p-3 rounded-lg bg-[var(--background-secondary)] text-xs text-[var(--foreground-muted)]">
             <p className="font-semibold mb-1">ℹ️ Technischer Hinweis</p>
             <p>
-              Kollaboration nutzt <strong>Yjs + WebRTC</strong> für
-              P2P-Synchronisation. Daten werden direkt zwischen Browsern
-              übertragen — kein Server speichert deinen Inhalt. Signaling über
-              öffentlichen Free-Tier-Server.
+              Kollaboration nutzt <strong>Yjs + WebRTC</strong> für P2P-Synchronisation. Daten
+              werden direkt zwischen Browsern übertragen — kein Server speichert deinen Inhalt.
+              Signaling über öffentlichen Free-Tier-Server.
             </p>
           </div>
         </div>
