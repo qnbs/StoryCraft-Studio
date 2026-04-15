@@ -25,3 +25,4 @@ dist-ssr
 
 # Tauri build output
 src-tauri/target/
+.env

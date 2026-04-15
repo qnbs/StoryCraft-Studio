@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "github": {
+      "enabled": true
+    }
+  }
+}
