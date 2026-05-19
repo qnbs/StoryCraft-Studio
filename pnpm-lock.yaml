@@ -53,8 +53,8 @@ importers:
         specifier: ^5.2.11
         version: 5.2.11
       '@google/genai':
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^2.4.0
+        version: 2.4.0
       '@reduxjs/toolkit':
         specifier: ^2.12.0
         version: 2.12.0(react-redux@9.3.0(@types/react@19.2.14)(react@19.2.6)(redux@5.0.1))(react@19.2.6)
@@ -1183,8 +1183,8 @@ packages:
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
 
-  '@google/genai@2.3.0':
-    resolution: {integrity: sha512-rXDhXUBj31gZafcwQFbXvt8jMrMxZoK7ECjQpk88UfA/OkZls3PtZDprT9lM3jjqRtwRjQoNLoPoNq6MlV8qLw==}
+  '@google/genai@2.4.0':
+    resolution: {integrity: sha512-q5q26X/yNKjbzrRdVVDIM9KEmN4dhezmhyliCDIn8mPGT0AlfzOqQfZ5iNCGRCEHSPd86oUdhpNpuzAkEZ5LQg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.25.2
@@ -4538,6 +4538,10 @@ packages:
     resolution: {integrity: sha512-JpJpFaR7yKNb6WqKvJJ1MLbiuIQWQnbUUb06nDtf2/i8YWYYLEfP6xf9BwSJoJQg1wAy61EQB8dssQg64oX4aA==}
     engines: {node: '>=12.0.0'}
 
+  protobufjs@8.4.0:
+    resolution: {integrity: sha512-iriNhQ57SYA5Jbdi+41AyPdx6jPPkFO7DODzkOBmqFhgYn/JzX2HxgxYPY18eQAs3CP/AWqtPvkWn8rclRAxdQ==}
+    engines: {node: '>=12.0.0'}
+
   proxy-addr@2.0.7:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
@@ -6834,11 +6838,11 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@google/genai@2.3.0':
+  '@google/genai@2.4.0':
     dependencies:
       google-auth-library: 10.6.2
       p-retry: 4.6.2
-      protobufjs: 8.3.0
+      protobufjs: 8.4.0
       ws: 8.20.1
     transitivePeerDependencies:
       - bufferutil
@@ -9997,7 +10001,7 @@ snapshots:
 
   onnx-proto@4.0.4:
     dependencies:
-      protobufjs: 8.3.0
+      protobufjs: 8.4.0
     optional: true
 
   onnxruntime-common@1.14.0:
@@ -10265,6 +10269,11 @@ snapshots:
       react-is: 16.13.1
 
   protobufjs@8.3.0:
+    dependencies:
+      long: 5.3.2
+    optional: true
+
+  protobufjs@8.4.0:
     dependencies:
       long: 5.3.2
 
