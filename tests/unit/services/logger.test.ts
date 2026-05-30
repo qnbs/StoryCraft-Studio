@@ -4,7 +4,7 @@
  * cache eviction, and Error formatting — the branches most often missed in coverage.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clearLogs,
   createLogger,
