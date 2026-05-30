@@ -67,6 +67,18 @@ vi.mock('../../../features/settings/accessibilitySchema', () => ({
     focusIndicator: 'enhanced' as const,
     keyboardNavigation: true,
   }),
+  normalizeAccessibilitySettings: (input: unknown) => ({
+    presetId: 'custom' as const,
+    highContrast: false,
+    reducedMotion: false,
+    largeText: false,
+    screenReader: false,
+    focusIndicators: true,
+    colorBlindMode: 'none' as const,
+    liveRegionVerbosity: 'normal' as const,
+    comfortableTargets: false,
+    ...(typeof input === 'object' && input ? input : {}),
+  }),
 }));
 
 // ---------------------------------------------------------------------------
