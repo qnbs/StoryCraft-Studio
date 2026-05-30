@@ -2,7 +2,10 @@ import type { FC } from 'react';
 import { useContext } from 'react';
 import { AppContext } from '../../contexts/AppContext';
 import { useSettingsViewContext } from '../../contexts/SettingsViewContext';
-import { accessibilityPresetDefaults } from '../../features/settings/accessibilitySchema';
+import {
+  accessibilityPresetDefaults,
+  normalizeAccessibilitySettings,
+} from '../../features/settings/accessibilitySchema';
 import type { AccessibilityPresetId, AccessibilitySettings } from '../../types';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader } from '../ui/Card';
