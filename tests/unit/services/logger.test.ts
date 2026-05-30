@@ -18,16 +18,16 @@ describe('sanitizeLogContext', () => {
   it('redacts keys matching sensitive pattern', () => {
     const ctx = { apiKey: 'secret', userToken: 'tok', myPassword: 'pw' };
     const out = sanitizeLogContext(ctx);
-    expect(out.apiKey).toBe('[REDACTED]');
-    expect(out.userToken).toBe('[REDACTED]');
-    expect(out.myPassword).toBe('[REDACTED]');
+    expect(out['apiKey']).toBe('[REDACTED]');
+    expect(out['userToken']).toBe('[REDACTED]');
+    expect(out['myPassword']).toBe('[REDACTED]');
   });
 
   it('preserves non-sensitive keys', () => {
     const ctx = { userId: 42, projectName: 'Novel' };
     const out = sanitizeLogContext(ctx);
-    expect(out.userId).toBe(42);
-    expect(out.projectName).toBe('Novel');
+    expect(out['userId']).toBe(42);
+    expect(out['projectName']).toBe('Novel');
   });
 });
 
