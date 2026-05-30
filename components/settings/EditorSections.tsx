@@ -1,6 +1,7 @@
 import type React from 'react';
 import type { FC } from 'react';
 import { useSettingsViewContext } from '../../contexts/SettingsViewContext';
+import { defaultAdvancedEditorSettings } from '../../features/settings/settingsSlice';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -183,6 +184,9 @@ export const EditorSection: FC = () => {
 
 export const AdvancedEditorSection: FC = () => {
   const { t, settings, handleSettingChange } = useSettingsViewContext();
+  // QNBS-v3: guard against undefined/partial advancedEditor from older persisted settings —
+  // reading `settings.advancedEditor.X` directly crashed this page on rehydration.
+  const advancedEditor = { ...defaultAdvancedEditorSettings, ...(settings.advancedEditor ?? {}) };
   return (
     <div className="space-y-6">
       <Card>
@@ -195,60 +199,60 @@ export const AdvancedEditorSection: FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ToggleSwitch
               label={t('settings.advancedEditor.autoComplete')}
-              checked={settings.advancedEditor.autoComplete}
+              checked={advancedEditor.autoComplete}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   autoComplete: v,
                 })
               }
             />
             <ToggleSwitch
               label={t('settings.advancedEditor.spellCheck')}
-              checked={settings.advancedEditor.spellCheck}
+              checked={advancedEditor.spellCheck}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   spellCheck: v,
                 })
               }
             />
             <ToggleSwitch
               label={t('settings.advancedEditor.grammarCheck')}
-              checked={settings.advancedEditor.grammarCheck}
+              checked={advancedEditor.grammarCheck}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   grammarCheck: v,
                 })
               }
             />
             <ToggleSwitch
               label={t('settings.advancedEditor.wordCount')}
-              checked={settings.advancedEditor.wordCount}
+              checked={advancedEditor.wordCount}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   wordCount: v,
                 })
               }
             />
             <ToggleSwitch
               label={t('settings.advancedEditor.readingTime')}
-              checked={settings.advancedEditor.readingTime}
+              checked={advancedEditor.readingTime}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   readingTime: v,
                 })
               }
             />
             <ToggleSwitch
               label={t('settings.advancedEditor.writingStats')}
-              checked={settings.advancedEditor.writingStats}
+              checked={advancedEditor.writingStats}
               onChange={(v) =>
                 handleSettingChange('advancedEditor', {
-                  ...settings.advancedEditor,
+                  ...advancedEditor,
                   writingStats: v,
                 })
               }
@@ -261,40 +265,40 @@ export const AdvancedEditorSection: FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ToggleSwitch
                 label={t('settings.advancedEditor.distractionFree')}
-                checked={settings.advancedEditor.distractionFree}
+                checked={advancedEditor.distractionFree}
                 onChange={(v) =>
                   handleSettingChange('advancedEditor', {
-                    ...settings.advancedEditor,
+                    ...advancedEditor,
                     distractionFree: v,
                   })
                 }
               />
               <ToggleSwitch
                 label={t('settings.advancedEditor.typewriterMode')}
-                checked={settings.advancedEditor.typewriterMode}
+                checked={advancedEditor.typewriterMode}
                 onChange={(v) =>
                   handleSettingChange('advancedEditor', {
-                    ...settings.advancedEditor,
+                    ...advancedEditor,
                     typewriterMode: v,
                   })
                 }
               />
               <ToggleSwitch
                 label={t('settings.advancedEditor.zenMode')}
-                checked={settings.advancedEditor.zenMode}
+                checked={advancedEditor.zenMode}
                 onChange={(v) =>
                   handleSettingChange('advancedEditor', {
-                    ...settings.advancedEditor,
+                    ...advancedEditor,
                     zenMode: v,
                   })
                 }
               />
               <ToggleSwitch
                 label={t('settings.advancedEditor.focusMode')}
-                checked={settings.advancedEditor.focusMode}
+                checked={advancedEditor.focusMode}
                 onChange={(v) =>
                   handleSettingChange('advancedEditor', {
-                    ...settings.advancedEditor,
+                    ...advancedEditor,
                     focusMode: v,
                   })
                 }

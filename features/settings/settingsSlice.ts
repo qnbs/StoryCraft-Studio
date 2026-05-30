@@ -161,6 +161,10 @@ const defaultSettings: Settings = {
 };
 
 export const defaultVoiceSettings = defaultSettings.voice;
+// QNBS-v3: exported so components + IDB rehydration can backfill missing nested objects
+// (older persisted settings lacked advancedEditor/themeCustomization → page crash on read).
+export const defaultAdvancedEditorSettings = defaultSettings.advancedEditor;
+export const defaultThemeCustomization = defaultSettings.themeCustomization;
 
 const initialState: Settings = { ...defaultSettings };
 
@@ -171,6 +175,13 @@ const settingsSlice = createSlice({
     setSettings(state, action: PayloadAction<Settings>) {
       Object.assign(state, action.payload);
       state.accessibility = normalizeAccessibilitySettings(state.accessibility);
+      // QNBS-v3: backfill nested objects absent in older persisted/imported settings so
+      // the Advanced Editor + Appearance sections never read through `undefined` and crash.
+      state.advancedEditor = { ...defaultSettings.advancedEditor, ...(state.advancedEditor ?? {}) };
+      state.themeCustomization = {
+        ...defaultSettings.themeCustomization,
+        ...(state.themeCustomization ?? {}),
+      };
     },
     setTheme(state, action: PayloadAction<Theme>) {
       state.theme = action.payload;

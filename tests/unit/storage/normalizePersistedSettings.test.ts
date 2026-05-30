@@ -145,6 +145,31 @@ describe('normalizePersistedSettings', () => {
     expect(result.advancedAi.temperature).toBe(0.7); // default preserved
   });
 
+  // ── advancedEditor (regression: page crashed on rehydration) ──────────────
+
+  it('provides advancedEditor defaults when field is absent', () => {
+    const result = normalizePersistedSettings({ theme: 'dark' });
+    expect(result.advancedEditor).toBeDefined();
+    expect(result.advancedEditor.autoComplete).toBe(true);
+    expect(result.advancedEditor.zenMode).toBe(false);
+    expect(Array.isArray(result.advancedEditor.customDictionary)).toBe(true);
+  });
+
+  it('merges partial advancedEditor with defaults', () => {
+    const result = normalizePersistedSettings({ advancedEditor: { zenMode: true } });
+    expect(result.advancedEditor.zenMode).toBe(true);
+    expect(result.advancedEditor.autoComplete).toBe(true); // default preserved
+  });
+
+  // ── themeCustomization (regression: appearance page crashed) ──────────────
+
+  it('provides themeCustomization defaults when field is absent', () => {
+    const result = normalizePersistedSettings({});
+    expect(result.themeCustomization).toBeDefined();
+    expect(typeof result.themeCustomization.primaryColor).toBe('string');
+    expect(typeof result.themeCustomization.customCss).toBe('string');
+  });
+
   // ── collaboration ─────────────────────────────────────────────────────────
 
   it('provides default collaboration signaling URLs when empty', () => {
@@ -189,5 +214,7 @@ describe('normalizePersistedSettings', () => {
     expect(typeof result.privacy).toBe('object');
     expect(typeof result.advancedAi).toBe('object');
     expect(typeof result.collaboration).toBe('object');
+    expect(typeof result.advancedEditor).toBe('object');
+    expect(typeof result.themeCustomization).toBe('object');
   });
 });

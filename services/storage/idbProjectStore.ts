@@ -8,7 +8,11 @@
 import type { ProjectData } from '../../features/project/projectSlice';
 import { normalizeAccessibilitySettings } from '../../features/settings/accessibilitySchema';
 import { getDefaultKeyboardShortcuts } from '../../features/settings/keyboardShortcutsDefaults';
-import { defaultVoiceSettings } from '../../features/settings/settingsSlice';
+import {
+  defaultAdvancedEditorSettings,
+  defaultThemeCustomization,
+  defaultVoiceSettings,
+} from '../../features/settings/settingsSlice';
 import type { Settings, StoryProject } from '../../types';
 import { DEFAULT_WEBRTC_SIGNALING_URLS } from '../collaborationService';
 import { APP_DATA_STORE } from '../dbConstants';
@@ -147,6 +151,18 @@ export function normalizePersistedSettings(incoming: Record<string, unknown>): S
       offlineMode: false,
     };
   }
+
+  // QNBS-v3: advancedEditor + themeCustomization were missing from this normalizer, so IDB
+  // states saved before these fields existed loaded them as `undefined` → the Advanced Editor
+  // and Appearance settings pages crashed on first render. Merge persisted over defaults.
+  validSettings.advancedEditor = {
+    ...defaultAdvancedEditorSettings,
+    ...(incoming['advancedEditor'] as Partial<Settings['advancedEditor']> | undefined),
+  };
+  validSettings.themeCustomization = {
+    ...defaultThemeCustomization,
+    ...(incoming['themeCustomization'] as Partial<Settings['themeCustomization']> | undefined),
+  };
 
   return validSettings;
 }
