@@ -189,7 +189,10 @@ export class VoiceCommandService {
   private async initTts(): Promise<TtsEngine | null> {
     try {
       this.d(setTtsStatus('loading'));
-      const engine = await createTtsEngine({ preferredEngine: this.config.preferredTtsEngine });
+      const engine = await createTtsEngine({
+        preferredEngine: this.config.preferredTtsEngine,
+        enableVoiceWasm: this.config.enableVoiceWasm,
+      });
       this.d(setActiveTtsEngine(engine.id));
       this.d(setTtsStatus('ready'));
       return engine;
