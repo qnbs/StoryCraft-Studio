@@ -18,8 +18,8 @@
 | # | File | Issue | Fix |
 |---|------|-------|-----|
 | 1 | `workers/inference.worker.ts:34-98` + `workers/v2/inference.worker.ts:21-56` | Byte-identical pipeline-LRU logic duplicated across both workers; **neither disposed the evicted pipeline** → VRAM/RAM leak (same bug-class as WebLLM eviction, 2026-06-01 #1) | Extracted `services/ai/pipelineLruCache.ts` (`PipelineLruCache<T>`): dispose-on-evict, **in-flight load dedup**, injectable clock for deterministic tests. Both workers now consume it; duplication removed. |
-| 2 | `services/ai/aiRetry.ts` (self-review) | Sound (exp-backoff + full jitter + `Retry-After` precedence + hostile-value clamp + injectable RNG). Gap: no property-based invariant tests | Scheduled (Phase 3). |
-| 3 | `hooks/useLoraView.ts:70-72` (self-review) | `projectId ? selectDatasetForProject(projectId) : () => []` recreates the memoized selector each render | Scheduled (Phase 3 — stable empty selector + `useMemo`). |
+| 2 | `services/ai/aiRetry.ts` (self-review) | Sound (exp-backoff + full jitter + `Retry-After` precedence + hostile-value clamp + injectable RNG). Gap: no property-based invariant tests | ✅ Added invariant tests for `computeRetryDelayMs` (exponential, non-decreasing, cap, jitter∈[0,capped)) + `parseRetryAfterMs` (ms/seconds/string/header/clamp) + a Retry-After-beats-backoff integration test. 19 tests total. |
+| 3 | `hooks/useLoraView.ts:70-72` (self-review) | `projectId ? selectDatasetForProject(projectId) : () => []` recreates the memoized selector each render | ✅ `useMemo`-wrapped selector keyed on `projectId`; module-level stable empty selector. 12 existing tests still green (behavior-preserving). |
 
 **Non-finding:** latency telemetry is already recorded at the facade (`localAiFacade.ts` → `localWorkerBus.recordResult(elapsedMs, …)`), so no new worker→main telemetry hop was needed.
 
