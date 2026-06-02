@@ -42,9 +42,12 @@ test.describe('LoRA Wizard (CI-only)', () => {
     await ensureBlankProject(page);
   });
 
-  test('LoRA entry appears in the sidebar when the flag is enabled', async ({ page }) => {
-    const loraNav = page.locator('#sidebar').getByRole('button', { name: /LoRA|Fine.?Tun/i });
-    await expect(loraNav).toBeVisible({ timeout: 8000 });
+  test('LoRA entry is reachable from navigation when the flag is enabled', async ({ page }) => {
+    // QNBS-v3: viewport-agnostic — clickNavItem resolves desktop sidebar OR mobile overflow sheet.
+    await clickNavItem(page, /LoRA|Fine.?Tun/i);
+    await expect(page.getByRole('heading', { name: /LoRA Fine-Tuning/i })).toBeVisible({
+      timeout: 8000,
+    });
   });
 
   test('Adapter Library shows the empty state with a Train CTA on first visit', async ({

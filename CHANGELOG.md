@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `components/lora/LoraView.tsx` — new container assembling the existing `LoraAdapterLibrary` / `LoraDatasetBuilder` / `LoraEvaluationPanel` / `LoraTrainingWizard` behind `LoraViewContext`, with first-visit onboarding and library/dataset/evaluation sub-nav
   - `App.tsx` — gated `lora` route (lazy-loaded; falls back to Dashboard when `enableLoraAdapters` is off, mirroring `objects`/`mindmap`)
   - `components/Sidebar.tsx` — conditional "Fine-Tuning" nav entry behind `enableLoraAdapters` (new `enableLora` prop)
-  - `View` type, `APP_SECTIONS`, `viewNavigationLabels`, new `ICONS.LORA` (cpu-chip), `sidebar.lora` i18n key across all 7 locales (2159 keys)
+  - `View` type, `APP_SECTIONS`, `viewNavigationLabels`, new `ICONS.LORA` (cpu-chip), `sidebar.lora` i18n key across all 7 locales
+  - **Fixed pre-existing i18n bug:** the `lora` module was orphaned from the i18n build (missing from `scripts/build-i18n.mjs` + `check-i18n-keys.mjs`) and `lora.json` was nested instead of flat-dotted — so `lora.*` keys never reached the runtime bundle and rendered as raw keys once the view went live. Registered the module and flattened `lora.json` in all 7 locales (bundle 2159 → 2234 keys)
   - `tests/e2e/lora-wizard.spec.ts` re-enabled (flag seeded via localStorage; selectors aligned to the shipped DOM); `tests/unit/lora/LoraView.test.tsx` (6 tests)
 
 - **WorkerBus v2 Phase 2 — runtime wiring, hybrid routing, legacy adapter** (2026-06-02):
