@@ -45,4 +45,27 @@ describe('createStoryCraftFetch', () => {
     const fetchFn = createStoryCraftFetch();
     expect(typeof fetchFn).toBe('function');
   });
+
+  it('does not attach a signal when no timeout is configured (streaming-safe default)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', mockFetch);
+
+    const { createStoryCraftFetch } = await import('../../../services/ai/fetchAdapter');
+    await createStoryCraftFetch()('https://api.example.com/stream', { method: 'POST' });
+
+    expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/stream', { method: 'POST' });
+    vi.unstubAllGlobals();
+  });
+
+  it('attaches an AbortSignal when an opt-in timeout is set', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', mockFetch);
+
+    const { createStoryCraftFetch } = await import('../../../services/ai/fetchAdapter');
+    await createStoryCraftFetch({ timeoutMs: 5000 })('https://api.example.com/tags');
+
+    const init = mockFetch.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+    vi.unstubAllGlobals();
+  });
 });
