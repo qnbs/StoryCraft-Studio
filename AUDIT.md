@@ -158,8 +158,8 @@ The P0/P1 tables above were authored against the pre-Phase-2.1 tree. A line-by-l
 | P1-F2 | ✅ FIXED | `enableAdaptiveAiEngine` + compute/WebNN gates added (Phase 1.3). |
 | P1-F3 | ✅ FIXED | RAM-pressure eco-mode added (Phase 1.3). |
 | P1-F4 | ✅ FIXED | `AbortSignal` propagated end-to-end into the worker (Phase 2.1). |
-| **P1-F5** | ⬜ **OPEN** | `services/ai/aiRetry.ts:21` — still linear `baseDelayMs * (i+1)`; no jitter, no `Retry-After` parsing. *(Addressed in this sprint.)* |
-| **P1-F6** | ⬜ **OPEN** | `services/ai/fetchAdapter.ts` — thin Tauri/browser selector; no timeout. *(Opt-in connection timeout under evaluation; deferred if it risks streaming.)* |
+| P1-F5 | ✅ FIXED (v1.20) | `services/ai/aiRetry.ts` — capped exponential backoff + full jitter; honors server `Retry-After` (seconds / HTTP-date / `retryAfterMs`) over the computed delay, clamped to 30s. Pure `computeRetryDelayMs`/`parseRetryAfterMs` helpers + injectable rng; 13 unit tests. |
+| P1-F6 | ✅ FIXED (v1.20) | `services/ai/fetchAdapter.ts` — opt-in `timeoutMs` (DEFAULT OFF, streaming-safe) composing `AbortSignal.timeout` with the caller signal via `AbortSignal.any`. Existing no-arg callers unchanged; 5 unit tests. |
 
 ### Performance / Benchmark Gaps
 - **No benchmark infrastructure at all** — no Vitest `bench()`, no Playwright perf specs, no token/sec tracking.

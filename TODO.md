@@ -17,7 +17,8 @@ Status: 🔄 in progress | ⬜ open | ✅ done
 - ✅ **Scorecard Pinned-Dependencies #72** — graphifyy pip install pinned by SHA256 hash
 - ✅ **prune-deployments.yml** — all-environment pruning (Production/Preview/github-pages); 156 records deleted; github-script v7→v9 (node24)
 - ✅ **Storybook cloud-first CI** — storybook-debug.yml (manual dispatch), Playwright browser cache v5 (node24)
-- 🔄 **Local AI Perfection Phase 2.2** — LoRA productionization: App.tsx route for LoRA view + sidebar nav (allows E2E lora-wizard.spec.ts re-enable) — *in progress (2026-06-02): `LoraView` container + gated route + conditional sidebar entry + AI retry hardening*
+- ✅ **Local AI Perfection Phase 2.2** — LoRA productionization (2026-06-02): `LoraView` container assembles library/dataset/evaluation/wizard behind `LoraViewContext`; gated `lora` route in App.tsx; conditional sidebar nav (`enableLoraAdapters`); `View`/`APP_SECTIONS`/`viewNavigationLabels`/`LORA` icon/`sidebar.lora` (7 locales); `lora-wizard.spec.ts` re-enabled; LoraView unit test
+- ✅ **AI retry/fetch hardening** (2026-06-02) — `aiRetry` exponential backoff + jitter + Retry-After (P1-F5); `fetchAdapter` opt-in streaming-safe timeout (P1-F6)
 - ⬜ **Local AI Perfection Phase 2.3** — Performance hardening (WebLLM worker, LRU pipeline cache)
 - ⬜ **Local AI Perfection Phase 2.4** — Coverage: sileroVadEngine.ts, kokoroTtsEngine.ts (0 tests each), inferenceWorker.ts (LRU)
 - ✅ **WorkerBus v2 Phase 1** — `@domain/worker-bus` package: typed worker pool, circuit breakers, dead-letter queue, priority task queue, progress emitter, protocol handler; 123 tests / 12 suites; 84.5% coverage
