@@ -26,6 +26,10 @@ const SUPERVISOR_VERSION: &str = "1.0.0";
 /// Incoming task request from the TS hybrid router (camelCase on the wire).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+// QNBS-v3: priority/target/timeoutMs/retryPolicy are part of the worker-bus wire contract
+//          and accepted from the TS router, but the current dispatcher only reads
+//          task_id/task_type/payload — allow(dead_code) until the retry/timeout path lands.
+#[allow(dead_code)]
 pub struct RustTaskRequest {
     pub task_id: String,
     pub task_type: String,
