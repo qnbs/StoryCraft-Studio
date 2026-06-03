@@ -35,7 +35,7 @@ const LanguageSelector = () => {
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: role="group" on a div is appropriate for a toolbar of language-switch buttons; fieldset requires a legend child and adds default border/padding that breaks this absolutely-positioned layout. */}
       <div
-        className="absolute top-4 right-4 flex flex-wrap justify-end gap-1 max-w-[min(100%,14rem)]"
+        className="fixed top-4 right-4 z-10 flex flex-wrap justify-end gap-1 max-w-[min(100%,14rem)]"
         role="group"
         aria-label={t('portal.language.groupLabel')}
       >
@@ -260,7 +260,7 @@ export const WelcomePortal: React.FC<WelcomePortalProps> = ({ onExit }) => {
       </p>
       {/* QNBS-v3: feature highlights orient first-time users; offline-first badge sets the privacy
           expectation up front (no backend, keys encrypted at rest, data stays on device). */}
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <FeatureHighlight
           icon={ICONS.SPARKLES}
           title={t('portal.features.ai.title')}
@@ -447,9 +447,15 @@ export const WelcomePortal: React.FC<WelcomePortalProps> = ({ onExit }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--sc-surface-base)] z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[var(--sc-surface-base)] animate-fade-in">
+      {/* QNBS-v3: shell is now scrollable (overflow-y-auto) with min-h-full centering — content
+          taller than the viewport (e.g. the feature grid on mobile) scrolls instead of being
+          clipped by the old fixed `flex items-center` shell. Fixes Mobile-Chrome E2E click
+          timeouts where the bottom action buttons were unreachable. */}
       <LanguageSelector />
-      <div className="w-full max-w-3xl">{renderView()}</div>
+      <div className="flex min-h-full items-center justify-center p-4 pt-16 sm:pt-4">
+        <div className="w-full max-w-3xl">{renderView()}</div>
+      </div>
       <style>{`
             @keyframes fade-in {
                 from { opacity: 0; }

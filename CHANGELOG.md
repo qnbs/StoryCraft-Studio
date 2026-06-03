@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Welcome / onboarding gate elaboration** (2026-06-03):
   - `WelcomePortal` main view gains a feature-highlights grid (AI Co-Pilot, Visual Plot Board, Characters & Worlds, Pro Export) and an **offline-first privacy badge** (data stays on device; API keys encrypted at rest) — orienting first-time users before they choose a path. All existing flows/labels preserved; +1 test.
   - i18n: 30 new keys (`characters.*`, `worlds.*`, shared `roster.*` in `common`, `portal.*`) translated across all 7 locales (en/de/es/fr/it + ar/he stubs).
+  - **Mobile portal fix**: the welcome shell is now `overflow-y-auto` with `min-h-full` centering (was a non-scrolling `fixed flex items-center`), the feature grid is 2-up on mobile (`grid-cols-2`), and the language selector is `fixed` + reserves top padding. Without this, the taller main view overflowed the Pixel 5 viewport and clipped the bottom action buttons off-screen — which timed out the `click` in every Mobile-Chrome E2E that bootstraps via the portal.
 
 - **Dashboard mission-control overhaul** (2026-06-03):
   - **`DashboardHeader`** (`components/dashboard/DashboardHeader.tsx`) — personalized, time-aware greeting (morning/afternoon/evening/night), prominent project title + logline, a primary **Continue Writing** CTA that navigates to the manuscript (targeting the last scene with prose), and at-a-glance chips (streak, word count, reading time).
