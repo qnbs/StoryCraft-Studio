@@ -19,6 +19,7 @@
   <img src="https://img.shields.io/github/actions/workflow/status/qnbs/StoryCraft-Studio/.github/workflows/ci.yml?branch=main&logo=github" alt="CI Status">
   <img src="https://img.shields.io/codecov/c/github/qnbs/StoryCraft-Studio?logo=codecov" alt="Codecov Coverage">
   <img src="https://img.shields.io/badge/Lighthouse-90%2B-brightgreen" alt="Lighthouse Score">
+  <a href="https://qnbs.github.io/StoryCraft-Studio/"><img src="https://img.shields.io/badge/▶_Launch_Live-GitHub_Pages-22C55E?logo=github&logoColor=white" alt="Launch live on GitHub Pages"></a>
 </p>
 
 ---
@@ -31,7 +32,14 @@
 
 ## 🌐 Live Demo
 
-**🚀 [Launch StoryCraft Studio in your Browser!](https://storycraft-studio-indol.vercel.app/) 🚀**
+Two always-on hosted builds — open whichever you prefer (identical app, both auto-deployed from `main`):
+
+| | Host | Link |
+|---|---|---|
+| 🟢 | **GitHub Pages** _(always-on mirror — auto-deployed from `main` on every green build)_ | **🚀 <https://qnbs.github.io/StoryCraft-Studio/> 🚀** |
+| ▲ | **Vercel** _(primary)_ | <https://storycraft-studio-indol.vercel.app/> |
+
+> **Tip:** If the Vercel build is ever rate-limited, the **[GitHub Pages mirror](https://qnbs.github.io/StoryCraft-Studio/)** is always live and current.
 
 ✨ _Try it right now — no installation, no account required. All data is saved securely in your browser's IndexedDB._ ✨
 
@@ -50,7 +58,7 @@
 
 **The fastest path to value — no install, no account, no API key:**
 
-1. **[Open the Live Demo](https://storycraft-studio-indol.vercel.app/)** → click **"Try Demo Project"** on the Welcome screen to load a populated story instantly.
+1. **Open the Live Demo** — [GitHub Pages (always-on)](https://qnbs.github.io/StoryCraft-Studio/) or [Vercel](https://storycraft-studio-indol.vercel.app/) → click **"Try Demo Project"** on the Welcome screen to load a populated story instantly.
 2. Open the **Manuscript** view (sidebar) and start typing. Press **`⌘K` / `Ctrl-K`** anytime for the Command Palette — every action is reachable from there.
 3. Want AI without a cloud key? **Settings → AI Provider → WebLLM** runs a model entirely in your browser (WebGPU; auto-falls back to ONNX/WASM on any device). Prefer cloud? Paste a Gemini/OpenAI key — it's encrypted at rest in your browser and only ever sent to that provider.
 
