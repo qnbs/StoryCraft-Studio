@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Characters & World Building roster overhaul** (2026-06-03):
+  - New shared, framework-free roster layer: `services/rosterMetrics.ts` (completeness scoring + `filterByQuery` + `sortByMode`, 17 unit tests), `components/roster/RosterToolbar.tsx` (stat chips + live search + sort), and `components/roster/CompletenessRing.tsx` (band-colored SVG ring, sr-only labelled).
+  - **CharacterView** + **WorldView** now show a roster toolbar (search by name, sort by name/completeness, live result count) and at-a-glance stats — Characters: total / developed / with-portrait / avg completeness; Worlds: total / developed / locations / avg completeness. Each card carries a completeness ring; a dedicated "no matches" empty state distinguishes an empty search from an empty roster. Search/sort is ephemeral component state (not Redux) so the existing view hooks + their tests are untouched.
+- **Welcome / onboarding gate elaboration** (2026-06-03):
+  - `WelcomePortal` main view gains a feature-highlights grid (AI Co-Pilot, Visual Plot Board, Characters & Worlds, Pro Export) and an **offline-first privacy badge** (data stays on device; API keys encrypted at rest) — orienting first-time users before they choose a path. All existing flows/labels preserved; +1 test.
+  - i18n: 30 new keys (`characters.*`, `worlds.*`, shared `roster.*` in `common`, `portal.*`) translated across all 7 locales (en/de/es/fr/it + ar/he stubs).
+
+- **Dashboard mission-control overhaul** (2026-06-03):
+  - **`DashboardHeader`** (`components/dashboard/DashboardHeader.tsx`) — personalized, time-aware greeting (morning/afternoon/evening/night), prominent project title + logline, a primary **Continue Writing** CTA that navigates to the manuscript (targeting the last scene with prose), and at-a-glance chips (streak, word count, reading time).
+  - **`WritingMomentumCard`** — wires the previously-unsurfaced `progressTracker` data onto the dashboard: current/longest streak (derived locally via `computeStreak`, accurate even when the Progress view never ran the sync), today-vs-daily-goal and week-vs-weekly-goal progress bars, and a 14-day gap-filled activity sparkline (pure SVG, no chart dep).
+  - **`GoalTrackerCard`** (extracted from `Dashboard.tsx`) — adds a **pace projection**: words remaining + required words/day to hit the deadline, with an on-track / behind / done badge using `--sc-success/warning` tokens.
+  - **`ProjectHealthCard`** (extracted + enhanced) — radial SVG gauge (band-colored by score) plus per-dimension breakdown bars for writing progress, cast depth, and worldbuilding.
+  - **`ManuscriptCompositionCard`** — scene-status distribution segmented bar (outline → final + untracked), reading-time estimate (238 WPM), scene count, and average words/scene.
+  - `hooks/useDashboard.ts` extended with all derived selectors (greeting, continue-section, momentum, composition, pace, health breakdown); 12 new unit assertions across `Dashboard.test.tsx` + `useDashboard.test.ts`; 37 new i18n keys translated across all 7 locales (en/de/es/fr/it + ar/he stubs).
+
 - **WorkerBus v2 Phase 3 — Rust TaskSupervisor + native `text.analyze`** (2026-06-03):
   - `src-tauri/src/commands/task_supervisor.rs` + `commands/mod.rs` — the native half of the hybrid router. `storycraft_task_supervisor_ping` (returns supervisor version) and `storycraft_task_supervisor_submit` (taskType dispatcher) registered in `lib.rs` `generate_handler!`. Unknown / bad-payload tasks resolve as `{ success: false, error }` (never a hard `Err`), matching the `RustTaskResultEvent` honest-failure convention so the router's fallback is driven by `result.success`
   - First native task **`text.analyze`** — word/char/sentence/syllable counts + Flesch Reading Ease, pure Rust, no new deps; 8 `#[cfg(test)]` unit tests

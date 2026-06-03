@@ -93,7 +93,15 @@ In a world of generic text editors and bloated writing software, StoryCraft Stud
 
 ### 📊 Dynamic Project Dashboard
 
-Your mission control. Track word counts against custom goals, visualize project statistics, manage your title and logline with AI assistance, and access all views from a single hub. Includes **readability sampling** (Flesch-style heuristic), **scene-timeline rule hints**, and the optional **Project Health Score** card — all computed locally without sending manuscript text to the cloud.
+Your mission control. Track word counts against custom goals, visualize project statistics, manage your title and logline with AI assistance, and access all views from a single hub. The dashboard opens with a **personalized, time-aware greeting header** and a one-click **Continue Writing** jump-back into your last-edited scene. Surfaced cards include:
+
+- **Writing Momentum** — current/longest streak, today-vs-daily-goal and week-vs-weekly-goal progress, and a 14-day activity sparkline (wired to the progress tracker).
+- **Project Goals + Pace Projection** — words remaining and the required words/day to hit your deadline, with an on-track / behind verdict.
+- **Project Health Score** (optional, `enableProjectHealthScore`) — a radial gauge plus per-dimension breakdown bars (writing progress, cast depth, worldbuilding).
+- **Manuscript Composition** — scene-status distribution segmented bar, reading-time estimate, scene count, and average words/scene.
+- **Author insights** — **readability sampling** (Flesch-style heuristic) and **scene-timeline rule hints**.
+
+Everything is computed locally without sending manuscript text to the cloud.
 
 ### ✍️ Three-Panel Manuscript Editor
 
@@ -168,11 +176,11 @@ The ultimate cure for the blank page. Provide a concept and let the AI architect
 
 ### 👥 Advanced Character Dossiers
 
-Breathe life into your cast. Use the **AI Profile Generator** to create compelling backstories, motivations, and personality traits from a single concept. Generate a unique **AI character portrait** in a choice of styles (realistic, anime, cartoon, comic book). Manage relationships and character arcs with dedicated fields.
+Breathe life into your cast. Use the **AI Profile Generator** to create compelling backstories, motivations, and personality traits from a single concept. Generate a unique **AI character portrait** in a choice of styles (realistic, anime, cartoon, comic book). Manage relationships and character arcs with dedicated fields. A **roster toolbar** adds live search, sort (name / completeness), and at-a-glance cast stats (total, developed, with-portrait, average completeness), while each card shows a **completeness ring** signalling how fully developed that character is — so gaps in a large cast are obvious at a glance.
 
 ### 🌍 Expansive World-Building Atlas
 
-Construct the universe of your story. Define your world's history and lore, create interactive timelines and location lists, and let the **AI World Generation** feature write rich, consistent world-building content. Generate an atmospheric **ambiance image** to capture your world's visual identity.
+Construct the universe of your story. Define your world's history and lore, create interactive timelines and location lists, and let the **AI World Generation** feature write rich, consistent world-building content. Generate an atmospheric **ambiance image** to capture your world's visual identity. The same **roster toolbar** (search, sort, stats — total, developed, locations, average completeness) and per-world **completeness ring** keep large atlases navigable and surface under-developed worlds.
 
 ### ✨ AI Writing Studio _(10 Specialized AI Tools)_
 
@@ -605,7 +613,7 @@ Shared Playwright helpers (`waitForSpaReady`, `ensureBlankProject`, `clickNavIte
 
 ## 🚀 A Creative Workflow
 
-1. **Conceive** — Start in the **Welcome Portal** with a Template, the AI Outline Generator, or a blank manuscript.
+1. **Conceive** — Start in the **Welcome Portal** — a first-launch onboarding gate that orients you with feature highlights (AI Co-Pilot, Visual Plot Board, Characters & Worlds, Pro Export), an offline-first/privacy assurance, and a one-click demo project — then begin with a Template, the AI Outline Generator, or a blank manuscript.
 2. **Build** — Create **Characters** and **Worlds** with AI. Visualize your cast in the **Character Relationship Graph**.
 3. **Structure** — Refine your plot in the **Outline Generator** or arrange scenes visually on the **Scene Board**.
 4. **Write** — Immerse yourself in the **Manuscript** editor. `@mentions` link characters and worlds. Progress is saved automatically.

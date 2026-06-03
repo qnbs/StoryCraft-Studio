@@ -96,6 +96,31 @@ const NewProjectOption: React.FC<{
   );
 };
 
+// QNBS-v3: first-launch value-prop highlights — orient new users before they pick a path.
+const FeatureHighlight: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}> = ({ icon, title, description }) => (
+  <div className="rounded-lg border border-[var(--sc-border-subtle)] bg-[var(--sc-surface-raised)]/50 p-4 text-left">
+    <div className="mb-2 inline-flex rounded-lg bg-[var(--sc-accent-subtle)] p-2 text-[var(--sc-accent)]">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="h-5 w-5"
+        aria-hidden="true"
+      >
+        {icon}
+      </svg>
+    </div>
+    <h3 className="text-sm font-bold text-[var(--sc-text-primary)]">{title}</h3>
+    <p className="mt-0.5 text-xs leading-relaxed text-[var(--sc-text-muted)]">{description}</p>
+  </div>
+);
+
 export const WelcomePortal: React.FC<WelcomePortalProps> = ({ onExit }) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -232,6 +257,48 @@ export const WelcomePortal: React.FC<WelcomePortalProps> = ({ onExit }) => {
       </h1>
       <p className="text-lg text-[var(--sc-text-muted)] mt-2 mb-6">
         {t('portal.welcome.subtitle')}
+      </p>
+      {/* QNBS-v3: feature highlights orient first-time users; offline-first badge sets the privacy
+          expectation up front (no backend, keys encrypted at rest, data stays on device). */}
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FeatureHighlight
+          icon={ICONS.SPARKLES}
+          title={t('portal.features.ai.title')}
+          description={t('portal.features.ai.description')}
+        />
+        <FeatureHighlight
+          icon={ICONS.SCENEBOARD}
+          title={t('portal.features.plot.title')}
+          description={t('portal.features.plot.description')}
+        />
+        <FeatureHighlight
+          icon={ICONS.CHARACTERS}
+          title={t('portal.features.worldbuilding.title')}
+          description={t('portal.features.worldbuilding.description')}
+        />
+        <FeatureHighlight
+          icon={ICONS.EXPORT}
+          title={t('portal.features.export.title')}
+          description={t('portal.features.export.description')}
+        />
+      </div>
+      <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--sc-border-subtle)] bg-[var(--sc-surface-raised)]/60 px-4 py-1.5 text-sm text-[var(--sc-text-secondary)]">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="h-4 w-4 text-[var(--sc-success-fg)]"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+        {t('portal.welcome.privacyBadge')}
       </p>
       {!hasExistingSession && (
         <section
