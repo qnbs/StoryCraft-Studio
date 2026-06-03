@@ -23,9 +23,9 @@ const STATUS_META: { key: string; labelKey: string; color: string }[] = [
 ];
 
 const Metric: FC<{ value: string; label: string }> = ({ value, label }) => (
-  <div className="rounded-2xl border border-[var(--sc-border-subtle)] bg-[var(--sc-surface-base)]/40 p-4 text-center backdrop-blur-sm">
+  <div className="min-w-0 rounded-2xl border border-[var(--sc-border-subtle)] bg-[var(--sc-surface-base)]/40 p-4 text-center backdrop-blur-sm">
     <p className="text-2xl font-black tabular-nums text-[var(--sc-text-primary)]">{value}</p>
-    <p className="mt-1 text-xs font-medium text-[var(--sc-text-muted)]">{label}</p>
+    <p className="mt-1 break-words text-xs font-medium text-[var(--sc-text-muted)]">{label}</p>
   </div>
 );
 

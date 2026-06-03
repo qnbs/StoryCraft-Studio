@@ -55,9 +55,11 @@ const RadialGauge: FC<{ score: number; label: string }> = ({ score, label }) => 
 
 const BreakdownBar: FC<{ label: string; value: number }> = ({ label, value }) => (
   <div>
-    <div className="mb-1 flex items-baseline justify-between">
-      <span className="text-xs font-semibold text-[var(--sc-text-secondary)]">{label}</span>
-      <span className="text-xs tabular-nums text-[var(--sc-text-muted)]">{value}%</span>
+    <div className="mb-1 flex items-baseline justify-between gap-2">
+      <span className="min-w-0 break-words text-xs font-semibold text-[var(--sc-text-secondary)]">
+        {label}
+      </span>
+      <span className="shrink-0 text-xs tabular-nums text-[var(--sc-text-muted)]">{value}%</span>
     </div>
     <Progress value={value} className="h-1.5" />
   </div>

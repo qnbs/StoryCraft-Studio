@@ -57,8 +57,10 @@ const StatCard: FC<{
           {icon}
         </svg>
       </div>
-      <div>
-        <p className="text-xs text-[var(--sc-text-muted)] uppercase tracking-wider font-bold mb-1">
+      {/* QNBS-v3: min-w-0 lets the text column shrink inside the flex row; break-words + hyphens
+          wrap long German compounds (e.g. "Gliederungsabschnitte") instead of overflowing the card */}
+      <div className="min-w-0">
+        <p className="text-xs text-[var(--sc-text-muted)] uppercase tracking-wider font-bold mb-1 break-words hyphens-auto">
           {title}
         </p>
         <p className="text-3xl font-black text-[var(--sc-text-primary)] tracking-tight tabular-nums">
