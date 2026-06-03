@@ -50,6 +50,14 @@ const TYPOS_DE: Record<string, string> = {
   haken: 'Haken',
 };
 
+// QNBS-v3: concrete editor font stacks — single source mirrored from components/ui/Textarea fontMap.
+const EDITOR_FONT_STACKS: Record<string, string> = {
+  serif: 'Merriweather, serif',
+  'sans-serif': 'Inter, sans-serif',
+  monospace: 'JetBrains Mono, monospace',
+  custom: 'JetBrains Mono, monospace',
+};
+
 export const ManuscriptEditor: FC<{ isFocusMode: boolean }> = React.memo(({ isFocusMode }) => {
   const {
     t,
@@ -88,16 +96,18 @@ export const ManuscriptEditor: FC<{ isFocusMode: boolean }> = React.memo(({ isFo
   const deferredContent = useDeferredValue(activeSection?.content ?? '');
   const isHighlightPending = deferredContent !== (activeSection?.content ?? '');
 
+  // QNBS-v3: map the editorFont enum to a concrete CSS stack (mirrors components/ui/Textarea
+  // fontMap) — the raw enum value (e.g. 'custom') is not a valid font-family, and the highlight
+  // overlay must render the exact same stack as the textarea so glyphs stay aligned.
+  const ltrEditorStack = EDITOR_FONT_STACKS[settings.editorFont] ?? 'Inter, sans-serif';
   // QNBS-v3: RTL prose needs Noto glyphs — generic serif/sans/mono lack reliable Arabic/Hebrew
-  // coverage; prefer Naskh for serif (book face), Noto Sans otherwise. LTR keeps the user's choice.
+  // coverage; prefer Naskh (book face) for serif/custom, Noto Sans otherwise, Latin stack as tail.
   const editorFontFamily =
     dir === 'rtl'
-      ? settings.editorFont === 'sans-serif'
-        ? '"Noto Sans Arabic", "Noto Sans Hebrew", sans-serif'
-        : settings.editorFont === 'monospace'
-          ? '"Noto Sans Arabic", "Noto Sans Hebrew", monospace'
-          : '"Noto Naskh Arabic", "Noto Sans Hebrew", serif'
-      : settings.editorFont;
+      ? settings.editorFont === 'sans-serif' || settings.editorFont === 'monospace'
+        ? `"Noto Sans Arabic", "Noto Sans Hebrew", ${ltrEditorStack}`
+        : `"Noto Naskh Arabic", "Noto Sans Hebrew", ${ltrEditorStack}`
+      : ltrEditorStack;
   const editorStyles: React.CSSProperties = {
     fontFamily: editorFontFamily,
     fontSize: `${settings.fontSize}px`,

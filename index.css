@@ -20,10 +20,15 @@
   --font-ui: "Inter", system-ui, -apple-system, sans-serif;
   --font-editor: "Merriweather", Georgia, "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  /* QNBS-v3: RTL beta — Noto stacks keep Latin glyphs (Inter/Merriweather) as final fallback so
-     mixed-script (BiDi) text stays consistent; [dir="rtl"] swaps the active token to these. */
-  --font-ui-rtl: "Noto Sans Arabic", "Noto Sans Hebrew", var(--font-ui);
-  --font-editor-rtl: "Noto Naskh Arabic", "Noto Sans Hebrew", var(--font-editor);
+  /* QNBS-v3: RTL beta — Noto stacks keep the Latin base (Inter/Merriweather) as final fallback so
+     mixed-script (BiDi) text stays consistent; [dir="rtl"] swaps the active token to these.
+     NOTE: the base stack is inlined literally (not var(--font-ui)/var(--font-editor)) — under
+     [dir="rtl"] those tokens are reassigned to var(--font-ui-rtl), which would otherwise form a
+     circular var reference and drop font-family to browser defaults at computed-value time. */
+  --font-ui-rtl:
+    "Noto Sans Arabic", "Noto Sans Hebrew", "Inter", system-ui, -apple-system, sans-serif;
+  --font-editor-rtl:
+    "Noto Naskh Arabic", "Noto Sans Hebrew", "Merriweather", Georgia, "Times New Roman", serif;
   --sc-prose-measure: 65ch;
 
   /* Icon size tokens — QNBS-v3: semantic names replace w-4/w-5/w-6/w-8 literals; map to 16/20/24/32px. */
