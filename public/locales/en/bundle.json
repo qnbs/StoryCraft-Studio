@@ -1109,6 +1109,7 @@
   "outline.confirm.deleteAction": "Delete",
   "outline.moveUp": "Move section '{{title}}' up",
   "outline.moveDown": "Move section '{{title}}' down",
+  "outline.selectSection": "Select section '{{title}}'",
   "characters.title": "Character Dossiers",
   "characters.description": "Build and manage your cast. Click a card to open their full dossier.",
   "characters.addNewManually": "Add Manually",
