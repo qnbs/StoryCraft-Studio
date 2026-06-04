@@ -16,12 +16,16 @@ const useLoraDatasetBuilder = () => {
   } | null>(null);
 
   useEffect(() => {
-    void import('../../services/lora/loraDatasetBuilder').then((m) => {
-      setApi({
-        estimateDatasetQuality: m.estimateDatasetQuality,
-        exportAsJsonl: m.exportAsJsonl,
+    void import('../../services/lora/loraDatasetBuilder')
+      .then((m) => {
+        setApi({
+          estimateDatasetQuality: m.estimateDatasetQuality,
+          exportAsJsonl: m.exportAsJsonl,
+        });
+      })
+      .catch(() => {
+        // QNBS-v3: Import failed — api stays null, component shows fallback UI
       });
-    });
   }, []);
 
   return api;
@@ -88,7 +92,8 @@ export default React.memo(function LoraDatasetBuilder() {
             <button
               type="button"
               onClick={() => handleExport('alpaca')}
-              className="rounded-sc-md border border-[var(--sc-border-default)] px-3 py-1.5 text-sm text-[var(--sc-text-primary)] hover:bg-[var(--sc-surface-raised)] focus-visible:ring-2 focus-visible:ring-[var(--sc-border-focus)]"
+              disabled={!api}
+              className="rounded-sc-md border border-[var(--sc-border-default)] px-3 py-1.5 text-sm text-[var(--sc-text-primary)] disabled:opacity-50 hover:bg-[var(--sc-surface-raised)] focus-visible:ring-2 focus-visible:ring-[var(--sc-border-focus)]"
             >
               {t('lora.dataset.export')} JSONL
             </button>

@@ -114,7 +114,9 @@ export default React.memo(function LoraOnboarding({ onDismiss }: { onDismiss: ()
             />
           </ul>
         )}
-        {env.message && <p className="text-xs text-[var(--sc-danger-fg)]">{env.message}</p>}
+        {env.message && (
+          <p className="text-xs text-[var(--sc-danger-fg)]">{t('lora.onboarding.envError')}</p>
+        )}
       </div>
 
       <button

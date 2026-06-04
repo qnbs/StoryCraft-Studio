@@ -17,9 +17,13 @@ const DEFAULT_PROMPTS = [
 const useLoraEvaluationService = () => {
   const [api, setApi] = useState<{ scoreLabel: (score: number) => string } | null>(null);
   useEffect(() => {
-    void import('../../services/lora/loraEvaluationService').then((m) => {
-      setApi({ scoreLabel: m.scoreLabel });
-    });
+    void import('../../services/lora/loraEvaluationService')
+      .then((m) => {
+        setApi({ scoreLabel: m.scoreLabel });
+      })
+      .catch(() => {
+        // QNBS-v3: Import failed — api stays null, component shows fallback UI
+      });
   }, []);
   return api;
 };

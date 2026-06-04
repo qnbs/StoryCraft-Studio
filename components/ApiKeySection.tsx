@@ -156,6 +156,7 @@ export const ApiKeySection: FC = () => {
       {/* Security Notice */}
       <div className="p-4 rounded-lg bg-[var(--sc-warning-bg)] border border-[var(--sc-warning-fg)]/30">
         <div className="flex items-start gap-3">
+          {/* QNBS-v3: Decorative icon - hidden from assistive tech */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -163,6 +164,7 @@ export const ApiKeySection: FC = () => {
             strokeWidth={1.5}
             stroke="currentColor"
             className="w-5 h-5 text-[var(--sc-warning-fg)] flex-shrink-0 mt-0.5"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -185,6 +187,7 @@ export const ApiKeySection: FC = () => {
       {decryptFailed && (
         <div className="p-4 rounded-lg bg-[var(--sc-danger-bg)] border border-[var(--sc-danger-fg)]/30">
           <div className="flex items-start gap-3">
+            {/* QNBS-v3: Decorative icon - hidden from assistive tech */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -192,6 +195,7 @@ export const ApiKeySection: FC = () => {
               strokeWidth={1.5}
               stroke="currentColor"
               className="w-5 h-5 text-[var(--sc-danger-fg)] flex-shrink-0 mt-0.5"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -212,6 +216,7 @@ export const ApiKeySection: FC = () => {
         <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--sc-surface-overlay)] border border-[var(--sc-border-subtle)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--sc-success-bg)] flex items-center justify-center">
+              {/* QNBS-v3: Decorative icon - hidden from assistive tech */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -219,6 +224,7 @@ export const ApiKeySection: FC = () => {
                 strokeWidth={1.5}
                 stroke="currentColor"
                 className="w-5 h-5 text-[var(--sc-success-fg)]"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
