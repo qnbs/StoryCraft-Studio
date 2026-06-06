@@ -26,6 +26,7 @@ export const RadioGroup = React.memo(
     className = '',
   }: RadioGroupProps) => {
     const groupId = useId();
+    const radioName = name ?? groupId;
 
     return (
       <div
@@ -42,7 +43,7 @@ export const RadioGroup = React.memo(
                 <input
                   type="radio"
                   id={itemId}
-                  name={groupId}
+                  name={radioName}
                   value={option.value}
                   checked={checked}
                   onChange={() => onChange(option.value)}

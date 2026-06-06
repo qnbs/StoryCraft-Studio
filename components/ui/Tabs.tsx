@@ -65,18 +65,19 @@ Tabs.displayName = 'Tabs';
 interface TabPanelProps {
   tabId: string;
   activeTab: string;
+  groupId: string;
   children: React.ReactNode;
   className?: string;
 }
 
 export const TabPanel = React.memo(
-  ({ tabId, activeTab, children, className = '' }: TabPanelProps) => {
+  ({ tabId, activeTab, groupId, children, className = '' }: TabPanelProps) => {
     const isActive = activeTab === tabId;
     return (
       <section
         role="tabpanel"
-        id={`${tabId}-panel`}
-        aria-labelledby={tabId}
+        id={`${groupId}-${tabId}-panel`}
+        aria-labelledby={`${groupId}-${tabId}`}
         hidden={!isActive}
         className={isActive ? className : 'hidden'}
       >
