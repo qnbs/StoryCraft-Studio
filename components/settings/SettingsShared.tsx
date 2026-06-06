@@ -8,6 +8,8 @@ export const ToggleSwitch: FC<{
   ariaLabel?: string;
 }> = React.memo(({ label, checked, onChange, ariaLabel }) => {
   const labelId = React.useId();
+  // QNBS-v3: Ensure switch always has an accessible name (CodeAnt AI fix)
+  const accessibleName = ariaLabel ?? label ?? 'Toggle';
   return (
     <div className="flex items-center justify-between">
       {label && (
@@ -19,7 +21,7 @@ export const ToggleSwitch: FC<{
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={ariaLabel ?? label}
+        aria-label={accessibleName}
         aria-labelledby={label ? labelId : undefined}
         onClick={() => onChange(!checked)}
         className={`${

@@ -10,12 +10,13 @@ interface TabsProps {
   tabs: Tab[];
   activeTab: string;
   onChange: (tabId: string) => void;
+  ariaLabel: string;
   variant?: 'default' | 'pills' | 'underline';
   className?: string;
 }
 
 export const Tabs = React.memo(
-  ({ tabs, activeTab, onChange, variant = 'default', className = '' }: TabsProps) => {
+  ({ tabs, activeTab, onChange, ariaLabel, variant = 'default', className = '' }: TabsProps) => {
     const groupId = useId();
 
     const baseTabClasses =
@@ -33,7 +34,7 @@ export const Tabs = React.memo(
     return (
       <div
         role="tablist"
-        aria-label="Tabs"
+        aria-label={ariaLabel}
         className={`flex ${variant === 'underline' ? 'border-b border-[var(--sc-border-subtle)]' : 'bg-[var(--sc-surface-raised)]/50 p-1 rounded-sc-lg'} ${className}`}
       >
         {tabs.map((tab) => {

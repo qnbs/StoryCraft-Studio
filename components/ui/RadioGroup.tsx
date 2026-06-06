@@ -11,7 +11,7 @@ interface RadioGroupProps {
   options: RadioOption[];
   value: string;
   onChange: (value: string) => void;
-  name?: string;
+  name: string;
   orientation?: 'vertical' | 'horizontal';
   className?: string;
 }
