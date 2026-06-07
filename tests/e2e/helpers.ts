@@ -59,14 +59,17 @@ export async function selectFirstEnabledWriterSection(page: Page): Promise<void>
   }
   await expect(sel).toBeVisible();
 
-  // Click trigger to open dropdown, then click first enabled option.
+  // QNBS-v3: Select is a custom dropdown (button + listbox), not native <select>.
+  // Click trigger to open dropdown, then select first enabled option.
   await sel.click();
   const container = sel.locator('xpath=..');
   const listbox = container.locator('[role="listbox"]');
   await expect(listbox).toBeVisible({ timeout: 5000 });
   const options = listbox.locator('[role="option"]:not([disabled])');
   await expect.poll(async () => options.count()).toBeGreaterThan(0);
-  await options.first().click();
+  // Use direct DOM click to avoid "subtree intercepts pointer events" when
+  // the dropdown is overlapped by other elements (e.g. textarea in Writer view).
+  await options.first().evaluate((el) => el.click());
 }
 
 /** Outline / AI flows call Gemini only when a key exists in encrypted storage — seed before mocked HTTP in CI. */
