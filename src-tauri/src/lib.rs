@@ -2,7 +2,7 @@ mod commands;
 mod lora;
 mod pandoc;
 
-use tauri::Manager;
+use tauri::Emitter;
 
 #[cfg(desktop)]
 fn install_app_menu(app: &tauri::App) -> tauri::Result<()> {
