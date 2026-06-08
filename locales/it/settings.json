@@ -646,5 +646,9 @@
   "voice.modelDownload.error": "Download fallito: {{error}}",
   "voice.modelDownload.progress": "{{percent}}% completato",
   "voice.modelDownload.retry": "Riprova",
-  "voice.modelDownload.title": "Download modello vocale"
+  "voice.modelDownload.title": "Download modello vocale",
+  "settings.voice.wasmModels": "Modelli vocali WASM",
+  "settings.voice.wasmModelsReady": "Scaricati e pronti per il riconoscimento vocale locale",
+  "settings.voice.wasmModelsNotReady": "Modelli Whisper STT (~42 MB) e Kokoro TTS (~15 MB) non scaricati",
+  "settings.voice.downloadModels": "Scarica modelli"
 }

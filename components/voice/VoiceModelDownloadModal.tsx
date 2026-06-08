@@ -40,10 +40,8 @@ export const VoiceModelDownloadModal = React.memo(function VoiceModelDownloadMod
 
     try {
       // Trigger model download via voice service
-      // QNBS-v3: P0-5 — downloadVoiceModels to be implemented in voiceCommandService
-      // Placeholder: actual download would be triggered here
-      // const { downloadVoiceModels } = await import('../../services/voice/voiceCommandService');
-      // await downloadVoiceModels(modelType);
+      const { downloadVoiceModels } = await import('../../services/voice/voiceCommandService');
+      await downloadVoiceModels(modelType);
 
       dispatch(
         settingsActions.setVoiceSettings({
@@ -56,7 +54,7 @@ export const VoiceModelDownloadModal = React.memo(function VoiceModelDownloadMod
     } finally {
       setIsDownloading(false);
     }
-  }, [dispatch, onClose]);
+  }, [dispatch, onClose, modelType]);
 
   const handleCancel = useCallback(() => {
     // Cancel download logic would be implemented in voiceCommandService
