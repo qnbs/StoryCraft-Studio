@@ -1,6 +1,6 @@
 /*
- * WebLLM Worker Client - Main thread proxy for the dedicated worker (P1-1)
- * Fixed per CodeAnt review comments (client isolation, streaming contract, progress, abort handling)
+ * WebLLM Worker Client - Main thread proxy (P1-1)
+ * CodeAnt fixes applied + extra robustness (worker restart, better error propagation)
  */
 
 interface WebLlmProgressReport {
@@ -24,6 +24,7 @@ export interface WebLlmWorkerClient {
   dispose(): Promise<void>;
   isReady(): boolean;
   getCurrentModel(): string | null;
+  restart(): Promise<void>;
 }
 
 interface PendingRequest {
@@ -31,32 +32,31 @@ interface PendingRequest {
   reject: (reason?: unknown) => void;
   onStreamChunk?: (chunk: string, done: boolean) => void;
   onProgress?: (report: WebLlmProgressReport) => void;
-  accumulatedText?: string; // for streaming contract fix
+  accumulatedText?: string;
 }
 
-// Per-client state (moved inside factory for isolation - fixes race condition)
 export function createWebLlmWorkerClient(): WebLlmWorkerClient {
   let workerInstance: Worker | null = null;
   const pending = new Map<string, PendingRequest>();
   let ready = false;
   let currentModel: string | null = null;
+  let restartCount = 0;
+  const MAX_RESTARTS = 3;
 
   function genId(): string {
     return `wllm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   }
 
-  function getWorker(): Worker {
-    if (workerInstance) return workerInstance;
+  function createWorker(): Worker {
+    const w = new Worker(new URL('./webllm.worker.ts', import.meta.url), { type: 'module' });
 
-    workerInstance = new Worker(new URL('./webllm.worker.ts', import.meta.url), { type: 'module' });
-
-    workerInstance.onmessage = (e: MessageEvent) => {
+    w.onmessage = (e: MessageEvent) => {
       const { id, type, payload } = e.data as { id: string; type: string; payload?: any };
       const p = pending.get(id);
       if (!p) return;
 
-      if (type === 'progress') {
-        if (p.onProgress) p.onProgress(payload as WebLlmProgressReport);
+      if (type === 'progress' && p.onProgress) {
+        p.onProgress(payload);
         return;
       }
 
@@ -65,30 +65,41 @@ export function createWebLlmWorkerClient(): WebLlmWorkerClient {
         currentModel = payload?.modelId ?? null;
         p.resolve();
         pending.delete(id);
+      } else if (type === 'prewarmed') {
+        p.resolve();
+        pending.delete(id);
       } else if (type === 'result') {
         const finalText = p.accumulatedText ?? (payload?.text ?? '');
         p.resolve(finalText);
         pending.delete(id);
       } else if (type === 'stream-chunk') {
         if (p.onStreamChunk) p.onStreamChunk(payload?.text ?? '', !!payload?.done);
-        if (payload?.done) {
-          // Do NOT resolve here with empty string. Wait for final 'result' which carries accumulated text.
-          // The 'result' handler above will resolve with accumulatedText.
-        }
       } else if (type === 'error') {
         p.reject(new Error(payload?.message ?? 'Worker error'));
         pending.delete(id);
       }
     };
 
-    workerInstance.onerror = () => {
+    w.onerror = (err) => {
+      console.error('[WebLLMWorkerClient] Worker error, attempting restart...', err);
       pending.forEach((pr) => pr.reject(new Error('Worker crashed')));
       pending.clear();
       workerInstance = null;
       ready = false;
-      currentModel = null;
+
+      if (restartCount < MAX_RESTARTS) {
+        restartCount++;
+        // Auto-recreate on next operation
+      }
     };
 
+    return w;
+  }
+
+  function getWorker(): Worker {
+    if (!workerInstance) {
+      workerInstance = createWorker();
+    }
     return workerInstance;
   }
 
@@ -103,7 +114,9 @@ export function createWebLlmWorkerClient(): WebLlmWorkerClient {
     },
 
     async generate(prompt: string, options: GenerateOptions = {}): Promise<string> {
-      if (!ready) throw new Error('Call init() first');
+      if (!ready && !currentModel) {
+        throw new Error('Call init() first');
+      }
       const w = getWorker();
       const rid = genId();
       return new Promise((res, rej) => {
@@ -111,7 +124,7 @@ export function createWebLlmWorkerClient(): WebLlmWorkerClient {
           resolve: res,
           reject: rej,
           onStreamChunk: options.onStreamChunk,
-          accumulatedText: options.stream || options.onStreamChunk ? '' : undefined,
+          accumulatedText: (options.stream || options.onStreamChunk) ? '' : undefined,
         };
         pending.set(rid, entry);
 
@@ -124,14 +137,7 @@ export function createWebLlmWorkerClient(): WebLlmWorkerClient {
         w.postMessage({
           id: rid,
           type: 'generate',
-          payload: {
-            prompt,
-            options: {
-              maxTokens: options.maxTokens,
-              temperature: options.temperature,
-              stream: options.stream || !!options.onStreamChunk,
-            },
-          },
+          payload: { prompt, options: { maxTokens: options.maxTokens, temperature: options.temperature, stream: !!options.onStreamChunk } },
         });
       });
     },
@@ -157,12 +163,18 @@ export function createWebLlmWorkerClient(): WebLlmWorkerClient {
             ready = false;
             currentModel = null;
             pending.clear();
+            restartCount = 0;
             res();
           },
           reject: res,
         });
         w.postMessage({ id: rid, type: 'dispose' });
       });
+    },
+
+    async restart(): Promise<void> {
+      await this.dispose();
+      // Next init/generate will create a fresh worker
     },
 
     isReady: () => ready,
