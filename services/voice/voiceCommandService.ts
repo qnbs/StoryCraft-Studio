@@ -276,6 +276,11 @@ export class VoiceCommandService {
     // QNBS-v3: Route through VoiceActivityCoordinator when Whisper WASM is active —
     // feeds PCM frames to the VAD and triggers STT on detected speech boundaries.
     if (this.config.enableVoiceWasm && this.sttEngine.id === 'whisper' && this.vadEngine) {
+      // QNBS-v3: dispose previous coordinator before reassigning to prevent leaked mic stream
+      if (this.coordinator) {
+        await this.coordinator.dispose();
+        this.coordinator = null;
+      }
       this.coordinator = new VoiceActivityCoordinator(this.vadEngine, this.sttEngine);
       await this.coordinator.start(
         (result) => this.handleSttResult(result),

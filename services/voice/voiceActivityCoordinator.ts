@@ -10,8 +10,9 @@ import { DEFAULT_AUDIO_CONFIG } from './voiceTypes';
 
 const log = createLogger('VoiceActivityCoordinator');
 
-/** Minimum consecutive speech-edge events before firing STT. */
-const MIN_SPEECH_CHUNKS = 2;
+// QNBS-v3: WebRtcVadEngine emits exactly one isSpeech event per speech-start transition
+// (not continuous while speaking), so MIN_SPEECH_CHUNKS=2 would never be reached. Use 1.
+const MIN_SPEECH_CHUNKS = 1;
 /** Max buffered duration in ms before forcing an STT flush to avoid unbounded memory use. */
 const MAX_BUFFER_MS = 15_000;
 
@@ -41,6 +42,8 @@ export class VoiceActivityCoordinator {
     onResult: (result: SttResult) => void,
     onError: (error: Error) => void,
   ): Promise<void> {
+    // QNBS-v3: guard prevents double-start which would open a second mic stream without closing the first
+    if (this.running) return;
     this.running = true;
     try {
       // Initialize engines once — WasmSttEngine keeps the 40 MB Whisper pipeline

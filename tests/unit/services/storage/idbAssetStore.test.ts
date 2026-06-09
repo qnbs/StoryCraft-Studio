@@ -38,10 +38,12 @@ vi.mock('../../../../services/dbConstants', () => ({
   BINDER_ASSETS_STORE: 'binder-assets',
 }));
 
+// QNBS-v3: mock matches production contract — sanitize spaces/colons and use :: delimiter
 vi.mock('../../../../services/storageBackend', () => ({
-  makeBinderAssetIdsPrefix: (projectId: string) => `binder/${projectId}/`,
+  makeBinderAssetIdsPrefix: (projectId: string) =>
+    `${projectId.replace(/[\s:]/g, '_').slice(0, 200)}::`,
   makeBinderAssetStorageKey: (projectId: string, assetId: string) =>
-    `binder/${projectId}/${assetId}`,
+    `${projectId.replace(/[\s:]/g, '_').slice(0, 200)}::${assetId}`,
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -121,7 +123,7 @@ describe('IdbAssetStore', () => {
   });
 
   describe('saveBinderAsset', () => {
-    it('stores asset at binder/<projectId>/<assetId> key', async () => {
+    it('stores asset at proj-1::asset-1 key (production key format)', async () => {
       mockIdbStore.put.mockImplementation(() => makeSuccessReq(undefined));
       const data = new ArrayBuffer(4);
       await store.saveBinderAsset('proj-1', 'asset-1', data, {
@@ -129,7 +131,7 @@ describe('IdbAssetStore', () => {
         originalFileName: 'doc.pdf',
         byteSize: 4,
       });
-      expect(mockIdbStore.put).toHaveBeenCalledWith(expect.anything(), 'binder/proj-1/asset-1');
+      expect(mockIdbStore.put).toHaveBeenCalledWith(expect.anything(), 'proj-1::asset-1');
     });
   });
 
@@ -143,8 +145,12 @@ describe('IdbAssetStore', () => {
     it('reconstructs ArrayBuffer from stored blob payload', async () => {
       const bytes = new Uint8Array([1, 2, 3, 4]);
       const blob = new Blob([bytes], { type: 'application/pdf' });
+      // QNBS-v3: use exact BinderAssetMeta shape — originalFileName + byteSize required
       mockIdbStore.get.mockImplementation(() =>
-        makeSuccessReq({ meta: { mimeType: 'application/pdf', filename: 'x.pdf' }, blob }),
+        makeSuccessReq({
+          meta: { mimeType: 'application/pdf', originalFileName: 'x.pdf', byteSize: 4 },
+          blob,
+        }),
       );
       const result = await store.getBinderAsset('proj-1', 'asset-1');
       expect(result).not.toBeNull();
@@ -156,7 +162,7 @@ describe('IdbAssetStore', () => {
     it('calls delete with the correct composite key', async () => {
       mockIdbStore.delete.mockImplementation(() => makeSuccessReq(undefined));
       await store.deleteBinderAsset('proj-1', 'asset-1');
-      expect(mockIdbStore.delete).toHaveBeenCalledWith('binder/proj-1/asset-1');
+      expect(mockIdbStore.delete).toHaveBeenCalledWith('proj-1::asset-1');
     });
   });
 
@@ -172,9 +178,9 @@ describe('IdbAssetStore', () => {
     it('returns ids for the project prefix only', async () => {
       // Simulate two cursors for proj-1 and one for proj-2
       const cursors = [
-        { key: 'binder/proj-1/a1' },
-        { key: 'binder/proj-1/a2' },
-        { key: 'binder/proj-2/other' },
+        { key: 'proj-1::a1' },
+        { key: 'proj-1::a2' },
+        { key: 'proj-2::other' },
         null, // end of cursor
       ];
       let idx = 0;
