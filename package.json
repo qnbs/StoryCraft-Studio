@@ -19,6 +19,7 @@
     "i18n:check": "node scripts/check-i18n-keys.mjs && node scripts/build-i18n.mjs && node scripts/content-guard.mjs",
     "content:guard": "node scripts/content-guard.mjs",
     "parity:check": "tsx scripts/audit-feature-parity.ts",
+    "suppressions:check": "node scripts/check-suppressions.mjs",
     "graphify": "node scripts/graphify-cli.mjs",
     "graphify:install": "node scripts/graphify-cli.mjs install",
     "graphify:update": "node scripts/graphify-update.mjs",
