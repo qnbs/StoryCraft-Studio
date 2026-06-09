@@ -236,12 +236,10 @@ describe('CloudSyncBackend', () => {
     const backend = makeBackend();
     await backend.saveStoryCodex({
       projectId: 'proj-1',
-      characters: [],
-      locations: [],
-      items: [],
-      lore: [],
-      customEntries: [],
-    } as Parameters<typeof backend.saveStoryCodex>[0]);
+      extractedAt: new Date().toISOString(),
+      entities: [],
+      summary: '',
+    });
     expect(mockPut).toHaveBeenCalledWith(
       expect.stringContaining('codex/proj-1'),
       expect.any(String),
@@ -312,12 +310,10 @@ describe('CloudSyncBackend', () => {
     const backend = makeBackend();
     await backend.saveStoryCodex({
       projectId: 'p1',
-      characters: [],
-      locations: [],
-      items: [],
-      lore: [],
-      customEntries: [],
-    } as Parameters<typeof backend.saveStoryCodex>[0]);
+      extractedAt: new Date().toISOString(),
+      entities: [],
+      summary: '',
+    });
     const [, blob] = mockPut.mock.calls[0] as [string, string];
     const payload = JSON.parse(blob) as { meta: { deviceId: string } };
     expect(typeof payload.meta.deviceId).toBe('string');

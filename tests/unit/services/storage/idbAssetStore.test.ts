@@ -126,7 +126,8 @@ describe('IdbAssetStore', () => {
       const data = new ArrayBuffer(4);
       await store.saveBinderAsset('proj-1', 'asset-1', data, {
         mimeType: 'application/pdf',
-        filename: 'doc.pdf',
+        originalFileName: 'doc.pdf',
+        byteSize: 4,
       });
       expect(mockIdbStore.put).toHaveBeenCalledWith(expect.anything(), 'binder/proj-1/asset-1');
     });

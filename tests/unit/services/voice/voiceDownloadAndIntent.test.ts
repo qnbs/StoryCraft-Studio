@@ -25,6 +25,7 @@ vi.mock('../../../../services/ai/ecoModeService', () => ({
 
 vi.mock('../../../../services/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), withContext: vi.fn() }),
 }));
 
 vi.mock('../../../../services/voice/feedbackService', () => ({
@@ -117,20 +118,26 @@ function makeService() {
   const service = new VoiceCommandService({ enableVoiceWasm: true });
   const dispatched: unknown[] = [];
   service.setDispatch(
-    (action: unknown) => {
+    ((action: unknown) => {
       dispatched.push(action);
       return action;
-    },
-    () => ({
+      // biome-ignore lint/suspicious/noExplicitAny: test dispatch shim
+    }) as any,
+    (() => ({
       settings: {
         voice: { feedbackLevel: 'standard', enabled: true },
       },
       project: {
         present: {
-          data: { characters: { entities: {} }, manuscript: [], worlds: { entities: {} } },
+          data: {
+            characters: { ids: [], entities: {} },
+            manuscript: [],
+            worlds: { ids: [], entities: {} },
+          },
         },
       },
-    }),
+      // biome-ignore lint/suspicious/noExplicitAny: test getState shim
+    })) as any,
   );
   return { service, dispatched };
 }
