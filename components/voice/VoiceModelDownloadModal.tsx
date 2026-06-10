@@ -97,8 +97,12 @@ export const VoiceModelDownloadModal = React.memo(function VoiceModelDownloadMod
 
         {isDownloading && (
           <>
-            <Progress value={Math.round(progress * 100)} />
-            <p className="text-xs text-[var(--sc-text-tertiary)]">
+            {/* QNBS-v3: C-P1 — labelled progressbar + polite live region so the percentage is announced. */}
+            <Progress
+              value={Math.round(progress * 100)}
+              aria-label={t('voice.modelDownload.title')}
+            />
+            <p className="text-xs text-[var(--sc-text-tertiary)]" aria-live="polite">
               {t('voice.modelDownload.progress', { percent: String(Math.round(progress * 100)) })}
             </p>
           </>
