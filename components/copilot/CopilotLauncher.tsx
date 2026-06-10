@@ -40,7 +40,10 @@ export const CopilotLauncher: FC<CopilotLauncherProps> = ({ currentView }) => {
           onClick={open}
           aria-label={t('copilot.launcherLabel')}
           aria-expanded={isOpen}
-          className="fixed bottom-4 right-4 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sc-accent)] text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-border-focus)] focus-visible:ring-offset-2"
+          // QNBS-v3: on <md the mobile bottom-nav (Sidebar `data-tour="nav-mobile"`, fixed bottom-0)
+          // occupies the same corner; bottom-4 put this z-90 FAB on top of the "More" tab and ate its
+          // taps (broke all mobile clickNavItem E2E). Raise it clear of the bar on mobile, normal on md+.
+          className="fixed bottom-20 right-4 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sc-accent)] text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-border-focus)] focus-visible:ring-offset-2 md:bottom-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

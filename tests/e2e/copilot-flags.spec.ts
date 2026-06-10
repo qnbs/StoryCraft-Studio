@@ -7,7 +7,7 @@
  */
 import { expect, test } from '@playwright/test';
 
-import { selectEnglish, setFeatureFlags, waitForSpaReady } from './helpers';
+import { ensureBlankProject, selectEnglish, setFeatureFlags, waitForSpaReady } from './helpers';
 
 const isCI = process.env['CI'] === 'true';
 
@@ -18,6 +18,10 @@ test.describe('Global AI Copilot (feature-flag explicit)', () => {
     await page.goto('/');
     await waitForSpaReady(page);
     await selectEnglish(page);
+    // QNBS-v3: the launcher mounts inside the main app shell, which only renders once the
+    // WelcomePortal is dismissed (isPortalActive). Without a project the portal stays up and the
+    // FAB is never in the DOM — create a blank project first so this asserts real behaviour.
+    await ensureBlankProject(page);
 
     const launcher = page.getByRole('button', { name: /Open AI Copilot/i });
     await expect(launcher).toBeVisible({ timeout: 10000 });
@@ -42,6 +46,9 @@ test.describe('Global AI Copilot (feature-flag explicit)', () => {
     await page.goto('/');
     await waitForSpaReady(page);
     await selectEnglish(page);
+    // QNBS-v3: enter the shell so this is a real off-state assertion (the portal hides the launcher
+    // regardless of the flag, which would make this pass trivially).
+    await ensureBlankProject(page);
 
     await expect(page.getByRole('button', { name: /Open AI Copilot/i })).toHaveCount(0);
   });
