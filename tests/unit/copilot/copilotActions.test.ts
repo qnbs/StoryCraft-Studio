@@ -23,17 +23,24 @@ describe('detectCopilotIntent', () => {
 
 describe('runCopilotDiagnostic', () => {
   function mockCapability(runStage: ProForgeCapabilityLayer['runStage']): ProForgeCapabilityLayer {
-    // biome-ignore lint/suspicious/noExplicitAny: only runStage is exercised
-    return { runStage } as any;
+    return { runStage } as unknown as ProForgeCapabilityLayer;
   }
+
+  const zeroMetrics = {
+    aiCalls: 1,
+    tokensConsumed: 1,
+    durationMs: 1,
+    itemsFound: 0,
+    itemsAccepted: 0,
+    itemsRejected: 0,
+  };
 
   it('extracts score + summary from a successful intake run', async () => {
     const cap = mockCapability(
       vi.fn(async () => ({
         stage: 'intake' as const,
         reviewItems: [],
-        // biome-ignore lint/suspicious/noExplicitAny: metrics not asserted
-        metrics: {} as any,
+        metrics: zeroMetrics,
         agentOutput: {
           qualityScore: { overall: 72 },
           summary: 'Solid draft.',
@@ -51,8 +58,7 @@ describe('runCopilotDiagnostic', () => {
       vi.fn(async () => ({
         stage: 'intake' as const,
         reviewItems: [],
-        // biome-ignore lint/suspicious/noExplicitAny: metrics not asserted
-        metrics: {} as any,
+        metrics: zeroMetrics,
         agentOutput: { isFallback: true, qualityScore: { overall: 0 }, summary: '' },
         supervisorDecision: { pass: false, retryRecommended: true, qualityScore: 0, reasons: [] },
       })),

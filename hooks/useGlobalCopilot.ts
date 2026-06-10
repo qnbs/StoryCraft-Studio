@@ -30,23 +30,28 @@ import type { View } from '../types';
 import { useStoryCraftAI } from './useStoryCraftAI';
 import { useTranslation } from './useTranslation';
 
+/** Subset of the project shape the snapshot reads — avoids `any` while staying tolerant. */
+interface ProjectLike {
+  id?: string;
+  title?: string;
+  logline?: string;
+  manuscript?: Array<{ id: string; title?: string; content?: string }>;
+  characters?: { entities?: Record<string, unknown> };
+  worlds?: { entities?: Record<string, unknown> };
+}
+
 /** Map the live Redux project into the portable snapshot the capability layer expects. */
-function toSnapshot(
-  // biome-ignore lint/suspicious/noExplicitAny: project shape is broad; we read a known subset
-  project: any,
-): ProForgeProjectSnapshot | null {
+function toSnapshot(project: ProjectLike | null | undefined): ProForgeProjectSnapshot | null {
   if (!project) return null;
   return {
     id: project.id ?? 'default',
     title: project.title ?? '',
     logline: project.logline ?? '',
-    manuscript: (project.manuscript ?? []).map(
-      (s: { id: string; title?: string; content?: string }) => ({
-        id: s.id,
-        title: s.title ?? '',
-        content: s.content ?? '',
-      }),
-    ),
+    manuscript: (project.manuscript ?? []).map((s) => ({
+      id: s.id,
+      title: s.title ?? '',
+      content: s.content ?? '',
+    })),
     characters: Object.values(project.characters?.entities ?? {})
       .filter(Boolean)
       .map((c: unknown) => ({ id: (c as { id: string }).id, name: (c as { name: string }).name })),

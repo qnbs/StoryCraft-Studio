@@ -37,7 +37,11 @@ vi.mock('../../../services/proForge/pipelineAgents/supervisorAgent', () => ({
   },
 }));
 
-import type { ProForgeCapabilityPorts } from '../../../services/proForge/proForgeCapabilityCore';
+import type { PipelineRun } from '../../../features/proForge/types';
+import type {
+  ProForgeCapabilityPorts,
+  ProForgeGatewayPort,
+} from '../../../services/proForge/proForgeCapabilityCore';
 import {
   createProForgeCapabilityLayer,
   type ProForgeCapabilityLayer,
@@ -46,14 +50,17 @@ import { ProForgeError } from '../../../services/proForge/proForgeCapabilitySche
 
 function makePorts(overrides: Partial<ProForgeCapabilityPorts> = {}): ProForgeCapabilityPorts {
   return {
-    // biome-ignore lint/suspicious/noExplicitAny: test gateway stub
-    gateway: { generate: vi.fn(), embed: vi.fn(), modelList: vi.fn(), healthCheck: vi.fn() } as any,
+    gateway: {
+      generate: vi.fn(),
+      embed: vi.fn(),
+      modelList: vi.fn(),
+      healthCheck: vi.fn(),
+    } as unknown as ProForgeGatewayPort,
     memory: vi.fn(() => ({
       search: vi.fn(async () => [{ id: 'm1', key: 'k', content: 'c' }]),
       remember: vi.fn(),
       recall: vi.fn(async () => []),
-      // biome-ignore lint/suspicious/noExplicitAny: partial memory port for tests
-    })) as any,
+    })) as unknown as ProForgeCapabilityPorts['memory'],
     history: {
       load: vi.fn(async () => []),
       save: vi.fn(),
@@ -160,11 +167,7 @@ describe('ProForgeCapabilityLayer', () => {
 
   describe('getHistory', () => {
     it('filters by runId and limits results', async () => {
-      const runs = [
-        { id: 'a' },
-        { id: 'b' },
-        // biome-ignore lint/suspicious/noExplicitAny: minimal run stubs
-      ] as any;
+      const runs = [{ id: 'a' }, { id: 'b' }] as unknown as PipelineRun[];
       const p = makePorts({ history: { load: vi.fn(async () => runs), save: vi.fn() } });
       const l = createProForgeCapabilityLayer(p);
       const byId = await l.getHistory({ projectId: 'p1', runId: 'b' });
@@ -191,8 +194,7 @@ describe('ProForgeCapabilityLayer', () => {
             },
           ],
         },
-        // biome-ignore lint/suspicious/noExplicitAny: minimal run stub
-      ] as any;
+      ] as unknown as PipelineRun[];
       const p = makePorts({ history: { load: vi.fn(async () => runs), save: vi.fn() } });
       const l = createProForgeCapabilityLayer(p);
       const status = await l.getSupervisorStatus({ projectId: 'p1' });
