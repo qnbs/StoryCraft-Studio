@@ -258,6 +258,10 @@ export const useSettingsView = () => {
         case 'enableRustCompute':
           dispatch(featureFlagsActions.setEnableRustCompute(Boolean(value)));
           break;
+        // QNBS-v3: Global AI Copilot — beginner-friendly in-app live assistant.
+        case 'enableGlobalCopilot':
+          dispatch(featureFlagsActions.setEnableGlobalCopilot(Boolean(value)));
+          break;
         // QNBS-v3: enableIdbAtRestEncryption intentionally absent — managed via handlePassphraseConfirm
         // in Settings > Privacy, not the experimental flags UI toggle.
         default:
