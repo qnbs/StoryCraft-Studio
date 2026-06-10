@@ -75,10 +75,12 @@ export const VoiceModelDownloadModal = React.memo(function VoiceModelDownloadMod
   }, [onClose]);
 
   useEffect(() => {
-    if (isOpen && !isDownloading && progress === 0) {
+    // QNBS-v3: P1-2 — guard on !error so a failed download (which resets progress to 0) does NOT
+    //          auto-retry in a loop; the user retries via the explicit Retry button instead.
+    if (isOpen && !isDownloading && !error && progress === 0) {
       void handleDownload();
     }
-  }, [isOpen, isDownloading, progress, handleDownload]);
+  }, [isOpen, isDownloading, error, progress, handleDownload]);
 
   const modelName = modelType === 'stt' ? 'Whisper (STT)' : 'Kokoro (TTS)';
   const modelSize = modelType === 'stt' ? MODEL_SIZES.whisper : MODEL_SIZES.kokoro;

@@ -41,6 +41,21 @@ async function openVoiceSettingsAndEnable(page: import('@playwright/test').Page)
   }
 }
 
+/**
+ * Hold the push-to-talk combo (Ctrl+Shift+V) long enough for the mock STT to emit a transcript
+ * while listening is active. A quick `keyboard.press` releases the keys before the ~30ms emit,
+ * which would stop listening before the result is produced.
+ */
+async function pressPushToTalk(page: import('@playwright/test').Page): Promise<void> {
+  await page.keyboard.down('Control');
+  await page.keyboard.down('Shift');
+  await page.keyboard.down('KeyV');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('KeyV');
+  await page.keyboard.up('Shift');
+  await page.keyboard.up('Control');
+}
+
 // ---------------------------------------------------------------------------
 // Simulated model download (no 42 MB fetch — driven by the download seam)
 // ---------------------------------------------------------------------------
@@ -146,7 +161,7 @@ test.describe('Voice STT → command dispatch (mocked engine)', () => {
 
     // Move away from Settings, then push-to-talk: the mock STT emits "open settings".
     await clickNavItem(page, /AI Writing Studio|Writer/i);
-    await page.keyboard.press('Control+Shift+V');
+    await pressPushToTalk(page);
 
     await expect(
       page.getByRole('heading', { name: /Settings|Einstellungen/i }).first(),
@@ -162,13 +177,13 @@ test.describe('Voice STT → command dispatch (mocked engine)', () => {
     await openVoiceSettingsAndEnable(page);
 
     await clickNavItem(page, /AI Writing Studio|Writer/i);
-    await page.keyboard.press('Control+Shift+V');
+    await pressPushToTalk(page);
     await expect(
       page.getByRole('heading', { name: /Settings|Einstellungen/i }).first(),
     ).toBeVisible({ timeout: 15000 });
 
     // Second command from the Settings view → dashboard.
-    await page.keyboard.press('Control+Shift+V');
+    await pressPushToTalk(page);
     await expect(
       page.getByRole('heading', { name: /Dashboard|Übersicht|Overview/i }).first(),
     ).toBeVisible({ timeout: 15000 });
