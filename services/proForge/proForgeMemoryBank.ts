@@ -141,7 +141,12 @@ export async function searchMemoryEntries(
     const qVec = await embedText(query);
     const scored = await Promise.all(
       entries.map(async (entry) => {
-        const eVec = entry.embedding ?? (await embedText(`${entry.key} ${entry.content}`));
+        // QNBS-v3: stored embeddings are persisted as number[]; coerce to the Float32Array the
+        // similarity fn expects. Falls back to computing the embedding when none is stored.
+        const eVec =
+          entry.embedding != null
+            ? new Float32Array(entry.embedding)
+            : await embedText(`${entry.key} ${entry.content}`);
         const sim = cosineSimilarity(qVec, eVec);
         // QNBS-v3: hybrid blends semantic (0.7) with normalised keyword overlap (0.3).
         const score = mode === 'semantic' ? sim : 0.7 * sim + 0.3 * (scoreKeyword(entry) / maxKw);

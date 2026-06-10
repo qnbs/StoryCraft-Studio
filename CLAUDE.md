@@ -22,7 +22,7 @@ pnpm run build         # Production build to dist/
 pnpm run smoke:prod    # Headless mount check on dist/ (run AFTER build; catches prod-only crashes)
 pnpm run lint          # Biome lint (--error-on-warnings — warnings fail like CI)
 pnpm run lint:fix      # Biome auto-fix (lint + format)
-pnpm run typecheck     # TypeScript type check (tsgo --noEmit)
+pnpm run typecheck     # TypeScript type check — EXACT CI command (tsgo --project tsconfig.tsgo.json --noEmit --checkers 4). typecheck:single = lighter single-checker (may miss errors the gate catches; do not trust for the gate)
 pnpm run test          # Vitest watch mode
 pnpm run test:run      # Vitest single run (CI mode)
 pnpm run test:coverage # Vitest with V8 coverage (thresholds: lines 54%, branches 46%, functions 68%, statements 56%)
