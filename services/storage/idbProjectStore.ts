@@ -35,6 +35,8 @@ export function normalizePersistedSettings(incoming: Record<string, unknown>): S
   const validSettings = {
     theme: 'dark',
     appearancePreset: 'default',
+    // QNBS-v3: aiMode added in v1.22 — backfill for older persisted settings that lack the field.
+    aiMode: 'hybrid',
     editorFont: 'serif',
     fontSize: 16,
     lineSpacing: 1.6,

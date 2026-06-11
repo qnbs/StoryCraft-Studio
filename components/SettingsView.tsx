@@ -5,6 +5,7 @@ import { ICONS } from '../constants';
 import { SettingsViewContext, useSettingsViewContext } from '../contexts/SettingsViewContext';
 import { useSettingsView } from '../hooks/useSettingsView';
 import { SETTINGS_CATEGORY_SEARCH_HINTS } from '../services/settingsSearchHints';
+import { AiExecutionModeSection } from './settings/AiExecutionModeSection';
 import { AdvancedAiSection, AiSection } from './settings/AiSections';
 import { CommunitySection } from './settings/CommunitySection';
 import { DataSection } from './settings/DataSection';
@@ -281,7 +282,12 @@ const SettingsViewUI: FC = () => {
       case 'advanced-editor':
         return <AdvancedEditorSection />;
       case 'ai':
-        return <AiSection />;
+        return (
+          <div className="space-y-8">
+            <AiExecutionModeSection />
+            <AiSection />
+          </div>
+        );
       case 'advanced-ai':
         return <AdvancedAiSection />;
       case 'community':

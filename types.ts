@@ -360,6 +360,12 @@ export interface OutlineSection {
 export type Theme = 'dark' | 'light' | 'auto';
 /** Creative appearance presets — map to `body` classes in App (`.appearance-sepia`, …). */
 export type AppearancePreset = 'default' | 'sepia' | 'fantasy' | 'romance';
+/**
+ * AI execution mode — controls whether requests are routed to cloud providers,
+ * local on-device models, or resolved automatically (hybrid smart routing).
+ * Mirrors the CannaGuide-2025 AiMode pattern (localRoutingService ADR).
+ */
+export type AiMode = 'hybrid' | 'cloud' | 'local' | 'eco';
 export type EditorFont = 'serif' | 'sans-serif' | 'monospace' | 'custom';
 export type AiCreativity = 'Focused' | 'Balanced' | 'Imaginative';
 export type AiModel =
@@ -642,6 +648,8 @@ export interface Settings {
   // Basic Settings
   theme: Theme;
   appearancePreset: AppearancePreset;
+  /** AI execution routing mode — hybrid (default), cloud-only, local-only, or eco (tiny models). */
+  aiMode: AiMode;
   editorFont: EditorFont;
   fontSize: number;
   lineSpacing: number;

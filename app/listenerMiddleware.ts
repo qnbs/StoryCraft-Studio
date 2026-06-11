@@ -532,6 +532,20 @@ listenerMiddleware.startListening({
   },
 });
 
+// QNBS-v3: Sync AI execution mode from Redux settings into the singleton aiModeService.
+// Runs on any settings change so the routing service stays in lock-step with persisted state.
+listenerMiddleware.startListening({
+  predicate: (_action, curr, prev) => {
+    return (curr as RootState).settings?.aiMode !== (prev as RootState).settings?.aiMode;
+  },
+  effect: async (_action, listenerApi) => {
+    const state = listenerApi.getState() as RootState;
+    const mode = state.settings?.aiMode ?? 'hybrid';
+    const { setActiveAiMode } = await import('../services/ai/aiModeService');
+    setActiveAiMode(mode);
+  },
+});
+
 export const startAppListening = listenerMiddleware.startListening as TypedStartListening<
   RootState,
   AppDispatch
