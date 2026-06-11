@@ -32,6 +32,10 @@ interface TransientUiState {
   // QNBS-v3: Phase 2 — shared active section so InlineAnnotationLayer + apply flow can access it
   activeSectionId: string | null;
   setActiveSectionId: (id: string | null) => void;
+  // QNBS-v3: CodeAnt — badge click must force-expand the InsightSection; a bool in the store
+  // bridges InlineAnnotationLayer (setter) and InsightSection (consumer/reset) without prop-drilling.
+  copilotInsightExpanded: boolean;
+  setCopilotInsightExpanded: (value: boolean) => void;
 }
 
 export const useTransientUiStore = create<TransientUiState>((set) => ({
@@ -59,4 +63,6 @@ export const useTransientUiStore = create<TransientUiState>((set) => ({
   setCopilotInsightStatus: (status) => set({ copilotInsightStatus: status }),
   activeSectionId: null,
   setActiveSectionId: (id) => set({ activeSectionId: id }),
+  copilotInsightExpanded: false,
+  setCopilotInsightExpanded: (value) => set({ copilotInsightExpanded: value }),
 }));

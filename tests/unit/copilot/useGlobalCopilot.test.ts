@@ -35,6 +35,9 @@ vi.mock('../../../app/transientUiStore', () => ({
       // QNBS-v3: Phase 2 additions
       activeSectionId: null,
       setActiveSectionId: vi.fn(),
+      // QNBS-v3: CodeAnt fix — badge-to-insights-expand bridge
+      copilotInsightExpanded: false,
+      setCopilotInsightExpanded: vi.fn(),
     }),
 }));
 vi.mock('../../../hooks/useStoryCraftAI', () => ({

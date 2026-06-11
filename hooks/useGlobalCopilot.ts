@@ -264,9 +264,21 @@ export function useGlobalCopilot(currentView: View) {
       const section = project.manuscript.find((s) => s.id === activeSectionId);
       if (!section) return;
 
+      const existingContent = section.content ?? '';
+      // QNBS-v3: CodeAnt — partial snippets must not silently overwrite the whole chapter.
+      // Only proceed if the section is empty or the block is ≥70% of existing content length
+      // (clear full-chapter-rewrite intent). Shorter blocks are rejected to prevent data loss.
+      const isFullRewrite =
+        !existingContent.trim() || codeBlock.length / Math.max(existingContent.length, 1) >= 0.7;
+      if (!isFullRewrite) {
+        setApplyStatus('error');
+        setTimeout(() => setApplyStatus('idle'), 3000);
+        return;
+      }
+
       setApplyStatus('applying');
       try {
-        const result = applyTextEdit(section.content ?? '', '', codeBlock);
+        const result = applyTextEdit(existingContent, '', codeBlock);
         if (result.applied > 0) {
           dispatch(
             projectActions.updateManuscriptSection({

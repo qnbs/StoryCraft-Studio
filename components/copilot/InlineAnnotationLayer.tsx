@@ -48,6 +48,7 @@ export const InlineAnnotationLayer: FC<InlineAnnotationLayerProps> = ({ sectionT
   const enableCopilot = useAppSelector(selectEnableGlobalCopilot);
   const insights = useTransientUiStore((s) => s.copilotInsights);
   const insightStatus = useTransientUiStore((s) => s.copilotInsightStatus);
+  const setCopilotInsightExpanded = useTransientUiStore((s) => s.setCopilotInsightExpanded);
 
   if (!enableCopilot || insightStatus === 'running') return null;
 
@@ -61,7 +62,8 @@ export const InlineAnnotationLayer: FC<InlineAnnotationLayerProps> = ({ sectionT
       : 'info';
 
   const handleClick = () => {
-    // QNBS-v3: open copilot panel so the user sees the insight section
+    // QNBS-v3: CodeAnt — force-expand InsightSection so the user immediately sees the findings
+    setCopilotInsightExpanded(true);
     dispatch(copilotActions.setOpen(true));
   };
 

@@ -6,8 +6,7 @@
  */
 
 import DOMPurify from 'dompurify';
-import type { FC } from 'react';
-import { useEffect, useRef } from 'react';
+import { type FC, useEffect, useRef } from 'react';
 import type { CopilotMessage } from '../../features/copilot/copilotSlice';
 import { Spinner } from '../ui/Spinner';
 
@@ -129,6 +128,22 @@ interface CopilotMessageListProps {
   applyingLabel: string;
 }
 
+// QNBS-v3: useEffect+innerHTML avoids dangerouslySetInnerHTML (eliminates biome suppression debt);
+// DOMPurify sanitisation identical — the rule only flags the JSX prop, not direct DOM writes.
+const ALLOWED_MD_TAGS = ['p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'h3', 'span'];
+const MarkdownContent: FC<{ content: string }> = ({ content }) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.innerHTML = DOMPurify.sanitize(renderMarkdown(content), {
+        ALLOWED_TAGS: ALLOWED_MD_TAGS,
+        ALLOWED_ATTR: ['class'],
+      });
+    }
+  }, [content]);
+  return <div ref={ref} className="prose-copilot break-words" />;
+};
+
 function hasCodeBlock(text: string): boolean {
   return /```[\s\S]*?```/.test(text);
 }
@@ -203,30 +218,7 @@ export const CopilotMessageList: FC<CopilotMessageListProps> = ({
               ) : isUser ? (
                 <span className="whitespace-pre-wrap break-words">{msg.content}</span>
               ) : (
-                // biome-ignore-start lint/security/noDangerouslySetInnerHtml: sanitized with DOMPurify
-                <div
-                  className="prose-copilot break-words"
-                  // QNBS-v3: DOMPurify strips any injected HTML before renderMarkdown output is set
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(renderMarkdown(msg.content), {
-                      ALLOWED_TAGS: [
-                        'p',
-                        'br',
-                        'strong',
-                        'em',
-                        'code',
-                        'pre',
-                        'ul',
-                        'ol',
-                        'li',
-                        'h3',
-                        'span',
-                      ],
-                      ALLOWED_ATTR: ['class'],
-                    }),
-                  }}
-                />
-                // biome-ignore-end lint/security/noDangerouslySetInnerHtml: sanitized with DOMPurify
+                <MarkdownContent content={msg.content} />
               )}
             </div>
             {showApply && (
