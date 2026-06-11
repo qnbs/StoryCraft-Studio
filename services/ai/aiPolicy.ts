@@ -4,6 +4,8 @@ import { getActiveAiMode } from './aiModeService';
 
 const LORA_LOCAL_PROVIDERS = new Set(['webllm', 'onnx', 'transformers', 'ollama']);
 const LOCAL_INFERENCE_PROVIDERS = new Set(['webllm', 'onnx', 'transformers', 'ollama']);
+// QNBS-v3: openrouter is a cloud provider — included in the cloud-gate check below, NOT here.
+// Kept separate to make audit clear: local providers never need a key; cloud providers do.
 
 /**
  * Throws if the given model/provider is cloud-hosted.

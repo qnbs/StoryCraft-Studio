@@ -150,6 +150,14 @@ export function normalizePersistedSettings(incoming: Record<string, unknown>): S
       offlineMode: false,
     };
   }
+  // QNBS-v3: openRouter added in OpenRouter integration — backfill for older persisted settings.
+  if (!validSettings.openRouter || typeof validSettings.openRouter !== 'object') {
+    validSettings.openRouter = {
+      enabled: false,
+      apiKey: '',
+      preferredModel: 'deepseek/deepseek-r1:free',
+    };
+  }
 
   return validSettings;
 }
