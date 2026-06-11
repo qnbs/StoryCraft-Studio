@@ -10,6 +10,7 @@ import { useTransientUiStore } from '../../app/transientUiStore';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import type { UseGlobalCopilotReturn } from '../../hooks/useGlobalCopilot';
 import type { View } from '../../types';
+import { AiModeIndicator } from './AiModeIndicator';
 import { CopilotComposer } from './CopilotComposer';
 import { CopilotMessageList } from './CopilotMessageList';
 import { HeuristicsModeToggle } from './HeuristicsModeToggle';
@@ -116,7 +117,9 @@ export const CopilotPanel: FC<CopilotPanelProps> = ({ copilot, contextLabel, onN
           </h2>
           <p className="text-xs text-[var(--sc-text-muted)]">{contextLabel}</p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {/* QNBS-v3: Active AI mode indicator — shows current routing mode at a glance (G9). */}
+          <AiModeIndicator />
           {/* QNBS-v3: Heuristics-only toggle — privacy/offline mode. */}
           <HeuristicsModeToggle
             heuristicsOnly={heuristicsOnly}

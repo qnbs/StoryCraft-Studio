@@ -8,6 +8,54 @@ Status: 🔄 in progress | ⬜ open | ✅ done
 
 ---
 
+## AI Execution Mode — Audit, Perfection & OpenRouter (branch: `feat/copilot-ultimate-v2-phase2`)
+
+> Plan: `.claude/plans/storycraft-studio-recursive-valiant.md`
+> All 8 implementation phases complete. Remaining: follow-up UI, tests, PR.
+
+### ✅ Completed (2026-06-11)
+- ✅ **Phase 0** — Cold-start seed: `index.tsx` seeds `aiModeService` from persisted Redux state on startup (G1, commit `97a6d83`)
+- ✅ **Phase 1** — Positive routing: `shouldRouteLocally()` wired into `generateText()` + `DefaultInferenceGateway.generate()` (G2, commit `6f0cca1`)
+- ✅ **Phase 1 (OpenRouter)** — Full OpenRouter provider: circuit breaker (4 × 429 → 5 min), exponential backoff + Retry-After, RPM tracking, free-model detection; `shouldUseOpenRouter()` in routing chain
+- ✅ **Phase 2** — `notifyLocalModelsReady()` wired from `localAiFacade.ts` after successful inference (G4)
+- ✅ **Phase 3** — Eco bridge: `ecoModeService.setAiModeEco()` ↔ Redux aiMode listener; battery auto-eco back-syncs to Redux via `appStoreRef` (G3, G7)
+- ✅ **Phase 4** — ProForge `baseAgent.ts` honours `shouldRouteLocally()` + `isEcoMode()` in `buildAiOpts()` (G5)
+- ✅ **Phase 5** — Routing observability: `services/ai/routingLogger.ts` with `logRoutingDecision()` called at every routing branch (G8)
+- ✅ **Phase 6** — `AiModeIndicator` component in Copilot panel header; OpenRouter circuit/RPM status; 2583 i18n keys × 11 locales (G9)
+- ✅ **Phase 7** — Unit tests: `aiModeService.test.ts` (25), `routingLogger.test.ts` (5), `ecoModeBridge.test.ts` (13), `openrouterProvider.test.ts` (6) — all pass
+- ✅ **Settings state** — `OpenRouterSettings` type in `types.ts`; `settingsSlice` reducer + `DEFAULT_OPENROUTER_SETTINGS`; `idbProjectStore.ts` backfill guard
+
+### ⬜ Remaining (follow-up sprint)
+
+**P0 — Commit & push (blocking)**
+- ⬜ Commit remaining unstaged changes (Phases 2-7): `services/localAiFacade.ts`, `services/ai/ecoModeService.ts`, `app/listenerMiddleware.ts`, `components/settings/GpuMetricsPanel.tsx`, `services/proForge/pipelineAgents/baseAgent.ts`, `services/ai/routingLogger.ts`, `components/copilot/AiModeIndicator.tsx`, `components/copilot/CopilotPanel.tsx`, `locales/*/settings.json` (11 locales), `public/locales/*/bundle.json`, `tests/unit/ai/*`
+- ⬜ Push `feat/copilot-ultimate-v2-phase2` and create PR targeting `main`
+- ⬜ `pnpm run build && pnpm run smoke:prod` — verify no rolldown blank-screen regressions
+
+**P1 — OpenRouter Settings UI (missing piece for users to configure it)**
+- ⬜ New `components/settings/OpenRouterSection.tsx` — API key input (password field, AES-256-GCM stored via `idbKeyStore`), model selector (`OPENROUTER_FREE_MODELS` dropdown + custom model text input), enable/disable toggle, circuit-breaker reset button (`resetOpenRouterCircuit()`), live RPM indicator (`getApproxRpm()`)
+- ⬜ Wire into `SettingsView.tsx` NAV_GROUPS — add `'openrouter'` id to the **AI Models** group (`{ key: 'aiModels', ids: [..., 'openrouter'] }`)
+- ⬜ Add `settings.openRouter.*` i18n keys to all 11 locales (already partially added in Phase 6; verify completeness)
+- ⬜ Dispatch `settingsActions.setOpenRouter({ apiKey, preferredModel, enabled })` from the UI (reducer exists)
+- ⬜ Store API key via `idbKeyStore.saveKey('openrouter', apiKey)` + load on init (avoid Redux for sensitive data)
+- ⬜ Pass retrieved API key to `streamOpenRouter` / `generateOpenRouterText` calls in `aiProviderService.ts`
+
+**P2 — Command Palette integration**
+- ⬜ Register command `ai.mode.openrouter.toggle` — "Enable / Disable OpenRouter" — dispatches `settingsActions.setOpenRouter({ enabled: !current })`
+- ⬜ Register command `ai.mode.openrouter.resetCircuit` — "Reset OpenRouter Circuit Breaker" — calls `resetOpenRouterCircuit()` + toast confirmation
+- ⬜ Add both commands to `services/commands/commandDefinitions.ts` with correct `requiredFlags: ['enableOpenRouter']` (or no flag if always visible)
+
+**P3 — Test coverage gaps**
+- ⬜ Extend `tests/unit/proForge/components/baseAgent.test.ts`: mock `shouldRouteLocally()=true` → verify `buildAiOpts()` returns `provider: 'webllm'` instead of `gemini`
+- ⬜ Add `tests/unit/settings/openRouterSection.test.tsx` — toggle enable, key input, model selector, circuit-reset button
+- ⬜ Run `pnpm exec tsx scripts/audit-feature-parity.ts` — must report 0 drifts after OpenRouter settings wired
+
+**P4 — API key retrieval wiring (currently missing)**
+- ⬜ `aiProviderService.ts` `case 'openrouter'`: currently passes empty string as `apiKey`. Must call `idbKeyStore.getKey('openrouter')` (async) before forwarding to `streamOpenRouter` / `generateOpenRouterText`
+- ⬜ Add `services/storage/idbKeyStore.ts` key name `'openrouter'` to the key catalog doc comment
+
+---
+
 ## v1.21.0 — Integrity & Hardening Cycle (2026-06-10) — DELIVERED (PR #104, pending merge)
 
 > Master Plan: `.claude/plans/master-prompt-storycraft-studio-glistening-pnueli.md` (Deep Audit 2026-06-09, findings F-1…F-9).
