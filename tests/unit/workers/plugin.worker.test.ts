@@ -43,6 +43,14 @@ async function importWorker(): Promise<void> {
   await import('../../../workers/plugin.worker', { with: { type: 'script' } });
 }
 
+async function expectRejects(
+  handler: (ctx: unknown) => Promise<unknown>,
+  ctx: ReturnType<typeof makeContext>,
+  pattern: RegExp,
+): Promise<void> {
+  await expect(handler(ctx)).rejects.toThrow(pattern);
+}
+
 describe('plugin.worker', () => {
   beforeEach(async () => {
     mockRegisterTaskHandler.mockClear();
@@ -71,9 +79,9 @@ describe('plugin.worker', () => {
         },
       });
 
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(
+      await expectRejects(
+        handler,
+        ctx,
         /fetch is not defined|undefined is not a function|is not a function/,
       );
     });
@@ -91,9 +99,11 @@ describe('plugin.worker', () => {
         },
       });
 
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/indexedDB is not defined|Cannot read properties of undefined/);
+      await expectRejects(
+        handler,
+        ctx,
+        /indexedDB is not defined|Cannot read properties of undefined/,
+      );
     });
 
     it('denies access to self/globalThis inside plugin code', async () => {
@@ -109,27 +119,53 @@ describe('plugin.worker', () => {
         },
       });
 
-      const result = (await handler(ctx)) as {
-        success: boolean;
-        payload: { sideEffects: unknown[] };
-      };
-      expect(result.success).toBe(true);
-      expect(result.payload.sideEffects).toHaveLength(0);
+      const result = (await handler(ctx)) as { sideEffects: unknown[] };
+      expect(result.sideEffects).toHaveLength(0);
+    });
+
+    it('blocks Function constructor escape via (function(){}).constructor', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const ctx = makeContext({
+        payload: {
+          pluginId: 'function-escape',
+          code: 'run = () => { (function(){}).constructor("return globalThis")(); };',
+          grantedPermissions: [],
+          readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+        },
+      });
+
+      await expectRejects(handler, ctx, /Function constructor is disabled/);
+    });
+
+    it('blocks AsyncFunction constructor escape', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const ctx = makeContext({
+        payload: {
+          pluginId: 'async-function-escape',
+          code: 'run = () => { (async function(){}).constructor("return globalThis")(); };',
+          grantedPermissions: [],
+          readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+        },
+      });
+
+      await expectRejects(handler, ctx, /AsyncFunction constructor is disabled/);
     });
   });
 
   describe('plugin execution', () => {
-    it('returns error when payload is invalid', async () => {
+    it('throws when payload is invalid', async () => {
       const handler = registeredHandlers.get('plugin.execute');
       if (!handler) throw new Error('plugin.execute handler not registered');
 
       const ctx = makeContext({ payload: { pluginId: 'x' } });
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/Invalid plugin.execute payload/);
+      await expectRejects(handler, ctx, /Invalid plugin.execute payload/);
     });
 
-    it('returns error when plugin has no run export', async () => {
+    it('throws when plugin has no run export', async () => {
       const handler = registeredHandlers.get('plugin.execute');
       if (!handler) throw new Error('plugin.execute handler not registered');
 
@@ -141,9 +177,39 @@ describe('plugin.worker', () => {
           readApiSnapshot: { projectTitle: '', sceneTitles: [] },
         },
       });
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/has no exported run\(\) function/);
+      await expectRejects(handler, ctx, /has no exported run\(\) function/);
+    });
+
+    it('normalizes ESM export async function run syntax', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const ctx = makeContext({
+        payload: {
+          pluginId: 'esm-plugin',
+          code: 'export async function run(api) { api.log("esm ok"); }',
+          grantedPermissions: [],
+          readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+        },
+      });
+      const result = (await handler(ctx)) as { logs: string[] };
+      expect(result.logs).toEqual(['esm ok']);
+    });
+
+    it('normalizes ESM export function run syntax', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const ctx = makeContext({
+        payload: {
+          pluginId: 'esm-plugin',
+          code: 'export function run(api) { api.log("esm sync ok"); }',
+          grantedPermissions: [],
+          readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+        },
+      });
+      const result = (await handler(ctx)) as { logs: string[] };
+      expect(result.logs).toEqual(['esm sync ok']);
     });
 
     it('collects appendToCurrentScene side effects when permission is granted', async () => {
@@ -159,11 +225,9 @@ describe('plugin.worker', () => {
         },
       });
       const result = (await handler(ctx)) as {
-        success: boolean;
-        payload: { sideEffects: Array<{ kind: string; payload: string }> };
+        sideEffects: Array<{ kind: string; payload: string }>;
       };
-      expect(result.success).toBe(true);
-      expect(result.payload.sideEffects).toEqual([{ kind: 'append', payload: 'extra' }]);
+      expect(result.sideEffects).toEqual([{ kind: 'append', payload: 'extra' }]);
     });
 
     it('throws permission denied when appendToCurrentScene is called without scene.write', async () => {
@@ -178,9 +242,7 @@ describe('plugin.worker', () => {
           readApiSnapshot: { projectTitle: '', sceneTitles: [] },
         },
       });
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/Permission denied: scene.write/);
+      await expectRejects(handler, ctx, /Permission denied: scene.write/);
     });
 
     it('collects logs', async () => {
@@ -195,12 +257,8 @@ describe('plugin.worker', () => {
           readApiSnapshot: { projectTitle: '', sceneTitles: [] },
         },
       });
-      const result = (await handler(ctx)) as {
-        success: boolean;
-        payload: { logs: string[] };
-      };
-      expect(result.success).toBe(true);
-      expect(result.payload.logs).toEqual(['hello', '123']);
+      const result = (await handler(ctx)) as { logs: string[] };
+      expect(result.logs).toEqual(['hello', '123']);
     });
 
     it('reads project title and scene titles from snapshot', async () => {
@@ -215,34 +273,47 @@ describe('plugin.worker', () => {
           readApiSnapshot: { projectTitle: 'My Novel', sceneTitles: ['Opening', 'Twist'] },
         },
       });
-      const result = (await handler(ctx)) as {
-        success: boolean;
-        payload: { logs: string[] };
-      };
-      expect(result.success).toBe(true);
-      expect(result.payload.logs[0]).toBe('{"title":"My Novel","scenes":["Opening","Twist"]}');
+      const result = (await handler(ctx)) as { logs: string[] };
+      expect(result.logs[0]).toBe('{"title":"My Novel","scenes":["Opening","Twist"]}');
     });
 
-    it('async APIs are unavailable in worker sandbox', async () => {
+    it('async APIs are unavailable in worker sandbox even without await', async () => {
       const handler = registeredHandlers.get('plugin.execute');
       if (!handler) throw new Error('plugin.execute handler not registered');
 
       const ctx = makeContext({
         payload: {
           pluginId: 'async-api',
-          code: 'run = async (api) => { await api.generateText("x"); };',
+          code: 'run = (api) => { api.generateText("x"); };',
           grantedPermissions: ['ai.invoke'],
           readApiSnapshot: { projectTitle: '', sceneTitles: [] },
         },
       });
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/generateText\(\) is not available inside the worker sandbox/);
+      await expectRejects(
+        handler,
+        ctx,
+        /generateText\(\) is not available inside the worker sandbox/,
+      );
+    });
+
+    it('propagates plugin errors instead of returning success', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const ctx = makeContext({
+        payload: {
+          pluginId: 'crash',
+          code: 'run = () => { throw new Error("plugin crash"); };',
+          grantedPermissions: [],
+          readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+        },
+      });
+      await expectRejects(handler, ctx, /plugin crash/);
     });
   });
 
   describe('abort/timeout', () => {
-    it('returns aborted error when signal is already aborted', async () => {
+    it('throws aborted error when signal is already aborted', async () => {
       const handler = registeredHandlers.get('plugin.execute');
       if (!handler) throw new Error('plugin.execute handler not registered');
 
@@ -255,9 +326,7 @@ describe('plugin.worker', () => {
         },
         signalAborted: true,
       });
-      const result = (await handler(ctx)) as { success: boolean; error: string };
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/aborted before start/);
+      await expectRejects(handler, ctx, /aborted before start/);
     });
   });
 
@@ -266,12 +335,8 @@ describe('plugin.worker', () => {
       const handler = registeredHandlers.get('plugin.ping');
       if (!handler) throw new Error('plugin.ping handler not registered');
 
-      const result = (await handler(makeContext())) as {
-        success: boolean;
-        payload: { status: string };
-      };
-      expect(result.success).toBe(true);
-      expect(result.payload.status).toBe('ok');
+      const result = (await handler(makeContext())) as { status: string };
+      expect(result.status).toBe('ok');
     });
   });
 });

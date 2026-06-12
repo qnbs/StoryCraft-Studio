@@ -1538,10 +1538,14 @@ StoryCraft Studio was assessed as a strong, modern React/TypeScript application 
 | Status | Item |
 |--------|------|
 | ✅ | Replaced unsafe Worker global eval with function-scope sandbox in `workers/plugin.worker.ts` |
+| ✅ | Added runtime guards for `Function.prototype.constructor`, `eval`, `WebAssembly`, async/generator constructors |
+| ✅ | Normalized ESM `export function run` syntax for `new Function` execution |
+| ✅ | Converted denied async APIs to synchronous throwers so misuse always propagates |
+| ✅ | Made worker handler throw on plugin failures instead of returning `{ success: false }` |
 | ✅ | Added read-only project snapshot + side-effect bridge in `services/pluginRegistry.ts` |
 | ✅ | Added `plugin.sandbox` capability to WorkerBus v2 schema |
 | ✅ | Added telemetry logging to `pluginRegistry.ts` (loadPlugin method) |
-| ✅ | Created/extended `tests/unit/workers/plugin.worker.test.ts` (13 tests) |
+| ✅ | Created/extended `tests/unit/workers/plugin.worker.test.ts` (18 tests) |
 | ✅ | Created/extended `tests/unit/plugins/pluginRegistryLoad.test.ts` (8 tests) |
 | ✅ | Updated `docs/PLUGINS-BETA.md` with accurate sandbox/limitations description |
 | ⬜ | Full timeout/abort coupling for dynamic `import()` and sync loops (P0-2) |
@@ -1601,6 +1605,14 @@ StoryCraft Studio was assessed as a strong, modern React/TypeScript application 
 | ✅ | Plugin execution errors logged via structured logger |
 | ✅ | Voice error paths set `setVoiceError` in Redux |
 | ✅ | Storage encryption errors throw descriptive messages |
+
+### Tauri Build Pipeline (updated)
+
+| Status | Item |
+|--------|------|
+| ✅ | `tauri-build.yml` references `secrets.TAURI_SIGNING_PRIVATE_KEY` and password correctly |
+| ✅ | Workflow unsets signing keys and disables updater artifacts for `workflow_dispatch` test builds |
+| 🔄 | Full end-to-end signing verification pending next tag or manual workflow dispatch with secrets |
 
 ---
 

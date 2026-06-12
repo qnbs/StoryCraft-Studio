@@ -13,7 +13,7 @@ The StoryCraft Studio Plugin System allows extending the application with custom
 - All plugin code executes in `workers/plugin.worker.ts` (Web Worker)
 - Plugins cannot access the main thread directly
 - No direct access to Redux store, DOM, or browser APIs
-- Plugin code runs inside a function-scope sandbox: dangerous globals (`fetch`, `indexedDB`, `WebSocket`, `self`, `globalThis`, etc.) are shadowed with `undefined`. This closes the most common sandbox-escape vectors while keeping the architecture lightweight. It is **not** the same as process-level isolation; future releases may add iframe or ShadowRealm isolation (Phase 3).
+- Plugin code runs inside a function-scope sandbox: dangerous globals (`fetch`, `indexedDB`, `WebSocket`, `self`, `globalThis`, `Function`, `eval`, `WebAssembly`, etc.) are shadowed or neutered. Runtime guards also override `Function.prototype.constructor` (and async/generator variants) so a plugin cannot recover the real global object via `(function(){}).constructor`. This closes the most common sandbox-escape vectors while keeping the architecture lightweight. It is **not** the same as process-level isolation; future releases may add iframe or ShadowRealm isolation (Phase 3).
 - The worker does **not** receive live API objects. It gets a read-only project snapshot and returns serializable side effects (`appendToCurrentScene`, `log`) that the main thread applies after verifying permissions.
 
 ### Permission Gating

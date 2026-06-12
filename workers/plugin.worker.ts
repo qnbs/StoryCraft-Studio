@@ -39,6 +39,119 @@ interface PluginExecuteResult {
 }
 
 // ---------------------------------------------------------------------------
+// Runtime guard setup
+// ---------------------------------------------------------------------------
+
+// QNBS-v3: Capture the original Function constructor before we install runtime guards.
+// The worker uses this reference to build sandboxed runners; plugin code sees only the
+// guarded (throwing) global Function.
+const GlobalFunction = Function;
+
+const AsyncFunction = (async () => {
+  /** no-op */
+}).constructor as typeof Function;
+const GeneratorFunction = function* () {
+  /** no-op */
+}.constructor as typeof Function;
+const AsyncGeneratorFunction = async function* () {
+  /** no-op */
+}.constructor as typeof Function;
+
+function createDeniedConstructor(name: string): (...args: unknown[]) => never {
+  return function deniedConstructor() {
+    throw new Error(`${name} constructor is disabled inside the plugin sandbox`);
+  };
+}
+
+interface GuardSnapshot {
+  functionConstructor: (typeof Function)['prototype']['constructor'];
+  asyncFunctionConstructor: (typeof Function)['prototype']['constructor'];
+  generatorFunctionConstructor: (typeof Function)['prototype']['constructor'];
+  asyncGeneratorFunctionConstructor: (typeof Function)['prototype']['constructor'];
+  selfFunction: unknown;
+  selfEval: unknown;
+  selfWebAssembly: unknown;
+}
+
+/**
+ * Install runtime guards that close common sandbox-escape paths.
+ *
+ * QNBS-v3: Shadowing dangerous globals as parameters is not enough — a plugin can still
+ * reach the real Function constructor via `(function(){}).constructor`. We therefore
+ * also override `Function.prototype.constructor` (and the async/generator variants) and
+ * the global `Function`/`eval` bindings while the plugin runs, then restore them so the
+ * dedicated worker stays healthy for subsequent tasks and tests.
+ */
+function installRuntimeGuards(): GuardSnapshot {
+  const denied = createDeniedConstructor('Function');
+  const deniedEval = function deniedEval() {
+    throw new Error('eval is disabled inside the plugin sandbox');
+  };
+
+  // Snapshot originals before mutation.
+  const snapshot: GuardSnapshot = {
+    functionConstructor: Function.prototype.constructor,
+    asyncFunctionConstructor: AsyncFunction.prototype.constructor,
+    generatorFunctionConstructor: GeneratorFunction.prototype.constructor,
+    asyncGeneratorFunctionConstructor: AsyncGeneratorFunction.prototype.constructor,
+    selfFunction: (self as unknown as Record<string, unknown>)['Function'],
+    selfEval: (self as unknown as Record<string, unknown>)['eval'],
+    selfWebAssembly: (self as unknown as Record<string, unknown>)['WebAssembly'],
+  };
+
+  // Override the constructors plugin-defined functions would use to build new functions.
+  // QNBS-v3: Some of these prototypes have non-writable but configurable constructors,
+  // so Object.defineProperty is required instead of direct assignment.
+  function defineDenied(proto: typeof Function.prototype, name: string): void {
+    Object.defineProperty(proto, 'constructor', {
+      value: createDeniedConstructor(name),
+      writable: false,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+
+  Function.prototype.constructor = denied;
+  defineDenied(AsyncFunction.prototype, 'AsyncFunction');
+  defineDenied(GeneratorFunction.prototype, 'GeneratorFunction');
+  defineDenied(AsyncGeneratorFunction.prototype, 'AsyncGeneratorFunction');
+
+  // Override global bindings so direct `Function(...)` / `eval(...)` calls fail.
+  // QNBS-v3: `eval` cannot be shadowed as a parameter or var in strict mode, so we neuter
+  // the global binding instead. Plugin code referencing `eval` resolves to this override.
+  (self as unknown as Record<string, unknown>)['Function'] = denied;
+  (self as unknown as Record<string, unknown>)['eval'] = deniedEval;
+  (self as unknown as Record<string, unknown>)['WebAssembly'] = undefined;
+
+  return snapshot;
+}
+
+function restoreRuntimeGuards(snapshot: GuardSnapshot): void {
+  Function.prototype.constructor = snapshot.functionConstructor;
+  Object.defineProperty(AsyncFunction.prototype, 'constructor', {
+    value: snapshot.asyncFunctionConstructor,
+    writable: false,
+    configurable: true,
+    enumerable: false,
+  });
+  Object.defineProperty(GeneratorFunction.prototype, 'constructor', {
+    value: snapshot.generatorFunctionConstructor,
+    writable: false,
+    configurable: true,
+    enumerable: false,
+  });
+  Object.defineProperty(AsyncGeneratorFunction.prototype, 'constructor', {
+    value: snapshot.asyncGeneratorFunctionConstructor,
+    writable: false,
+    configurable: true,
+    enumerable: false,
+  });
+  (self as unknown as Record<string, unknown>)['Function'] = snapshot.selfFunction;
+  (self as unknown as Record<string, unknown>)['eval'] = snapshot.selfEval;
+  (self as unknown as Record<string, unknown>)['WebAssembly'] = snapshot.selfWebAssembly;
+}
+
+// ---------------------------------------------------------------------------
 // Sandbox implementation
 // ---------------------------------------------------------------------------
 
@@ -64,7 +177,33 @@ const DENIED_GLOBALS = new Set<string>([
   'Worker',
   'SharedArrayBuffer',
   'Atomics',
+  'WebAssembly',
+  'Intl',
+  'Function',
+  'constructor',
 ]);
+
+/**
+ * Normalize plugin source so ESM-style entrypoints compile inside a `Function` body.
+ * QNBS-v3: Plugin entrypoints are fetched as text and must not rely on module loaders
+ * inside the worker. We strip import/export statements and convert the common `run`
+ * export forms into a plain script binding.
+ */
+function normalizePluginSource(code: string): string {
+  // Remove full-line import/export declarations.
+  let normalized = code
+    .replace(/^import\s+[^;]+;?\s*$/gm, '')
+    .replace(/^export\s+\{[^}]*\};?\s*$/gm, '');
+
+  // Convert the supported `run` export forms to plain declarations.
+  normalized = normalized
+    .replace(/\bexport\s+async\s+function\s+run\b/g, 'async function run')
+    .replace(/\bexport\s+function\s+run\b/g, 'function run')
+    .replace(/\bexport\s+const\s+run\b/g, 'const run')
+    .replace(/\bexport\s+default\s+[^;]+;?/g, '');
+
+  return normalized.trim();
+}
 
 /**
  * Build a sandboxed runner for plugin code.
@@ -76,6 +215,7 @@ function createSandboxedRunner(
   code: string,
   sandbox: Record<string, unknown>,
 ): () => ((api: Record<string, unknown>) => Promise<void> | void) | undefined {
+  const normalized = normalizePluginSource(code);
   const sandboxKeys = Object.keys(sandbox);
   const sandboxValues = Object.values(sandbox);
 
@@ -92,17 +232,15 @@ function createSandboxedRunner(
   const wrapped = `
 "use strict";
 ${shadowDeclarations}
-var run = undefined;
-${code}
+var run;
+${normalized}
 return typeof run === 'function' ? run : undefined;
 `;
 
   try {
-    // QNBS-v3: `new Function` creates a function in the global scope but with the
-    // parameter list controlling what identifiers are injectable. By not including any
-    // dangerous globals in the parameter list and shadowing them with `var`, the plugin
-    // cannot reach them.
-    const fn = new Function(...sandboxKeys, wrapped);
+    // QNBS-v3: Use the captured original Function constructor so runtime guards do not
+    // prevent us from creating subsequent runners in this dedicated worker.
+    const fn = new GlobalFunction(...sandboxKeys, wrapped);
     return () =>
       fn(...sandboxValues) as ((api: Record<string, unknown>) => Promise<void> | void) | undefined;
   } catch (err) {
@@ -123,7 +261,7 @@ function buildSandboxApi(
   logs: string[],
 ) {
   const granted = new Set(payload.grantedPermissions);
-  const denyAsync = (name: string): never => {
+  const deny = (name: string): never => {
     throw new Error(
       `${name}() is not available inside the worker sandbox. Use pluginRegistry.executeAsync() for plugins that need ${name}.`,
     );
@@ -149,9 +287,11 @@ function buildSandboxApi(
       const entry = typeof message === 'string' ? message : String(message);
       logs.push(entry);
     },
-    generateText: async () => denyAsync('generateText'),
-    storageRead: async () => denyAsync('storageRead'),
-    storageWrite: async () => denyAsync('storageWrite'),
+    // QNBS-v3: These APIs are synchronous throwers. Async throwers would return a rejected
+    // Promise that a plugin could ignore; synchronous throw always propagates to run().
+    generateText: () => deny('generateText'),
+    storageRead: () => deny('storageRead'),
+    storageWrite: () => deny('storageWrite'),
   };
 }
 
@@ -172,12 +312,7 @@ function isPluginExecutePayload(value: unknown): value is PluginExecutePayload {
 
 registerTaskHandler('plugin.execute', async (ctx: WorkerHandlerContext) => {
   if (!isPluginExecutePayload(ctx.payload)) {
-    return {
-      success: false,
-      payload: null,
-      error: 'Invalid plugin.execute payload',
-      latencyMs: 0,
-    };
+    throw new Error('Invalid plugin.execute payload');
   }
 
   const payload = ctx.payload;
@@ -190,23 +325,15 @@ registerTaskHandler('plugin.execute', async (ctx: WorkerHandlerContext) => {
   const runner = createSandboxedRunner(payload.code, { api: sandboxApi });
 
   if (ctx.signal.aborted) {
-    return {
-      success: false,
-      payload: null,
-      error: 'Plugin execution aborted before start',
-      latencyMs: 0,
-    };
+    throw new Error('Plugin execution aborted before start');
   }
+
+  const guardSnapshot = installRuntimeGuards();
 
   try {
     const runFn = runner();
     if (typeof runFn !== 'function') {
-      return {
-        success: false,
-        payload: null,
-        error: `Plugin '${payload.pluginId}' has no exported run() function`,
-        latencyMs: 0,
-      };
+      throw new Error(`Plugin '${payload.pluginId}' has no exported run() function`);
     }
 
     ctx.emitProgress('running', 0.5);
@@ -235,29 +362,15 @@ registerTaskHandler('plugin.execute', async (ctx: WorkerHandlerContext) => {
       logs,
     };
 
-    return {
-      success: true,
-      payload: executeResult,
-      error: null,
-      latencyMs: 0,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      payload: null,
-      error: message,
-      latencyMs: 0,
-    };
+    // QNBS-v3: Return the payload directly. The WorkerBus bootstrap wraps it; throwing here
+    // on failure keeps the worker-bus contract consistent.
+    return executeResult;
+  } finally {
+    restoreRuntimeGuards(guardSnapshot);
   }
 });
 
 // Handle unknown task types gracefully
 registerTaskHandler('plugin.ping', async () => {
-  return {
-    success: true,
-    payload: { status: 'ok', version: '1.0.0' },
-    error: null,
-    latencyMs: 0,
-  };
+  return { status: 'ok', version: '1.0.0' };
 });
