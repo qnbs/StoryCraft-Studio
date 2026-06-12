@@ -26,7 +26,11 @@ export type IconName =
   | 'photo'
   | 'characters'
   | 'world'
-  | 'grip-horizontal';
+  | 'grip-horizontal'
+  | 'send'
+  | 'shield'
+  | 'panel-dock'
+  | 'panel-float';
 
 interface IconProps extends React.SVGAttributes<SVGSVGElement> {
   name: IconName;
@@ -177,6 +181,17 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
   'grip-horizontal': (
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.25h16.5" />
+  ),
+  send: <path d="M3.4 20.4L21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z" />,
+  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+  'panel-dock': (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M15 3v18" />
+    </>
+  ),
+  'panel-float': (
+    <path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h3M16 3h3a2 2 0 012 2v14a2 2 0 01-2 2h-3" />
   ),
 };
 
