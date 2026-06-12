@@ -38,10 +38,23 @@ const MAX_PROPOSED_LENGTH = 1_048_576; // 1 MiB
 
 // QNBS-v3: C0 control characters that are dangerous in manuscript content or may be used for
 // injection. We allow HT (\u0009), LF (\u000A), and CR (\u000D) because they are legitimate
-// whitespace. Built from a string to avoid literal control characters in the source regexp,
-// which Biome's noControlCharactersInRegex rule forbids.
-// biome-ignore lint/complexity/useRegexLiterals: required to avoid literal control characters
-const CONTROL_CHAR_RE = new RegExp('[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]');
+// whitespace. Implemented as a loop to avoid literal control characters in source regexps
+// (Biome's noControlCharactersInRegex rule) and to avoid adding a suppression.
+function containsDisallowedControlChar(text: string): boolean {
+  for (const char of text) {
+    const code = char.codePointAt(0) ?? 0;
+    if (
+      code <= 0x08 ||
+      code === 0x0b ||
+      code === 0x0c ||
+      (code >= 0x0e && code <= 0x1f) ||
+      code === 0x7f
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // QNBS-v3: Lone surrogates are not valid Unicode scalar values and can break serialization,
 // indexing, and downstream exports (PDF/EPUB). JavaScript strings can contain them, so we
@@ -113,7 +126,7 @@ export function validateProposedText(text: string): ProposedTextValidationResult
   if (text.includes('\0')) {
     return { ok: false, reason: 'Proposed text contains null bytes' };
   }
-  if (CONTROL_CHAR_RE.test(text)) {
+  if (containsDisallowedControlChar(text)) {
     return { ok: false, reason: 'Proposed text contains disallowed control characters' };
   }
   if (LONE_SURROGATE_RE.test(text)) {
