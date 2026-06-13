@@ -21,6 +21,7 @@ Status: 🔄 in progress | ⬜ open | ✅ done
 - ✅ **i18n Parity** — `pnpm run i18n:check` grün (2590 Keys × 11 Locales). `ja/zh/pt/el` + `ar/he` erreichen Projekt-Ziel ≤5 % EN-Placeholders; `ar/he` UI vollständig übersetzt, native Review offen. `--quality` Scan zeigt zusätzliche "likely untranslated" Einträge (v.a. technische Begriffe), die kein CI-Gate blockieren — siehe `docs/V1.22-SMOKE-TEST.md` für manuelle Locale-Prüfung.
 - ✅ **Smoke-Test-Protokoll authored** — `docs/V1.22-SMOKE-TEST.md` mit manuellen Szenarien für alle v1.22-Features (AI-Modi, OpenRouter, Copilot v2, Voice-Download, PWA, Core, Tauri).
   - ⬜ **Manuelle Ausführung (Human-only):** Protokoll gegen beide Live-Demos (GH Pages + Vercel) + lokalen Tauri-Build durchspielen und Sign-off-Tabelle ausfüllen. Kein Code-Task — bleibt offen bis ein Tester die Matrix abhakt.
+- ✅ **Plugin Sandbox post-fix validation** — adversarial Worker-Tests ergänzt (WebAssembly-Denial, Generator/AsyncGenerator-Constructor-Escape, Guard-Restoration auf Success- **und** Error-Pfad) in `tests/unit/workers/plugin.worker.test.ts` (23 Tests grün). `pluginRegistry.test.ts` deckt Storage-Key-Validierung (Prefix/Länge/`..`-Traversal/Separatoren) + 2-MiB-Value-Cap bereits ab. Tracking + Follow-up **FU-1** (Function.prototype.constructor Restore-Asymmetrie, low impact) in `docs/AUDIT-PERFECTION-PLAN-v1.23.md`.
 
 ### P1 — Diese Woche
 - ⬜ Coverage-Ziele erreichen (L≥85 %, B≥75 %, F≥80 %) — Fokus AI-Routing, Voice, Copilot.

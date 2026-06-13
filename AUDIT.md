@@ -1646,3 +1646,11 @@ several apply only to dev/test transitive deps and are never shipped to users.
 - `pnpm audit --audit-level=moderate` → 0 vulnerabilities.
 - `.npmrc` hardening active: `strict-dep-builds=true`, `block-exotic-subdeps=true`, `minimum-release-age=10080`.
 - `pnpm outdated` (re-run 2026-06-13): only non-critical patch/minor drift — `@ai-sdk/google|openai|react`, `ai`, `@storybook/*` + `storybook` (10.4.2→10.4.4), `@types/node`, `docx`, `dompurify`, `lint-staged`, `turbo`, `yjs`, `zustand`, `wrangler`. No major versions. `@duckdb/duckdb-wasm` (1.32.0) and `@typescript/native-preview` are dev/pre-release tracks and intentionally pinned.
+
+**Plugin sandbox post-fix validation (2026-06-13):** The v1.22 plugin-isolation hardening
+(`workers/plugin.worker.ts`, `services/pluginRegistry.ts`) is covered by adversarial tests —
+WebAssembly denial, `Function`/`AsyncFunction`/`GeneratorFunction`/`AsyncGeneratorFunction`
+constructor-escape blocks, guard restoration on success + error paths
+(`tests/unit/workers/plugin.worker.test.ts`), and storage-key validation + 2 MiB value cap
+(`tests/unit/pluginRegistry.test.ts`). Open follow-up **FU-1** (Function.prototype.constructor
+restore asymmetry, low impact) tracked in `docs/AUDIT-PERFECTION-PLAN-v1.23.md`.
