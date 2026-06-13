@@ -145,10 +145,28 @@ Wiederhole für alle 18+ Threads in Batches.
 Nach dem Schließen aller Threads:
 
 ```bash
-gh pr comment <NUMMER> --body '@codeant-ai: review'
+gh pr comment <NUMMER> --body '@codeant-ai review'
 ```
 
 Danach keine Live-Watch-Ausgabe der CI; Ergebnisse später aus den Cloud-Artifacts oder der GitHub-UI prüfen.
+
+### 3.7 Iron Rule — Loop bis Ruhe (Abbruchbedingung)
+
+**Der Correction-Loop endet NICHT nach einem Durchgang.** Ein Push, der Kommentare behebt, triggert eine **frische** CodeAnt-Review, die regelmäßig **neue** Findings erzeugt (eine „Welle") — oft als direkte Folge der gerade gemachten Fixes. Jede Welle wird exakt wie die erste behandelt (§3.1 → §3.6).
+
+> **Abbruchbedingung (BEIDES muss gelten):**
+> 1. Eine frisch getriggerte Review liefert **0 neue Inline-Kommentare**, **und**
+> 2. **0** Review-Threads sind unresolved.
+>
+> Solange nicht beides erfüllt ist: **weiter iterieren.** Niemals die PR als fertig erklären, während noch Kommentare eintreffen oder ein Thread offen ist.
+
+### 3.8 Suppression-Ratchet — niemals neue `biome-ignore`
+
+CI erzwingt einen **Suppression-Ratchet** (`scripts/check-suppressions.mjs`, Baseline-Zähler). Ein neues `// biome-ignore` **erhöht den Zähler und lässt das Quality-Gate scheitern**. Daher: ein Lint-Finding **nie** durch Suppression „lösen" — sauber refaktorieren, bis die Regel ehrlich grün ist. Nach jeder Änderung `node scripts/check-suppressions.mjs` → muss `[suppressions] OK` ausgeben.
+
+### 3.9 Kanonische Prozedur
+
+Die vollständige, agenten-übergreifende Referenz dieses Loops liegt in **`docs/CODEANT-REVIEW-LOOP.md`** (Single Source of Truth). Bei Workflow-/Tool-Änderungen dort UND hier aktualisieren.
 
 ---
 
