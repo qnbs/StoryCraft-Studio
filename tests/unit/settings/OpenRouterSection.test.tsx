@@ -265,11 +265,23 @@ describe('OpenRouterSection', () => {
     await user.selectOptions(select, '__custom__');
 
     const customInput = screen.getByLabelText('settings.openRouter.customModelAriaLabel');
+
+    // Blur path: typing then tabbing away commits the value.
     await user.type(customInput, 'custom/model-id');
     await user.tab();
     await waitFor(() =>
       expect(mocks.dispatch).toHaveBeenCalledWith(
         settingsActions.setOpenRouter({ preferredModel: 'custom/model-id' }),
+      ),
+    );
+
+    // Enter path: re-enter a different value and press Enter — covers the keydown commit branch.
+    mocks.dispatch.mockClear();
+    await user.clear(customInput);
+    await user.type(customInput, 'enter/model-id{Enter}');
+    await waitFor(() =>
+      expect(mocks.dispatch).toHaveBeenCalledWith(
+        settingsActions.setOpenRouter({ preferredModel: 'enter/model-id' }),
       ),
     );
   });
@@ -284,6 +296,9 @@ describe('OpenRouterSection', () => {
       name: 'settings.openRouter.testConnection',
     });
     await waitFor(() => expect(testBtn).toBeEnabled());
+    // QNBS-v3: assertCloudAiAllowed also runs during the mount catalog effect; clear its call history
+    // so the assertions below prove the *click* performed the policy check + key validation, not mount.
+    mocks.assertCloudAiAllowed.mockClear();
     await user.click(testBtn);
     await waitFor(() => {
       expect(mocks.assertCloudAiAllowed).toHaveBeenCalledWith('openrouter');
