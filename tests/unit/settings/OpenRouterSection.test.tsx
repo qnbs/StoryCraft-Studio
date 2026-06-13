@@ -278,9 +278,12 @@ describe('OpenRouterSection', () => {
     mocks.getApiKey.mockResolvedValue('stored-key');
     const user = userEvent.setup();
     render(<OpenRouterSection />);
-    // QNBS-v3: Wait for the stored key to load before clicking test connection.
-    await waitFor(() => expect(mocks.getApiKey).toHaveBeenCalledWith('openrouter'));
-    const testBtn = screen.getByText('settings.openRouter.testConnection');
+    // QNBS-v3: Wait for the async key load to enable the button (storedKey set + isKeyLoading false),
+    // not just for getApiKey to be invoked — otherwise the click can land while it's still disabled.
+    const testBtn = await screen.findByRole('button', {
+      name: 'settings.openRouter.testConnection',
+    });
+    await waitFor(() => expect(testBtn).toBeEnabled());
     await user.click(testBtn);
     await waitFor(() => {
       expect(mocks.assertCloudAiAllowed).toHaveBeenCalledWith('openrouter');

@@ -101,7 +101,21 @@ export const OpenRouterSection: FC = () => {
   const dispatch = useAppDispatch();
   const openRouterSettings = useAppSelector((s) => s.settings.openRouter);
   const aiMode = useAppSelector((s) => s.settings.aiMode);
-  const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  // QNBS-v3: Subscribe to online/offline events instead of reading navigator.onLine once at render —
+  // otherwise the offline warning goes stale until an unrelated re-render happens to recompute it.
+  const [isOffline, setIsOffline] = useState(
+    () => typeof navigator !== 'undefined' && navigator.onLine === false,
+  );
+  useEffect(() => {
+    const update = () =>
+      setIsOffline(typeof navigator !== 'undefined' && navigator.onLine === false);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
 
   const enabled = openRouterSettings?.enabled ?? false;
   const preferredModel = openRouterSettings?.preferredModel ?? 'deepseek/deepseek-r1:free';
