@@ -13,17 +13,21 @@
 
 **Quality gate (2026-06-13):** lint ✅ · typecheck ✅ · i18n:check ✅ (**2632 keys × 11 locales**) · targeted unit tests ✅ (`Select` 7, `OpenRouterSection` 10, `openrouterModels` 12, `openrouterProvider` 19).
 
-### CodeAnt AI review (7/7 addressed)
+### CodeAnt AI review (11/11 addressed)
 
 | # | File | Comment | Fix |
 |---|------|---------|-----|
 | 1 | `components/settings/OpenRouterSection.tsx` | Hardcoded free-model labels | Replaced with i18n keys `settings.openRouter.freeModel.*` resolved via `t(...)` |
 | 2 | `components/settings/OpenRouterSection.tsx` | Model-catalog fetch ungated | Added `assertCloudAiAllowed('openrouter')` pre-flight; UI shows `settings.openRouter.policyBlocked` |
 | 3 | `components/settings/OpenRouterSection.tsx` | Test-connection ungated | Same policy gate; returns policy-blocked message if disallowed |
-| 4 | `components/ui/Select.tsx` | Search input stops all keydown propagation | Only `Escape` propagates to document listener; dropdown closes on Escape |
+| 4 | `components/ui/Select.tsx` | Search input stops all keydown propagation | Removed the blanket `onKeyDown` stop so Escape and all other keys bubble normally |
 | 5 | `services/ai/openrouterModels.ts` | `/models` fetch ungated | `assertCloudAiAllowed('openrouter')` before any outbound request |
 | 6 | `services/ai/openrouterModels.ts` | Key-validation probe ungated | Same policy gate before `validateOpenRouterKey` network call |
 | 7 | `services/ai/openrouterModels.ts` | Malformed localStorage cache cast | Added `isValidCacheEntry()` runtime shape check (`fetchedAt` number + `models` array) |
+| 8 | `components/settings/OpenRouterSection.tsx` | Model catalog fetched without API key | Component keeps `storedKey`, passes it to `fetchOpenRouterModels(storedKey ?? undefined)` |
+| 9 | `components/settings/OpenRouterSection.tsx` | Select hidden when catalog fetch fails | Select now always renders with static free-tier + custom options; error shown as non-blocking alert |
+| 10 | `components/settings/OpenRouterSection.tsx` | No re-fetch after key save/clear | `storedKey` state is a dependency of the catalog effect; cache clear triggers refresh with new credentials |
+| 11 | `components/ui/Select.tsx` | Search input blanket `onKeyDown` stop (duplicate path) | Same fix as #4 — propagation stop removed |
 
 ### Delivered
 

@@ -107,7 +107,8 @@ export const OpenRouterSection: FC = () => {
   const preferredModel = openRouterSettings?.preferredModel ?? 'deepseek/deepseek-r1:free';
 
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [hasStoredKey, setHasStoredKey] = useState(false);
+  const [storedKey, setStoredKey] = useState<string | null>(null);
+  const hasStoredKey = Boolean(storedKey);
   const [isKeyLoading, setIsKeyLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -129,7 +130,7 @@ export const OpenRouterSection: FC = () => {
     storageService
       .getApiKey('openrouter')
       .then((k) => {
-        if (!cancelled) setHasStoredKey(Boolean(k));
+        if (!cancelled) setStoredKey(k);
       })
       .catch((err) => {
         logger.error('OpenRouter: failed to read stored API key status', { error: String(err) });
@@ -165,7 +166,7 @@ export const OpenRouterSection: FC = () => {
         return;
       }
       try {
-        const fetched = await fetchOpenRouterModels();
+        const fetched = await fetchOpenRouterModels(storedKey ?? undefined);
         if (!cancelled) setModels(fetched);
       } catch (err) {
         logger.warn('OpenRouter: failed to fetch model catalog', { error: String(err) });
@@ -178,7 +179,7 @@ export const OpenRouterSection: FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [guardPolicy, t]);
+  }, [guardPolicy, storedKey, t]);
 
   // Keep local custom-model state in sync with external Redux changes.
   useEffect(() => {
@@ -215,7 +216,7 @@ export const OpenRouterSection: FC = () => {
     try {
       await storageService.saveApiKey('openrouter', trimmed);
       setApiKeyInput('');
-      setHasStoredKey(true);
+      setStoredKey(trimmed);
       // QNBS-v3: Clear model cache so the next fetch can include private models for this key.
       clearOpenRouterModelCache();
       showSaveMsg(true, t('settings.openRouter.keyStatus.saved'));
@@ -234,7 +235,7 @@ export const OpenRouterSection: FC = () => {
   const handleClearKey = useCallback(async () => {
     try {
       await storageService.clearApiKey('openrouter');
-      setHasStoredKey(false);
+      setStoredKey(null);
       setApiKeyInput('');
       setSaveMsg(null);
       setTestResult(null);
@@ -257,14 +258,13 @@ export const OpenRouterSection: FC = () => {
       setIsTesting(false);
       return;
     }
+    if (!storedKey) {
+      setTestResult({ ok: false, text: t('settings.openRouter.keyError.empty') });
+      setIsTesting(false);
+      return;
+    }
     try {
-      const key = await storageService.getApiKey('openrouter');
-      if (!key) {
-        setTestResult({ ok: false, text: t('settings.openRouter.keyError.empty') });
-        setIsTesting(false);
-        return;
-      }
-      const result = await validateOpenRouterKey(key);
+      const result = await validateOpenRouterKey(storedKey);
       if (result.ok) {
         setTestResult({ ok: true, text: t('settings.openRouter.testConnectionOk') });
       } else if (result.error === 'INVALID_KEY') {
@@ -280,7 +280,7 @@ export const OpenRouterSection: FC = () => {
     } finally {
       setIsTesting(false);
     }
-  }, [guardPolicy, t]);
+  }, [guardPolicy, storedKey, t]);
 
   const handleModelChange = useCallback(
     (value: string) => {
@@ -530,16 +530,18 @@ export const OpenRouterSection: FC = () => {
             >
               {t('settings.openRouter.preferredModel')}
             </label>
-            {isModelsLoading ? (
+            {isModelsLoading && (
               <div className="flex items-center gap-2 text-xs text-[var(--sc-text-muted)]">
                 <Spinner className="h-3 w-3" />
                 {t('settings.openRouter.modelFetch.loading')}
               </div>
-            ) : modelFetchError ? (
+            )}
+            {modelFetchError && (
               <p className="text-xs text-[var(--sc-danger-fg)]" role="alert">
                 {modelFetchError}
               </p>
-            ) : (
+            )}
+            {!isModelsLoading && (
               <Select
                 id="openrouter-model"
                 value={selectValue}
@@ -547,6 +549,7 @@ export const OpenRouterSection: FC = () => {
                 groups={modelGroups}
                 placeholder={t('settings.openRouter.modelPlaceholder')}
                 ariaLabel={t('settings.openRouter.modelAriaLabel')}
+                disabled={Boolean(modelFetchError)}
                 searchable
                 searchPlaceholder={t('settings.openRouter.modelPlaceholder')}
               />
