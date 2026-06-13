@@ -20,10 +20,6 @@ on:
           - incremental
           - force
           - force-all-modules
-      break_threshold:
-        description: 'Break threshold (empty = use stryker.conf.json value)'
-        required: false
-        default: ''
       per_job_concurrency:
         description: 'Concurrency per job (default: 3)'
         required: false
@@ -116,8 +112,7 @@ jobs:
             $FORCE_FLAG \
             --concurrency "$CONCURRENCY" \
             --mutate "${{ matrix.mutate }}" \
-            --reporters progress,json,html \
-            --breakAt 75
+            --reporters progress,json,html
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
