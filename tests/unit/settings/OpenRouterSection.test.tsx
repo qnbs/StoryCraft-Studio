@@ -100,6 +100,9 @@ vi.mock('../../../components/ui/Select', () => ({
       options,
       groups,
       ariaLabel,
+      // QNBS-v3: Drop design-system-only props that do not exist on a native <select>.
+      searchable: _searchable,
+      searchPlaceholder: _searchPlaceholder,
       ...rest
     }: {
       value: string;
@@ -110,6 +113,8 @@ vi.mock('../../../components/ui/Select', () => ({
         options: Array<{ value: string; label: string; disabled?: boolean }>;
       }>;
       ariaLabel?: string;
+      searchable?: boolean;
+      searchPlaceholder?: string;
       [key: string]: unknown;
     }) => (
       <select
@@ -176,11 +181,17 @@ import { settingsActions } from '../../../features/settings/settingsSlice';
 
 describe('OpenRouterSection', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.getApiKey.mockResolvedValue(null);
+    vi.resetAllMocks();
+    mocks.dispatch.mockImplementation(() => undefined);
     mocks.fetchModels.mockResolvedValue([]);
     mocks.validateKey.mockResolvedValue({ ok: true });
     mocks.assertCloudAiAllowed.mockResolvedValue(undefined);
+    mocks.saveApiKey.mockResolvedValue(undefined);
+    mocks.clearApiKey.mockResolvedValue(undefined);
+    mocks.getApiKey.mockResolvedValue(null);
+    mocks.clearCache.mockImplementation(() => undefined);
+    mocks.resetCircuit.mockImplementation(() => undefined);
+    mocks.isCircuitOpen.mockReturnValue(false);
   });
 
   it('renders title, toggle, key input and model selector', async () => {
@@ -267,7 +278,9 @@ describe('OpenRouterSection', () => {
     mocks.getApiKey.mockResolvedValue('stored-key');
     const user = userEvent.setup();
     render(<OpenRouterSection />);
-    const testBtn = await waitFor(() => screen.getByText('settings.openRouter.testConnection'));
+    // QNBS-v3: Wait for the stored key to load before clicking test connection.
+    await waitFor(() => expect(mocks.getApiKey).toHaveBeenCalledWith('openrouter'));
+    const testBtn = screen.getByText('settings.openRouter.testConnection');
     await user.click(testBtn);
     await waitFor(() => {
       expect(mocks.assertCloudAiAllowed).toHaveBeenCalledWith('openrouter');

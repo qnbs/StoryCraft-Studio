@@ -44,7 +44,14 @@ function isBrowser(): boolean {
 function isValidCacheEntry(parsed: unknown): parsed is CacheEntry {
   if (!parsed || typeof parsed !== 'object') return false;
   const p = parsed as Record<string, unknown>;
-  return typeof p['fetchedAt'] === 'number' && Array.isArray(p['models']);
+  if (typeof p['fetchedAt'] !== 'number' || !Array.isArray(p['models'])) return false;
+  // QNBS-v3: Ensure every cached model has a string id so downstream consumers can rely on it.
+  return p['models'].every(
+    (m) =>
+      m !== null &&
+      typeof m === 'object' &&
+      typeof (m as Record<string, unknown>)['id'] === 'string',
+  );
 }
 
 function readCache(): CacheEntry | null {
@@ -55,7 +62,11 @@ function readCache(): CacheEntry | null {
     const parsed = JSON.parse(raw) as unknown;
     if (!isValidCacheEntry(parsed)) return null;
     if (Date.now() - parsed.fetchedAt > CACHE_TTL_MS) return null;
-    return parsed;
+    // QNBS-v3: Normalize cached items so malformed entries cannot leak bad field types downstream.
+    const normalized = (parsed.models as unknown[])
+      .map(normalizeModel)
+      .filter((m): m is OpenRouterModel => m !== null);
+    return { fetchedAt: parsed.fetchedAt, models: normalized };
   } catch {
     return null;
   }
@@ -111,6 +122,7 @@ export async function fetchOpenRouterModels(
   const res = await fetch(MODELS_URL, {
     method: 'GET',
     headers,
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

@@ -170,7 +170,11 @@ export const OpenRouterSection: FC = () => {
         if (!cancelled) setModels(fetched);
       } catch (err) {
         logger.warn('OpenRouter: failed to fetch model catalog', { error: String(err) });
-        if (!cancelled) setModelFetchError(t('settings.openRouter.modelFetch.failed'));
+        if (!cancelled) {
+          setModelFetchError(t('settings.openRouter.modelFetch.failed'));
+          // QNBS-v3: Drop stale paid models on error so the Select only offers guaranteed options.
+          setModels([]);
+        }
       } finally {
         if (!cancelled) setIsModelsLoading(false);
       }
@@ -186,10 +190,11 @@ export const OpenRouterSection: FC = () => {
     const free = OPENROUTER_FREE_MODELS.includes(
       preferredModel as (typeof OPENROUTER_FREE_MODELS)[number],
     );
-    setIsCustomModel(!free);
-    if (free) setCustomModelInput('');
+    const knownPaid = models.some((m) => m.id === preferredModel);
+    setIsCustomModel(!free && !knownPaid);
+    if (free || knownPaid) setCustomModelInput('');
     else setCustomModelInput(preferredModel);
-  }, [preferredModel]);
+  }, [preferredModel, models]);
 
   const showSaveMsg = useCallback((ok: boolean, text: string) => {
     setSaveMsg({ ok, text });
@@ -217,8 +222,9 @@ export const OpenRouterSection: FC = () => {
       await storageService.saveApiKey('openrouter', trimmed);
       setApiKeyInput('');
       setStoredKey(trimmed);
-      // QNBS-v3: Clear model cache so the next fetch can include private models for this key.
+      // QNBS-v3: Clear model cache and in-memory list so the next fetch can include private models for this key.
       clearOpenRouterModelCache();
+      setModels([]);
       showSaveMsg(true, t('settings.openRouter.keyStatus.saved'));
     } catch (err) {
       logger.error('OpenRouter: failed to save API key', { error: String(err) });
@@ -240,6 +246,7 @@ export const OpenRouterSection: FC = () => {
       setSaveMsg(null);
       setTestResult(null);
       clearOpenRouterModelCache();
+      setModels([]);
     } catch (err) {
       logger.error('OpenRouter: failed to clear API key', { error: String(err) });
       announceError(
@@ -321,14 +328,17 @@ export const OpenRouterSection: FC = () => {
     };
   }, []);
 
+  const knownPaidIds = useMemo(() => new Set(models.map((m) => m.id)), [models]);
+
   const selectValue = useMemo(() => {
     if (isCustomModel) return CUSTOM_MODEL_VALUE;
-    return OPENROUTER_FREE_MODELS.includes(
+    const free = OPENROUTER_FREE_MODELS.includes(
       preferredModel as (typeof OPENROUTER_FREE_MODELS)[number],
-    )
-      ? preferredModel
-      : CUSTOM_MODEL_VALUE;
-  }, [isCustomModel, preferredModel]);
+    );
+    // QNBS-v3: Paid catalog models are known by id, so keep the real value instead of falling back to custom.
+    if (free || knownPaidIds.has(preferredModel)) return preferredModel;
+    return CUSTOM_MODEL_VALUE;
+  }, [isCustomModel, preferredModel, knownPaidIds]);
 
   const modelOptions = useMemo(
     () =>
@@ -549,7 +559,6 @@ export const OpenRouterSection: FC = () => {
                 groups={modelGroups}
                 placeholder={t('settings.openRouter.modelPlaceholder')}
                 ariaLabel={t('settings.openRouter.modelAriaLabel')}
-                disabled={Boolean(modelFetchError)}
                 searchable
                 searchPlaceholder={t('settings.openRouter.modelPlaceholder')}
               />
