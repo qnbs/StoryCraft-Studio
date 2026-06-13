@@ -137,6 +137,9 @@ export const OpenRouterSection: FC = () => {
   );
   const [customModelInput, setCustomModelInput] = useState(isCustomModel ? preferredModel : '');
   const saveMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // QNBS-v3: Set once the user saves/clears a key, so a slower initial getApiKey load can't resolve
+  // afterwards and overwrite the user's newer key state with a stale value.
+  const keyOverriddenRef = useRef(false);
 
   // Load stored key status on mount.
   useEffect(() => {
@@ -144,7 +147,8 @@ export const OpenRouterSection: FC = () => {
     storageService
       .getApiKey('openrouter')
       .then((k) => {
-        if (!cancelled) setStoredKey(k);
+        // QNBS-v3: Drop the result if the user already saved/cleared a key while this was in flight.
+        if (!cancelled && !keyOverriddenRef.current) setStoredKey(k);
       })
       .catch((err) => {
         logger.error('OpenRouter: failed to read stored API key status', { error: String(err) });
@@ -255,6 +259,8 @@ export const OpenRouterSection: FC = () => {
       // QNBS-v3: Detect a same-value save BEFORE updating state — React skips a no-op setStoredKey,
       // so the storedKey effect wouldn't re-run in that case.
       const keyUnchanged = trimmed === storedKey;
+      // QNBS-v3: Mark the key as user-overridden so a still-in-flight initial load can't clobber it.
+      keyOverriddenRef.current = true;
       await storageService.saveApiKey('openrouter', trimmed);
       setApiKeyInput('');
       setStoredKey(trimmed);
@@ -284,6 +290,8 @@ export const OpenRouterSection: FC = () => {
 
   const handleClearKey = useCallback(async () => {
     try {
+      // QNBS-v3: Mark as user-overridden so a still-in-flight initial load can't re-populate the key.
+      keyOverriddenRef.current = true;
       await storageService.clearApiKey('openrouter');
       setStoredKey(null);
       setApiKeyInput('');

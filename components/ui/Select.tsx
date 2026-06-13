@@ -55,7 +55,9 @@ function useSelectDropdown() {
 }
 
 function matchesSearch(label: string, query: string): boolean {
-  return label.toLowerCase().includes(query.toLowerCase());
+  // QNBS-v3: Trim the query so leading/trailing whitespace doesn't produce a false "no results"
+  // state — a whitespace-only query matches everything (no filter) rather than nothing.
+  return label.toLowerCase().includes(query.trim().toLowerCase());
 }
 
 export const Select = React.memo(
