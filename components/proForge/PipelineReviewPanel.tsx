@@ -18,9 +18,9 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { Icon } from '../ui/Icon';
 
 const SEVERITY_ICONS: Record<string, React.ReactNode> = {
-  critical: <Icon name="error" size="sm" aria-hidden="true" />,
-  warning: <Icon name="warning" size="sm" aria-hidden="true" />,
-  info: <Icon name="info" size="sm" aria-hidden="true" />,
+  critical: <Icon name="error" size="sm" aria-hidden="true" data-testid="severity-icon-critical" />,
+  warning: <Icon name="warning" size="sm" aria-hidden="true" data-testid="severity-icon-warning" />,
+  info: <Icon name="info" size="sm" aria-hidden="true" data-testid="severity-icon-info" />,
 };
 
 const SEVERITY_GROUPS = [

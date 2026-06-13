@@ -222,10 +222,11 @@ export const ProForgeDashboard: React.FC = () => {
                         active ? 'ring-2 ring-[var(--sc-ring-focus)]' : ''
                       }`}
                       style={{
+                        // QNBS-v3: color-mix keeps CSS variable stage colors valid (hex-alpha suffix only worked for literal hex).
                         backgroundColor:
                           status === 'pending'
                             ? 'var(--sc-surface-base)'
-                            : `${STAGE_COLORS[status]}15`,
+                            : `color-mix(in srgb, ${STAGE_COLORS[status]} 8%, transparent)`,
                         borderColor: STAGE_COLORS[status],
                         color: STAGE_COLORS[status],
                       }}

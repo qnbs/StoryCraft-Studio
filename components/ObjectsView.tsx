@@ -302,7 +302,11 @@ const ObjectCard: FC<{ obj: StoryObject }> = ({ obj }) => {
             <span
               key={g.id}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-              style={{ backgroundColor: `${g.color}22`, color: g.color }}
+              // QNBS-v3: color-mix keeps CSS variable group colors valid (hex-alpha suffix only worked for literal hex).
+              style={{
+                backgroundColor: `color-mix(in srgb, ${g.color} 13%, transparent)`,
+                color: g.color,
+              }}
             >
               <span
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -358,7 +362,8 @@ const GroupCard: FC<{ group: ObjectGroup }> = ({ group }) => {
   return (
     <div
       className="bg-[var(--sc-surface-raised)] border rounded-xl p-4 flex flex-col gap-2"
-      style={{ borderColor: `${group.color}66` }}
+      // QNBS-v3: color-mix keeps CSS variable group colors valid (hex-alpha suffix only worked for literal hex).
+      style={{ borderColor: `color-mix(in srgb, ${group.color} 40%, transparent)` }}
     >
       <div className="flex items-center gap-2">
         <span
