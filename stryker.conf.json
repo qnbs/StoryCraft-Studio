@@ -6,7 +6,7 @@
     "configFile": "vitest.config.ts",
     "disableRelatedTests": true
   },
-  "coverageAnalysis": "all",
+  "coverageAnalysis": "perTest",
   "ignoreStatic": true,
   "incremental": true,
   "incrementalFile": "reports/stryker-incremental.json",

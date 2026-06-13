@@ -21,9 +21,9 @@ on:
           - force
           - force-all-modules
       per_job_concurrency:
-        description: 'Concurrency per job (default: 3)'
+        description: 'Concurrency per job (default: 2)'
         required: false
-        default: '3'
+        default: '2'
 
 concurrency:
   group: mutation-${{ github.ref }}
@@ -175,6 +175,6 @@ jobs:
           done
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "> Mode: \`${{ github.event.inputs.mode || 'incremental' }}\` | Concurrency: \`${{ github.event.inputs.per_job_concurrency || '3' }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "> Mode: \`${{ github.event.inputs.mode || 'incremental' }}\` | Concurrency: \`${{ github.event.inputs.per_job_concurrency || '2' }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "> Threshold: break ≥ 75 | low ≥ 70 | high ≥ 85" >> "$GITHUB_STEP_SUMMARY"
           echo "> Individual HTML/JSON reports are available as artifacts." >> "$GITHUB_STEP_SUMMARY"
