@@ -3,7 +3,7 @@
  * QNBS-v3: Covers delay computation, Retry-After parsing, and the withTransientRetry orchestrator.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AI_RETRY_BASE_DELAY_MS,
   AI_RETRY_MAX_RETRY_AFTER_MS,
@@ -135,6 +135,13 @@ describe('withTransientRetry', () => {
     mockClassify.mockReturnValue({ retryable: true, category: 'transient' });
   });
 
+  // QNBS-v3: Retry-path tests fake the timer so backoff delays advance explicitly instead of
+  // waiting on real wall-clock time; guaranteed restore here prevents fake timers from leaking
+  // into later tests if an assertion throws early.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('returns result on first successful call', async () => {
     const fn = vi.fn().mockResolvedValue('ok');
     const result = await withTransientRetry(fn, { attempts: 2 });
@@ -143,13 +150,11 @@ describe('withTransientRetry', () => {
   });
 
   it('retries on retryable error and eventually succeeds', async () => {
+    vi.useFakeTimers();
     const fn = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValue('ok');
-    const result = await withTransientRetry(fn, {
-      attempts: 3,
-      baseDelayMs: 1,
-      jitter: false,
-    });
-    expect(result).toBe('ok');
+    const promise = withTransientRetry(fn, { attempts: 3, baseDelayMs: 1, jitter: false });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBe('ok');
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
@@ -163,17 +168,21 @@ describe('withTransientRetry', () => {
   });
 
   it('throws last error after exhausting attempts', async () => {
+    vi.useFakeTimers();
     const fn = vi.fn().mockRejectedValue(new Error('persistent'));
-    await expect(
-      withTransientRetry(fn, { attempts: 2, baseDelayMs: 1, jitter: false }),
-    ).rejects.toThrow('persistent');
+    const promise = withTransientRetry(fn, { attempts: 2, baseDelayMs: 1, jitter: false });
+    const assertion = expect(promise).rejects.toThrow('persistent');
+    await vi.runAllTimersAsync();
+    await assertion;
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
   it('uses Retry-After when present', async () => {
+    vi.useFakeTimers();
     const fn = vi.fn().mockRejectedValueOnce({ retryAfterMs: 1 }).mockResolvedValue('ok');
-    const result = await withTransientRetry(fn, { attempts: 2, baseDelayMs: 1000, jitter: false });
-    expect(result).toBe('ok');
+    const promise = withTransientRetry(fn, { attempts: 2, baseDelayMs: 1000, jitter: false });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBe('ok');
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
@@ -183,14 +192,16 @@ describe('withTransientRetry', () => {
   });
 
   it('uses custom shouldRetry predicate', async () => {
+    vi.useFakeTimers();
     const fn = vi.fn().mockRejectedValueOnce(new Error('maybe')).mockResolvedValue('ok');
     const shouldRetry = (err: unknown) => (err as Error).message === 'maybe';
-    const result = await withTransientRetry(fn, {
+    const promise = withTransientRetry(fn, {
       attempts: 2,
       baseDelayMs: 1,
       jitter: false,
       shouldRetry,
     });
-    expect(result).toBe('ok');
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBe('ok');
   });
 });

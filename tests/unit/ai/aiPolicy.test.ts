@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setActiveAiMode } from '../../../services/ai/aiModeService';
 import {
   assertCloudAiAllowed,
@@ -50,6 +50,13 @@ describe('assertLoraLocalOnly', () => {
 });
 
 describe('assertCloudAiAllowedSync', () => {
+  // QNBS-v3: Guaranteed teardown — this suite mutates the singleton AI mode; reset it to the
+  // default 'hybrid' after every test so an early-failing assertion can't leak the wrong mode
+  // into later tests and cause cascading false failures.
+  afterEach(() => {
+    setActiveAiMode('hybrid');
+  });
+
   it('does not throw for ollama (local provider)', () => {
     expect(() => assertCloudAiAllowedSync('ollama', undefined)).not.toThrow();
   });
@@ -127,7 +134,6 @@ describe('assertCloudAiAllowedSync', () => {
       shareUsageData: false,
     };
     expect(() => assertCloudAiAllowedSync('gemini', privacy)).toThrow('local-only');
-    setActiveAiMode('hybrid');
   });
 
   it('does not throw for gemini when only euDataResidency is true', () => {

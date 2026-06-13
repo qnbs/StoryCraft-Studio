@@ -3,7 +3,7 @@
  * QNBS-v3: Covers task-based model selection and the Ollama speed probe.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceHealthReport } from '../../../services/ai/deviceHealthService';
 import {
   ECO_TEXT_GEN_MODEL,
@@ -83,25 +83,30 @@ describe('RECOMMENDED_OLLAMA_MODEL_IDS', () => {
 });
 
 describe('getProviderSpeedEstimate', () => {
+  // QNBS-v3: Guaranteed teardown — restore globals + spies even if an assertion throws early,
+  // so a failed test can never leave the fetch stub or performance.now spy active for later tests.
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('returns round-trip latency on successful probe', async () => {
+    // QNBS-v3: Fake the clock so latency is a deterministic value, not real wall-clock time.
+    vi.spyOn(performance, 'now').mockReturnValueOnce(1_000).mockReturnValueOnce(1_100);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     const latency = await getProviderSpeedEstimate('http://localhost:11434');
-    expect(Number.isFinite(latency)).toBe(true);
-    expect(latency).toBeGreaterThanOrEqual(0);
-    vi.unstubAllGlobals();
+    expect(latency).toBe(100);
   });
 
   it('returns Infinity on non-OK response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 500 })));
     const latency = await getProviderSpeedEstimate('http://localhost:11434');
     expect(latency).toBe(Number.POSITIVE_INFINITY);
-    vi.unstubAllGlobals();
   });
 
   it('returns Infinity on network error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('net')));
     const latency = await getProviderSpeedEstimate('http://localhost:11434');
     expect(latency).toBe(Number.POSITIVE_INFINITY);
-    vi.unstubAllGlobals();
   });
 });
