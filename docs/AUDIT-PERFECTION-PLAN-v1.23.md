@@ -69,6 +69,15 @@ a CodeAnt-caught regression.
 - **i18n / UI mapping of `messageKey` deferred to Batch 1.2** (avoids 11-locale churn here).
 - **FU-1 split out of this batch** (see follow-ups).
 
+### Batch 1.2 — user-facing AI error messages (Phase 1)
+- Realigned the taxonomy `messageKey` to the existing singular `error.ai.*` convention and added
+  9 `error.ai.<category>` keys to all 11 locales (`common.json`; translated de/en/es/fr/it,
+  English fallback Beta/RTL) — 2599 keys, `i18n:check` green.
+- `getAiErrorMessage(err, t)` helper + wired into `useGlobalCopilot` `onError` so the Copilot
+  shows an actionable, localized message (e.g. "Invalid API key — open Settings → AI…") instead
+  of the generic `copilot.error`. +helper test + 2 onError tests.
+- Out of scope (later): action buttons; Writer/other AI call sites (helper is ready).
+
 ---
 
 ## 4. Decisions & follow-ups
