@@ -217,6 +217,7 @@ describe('plugin.worker', () => {
       const originalFunction = selfRef['Function'];
       const originalEval = selfRef['eval'];
       const originalWebAssembly = selfRef['WebAssembly'];
+      const originalFnProtoConstructor = Function.prototype.constructor;
 
       const ctx = makeContext({
         payload: {
@@ -229,13 +230,12 @@ describe('plugin.worker', () => {
       await handler(ctx);
 
       // QNBS-v3: install/restore must be balanced so the dedicated worker keeps a healthy
-      // global scope for subsequent tasks. The self.* bindings round-trip to their
-      // captured originals. (NOTE: Function.prototype.constructor does NOT round-trip to
-      // its pre-call value — tracked as a follow-up; benign because createSandboxedRunner
-      // compiles via the captured GlobalFunction, not Function.prototype.constructor.)
+      // global scope for subsequent tasks — both the self.* bindings and the patched
+      // Function.prototype.constructor round-trip to their captured originals (FU-1).
       expect(selfRef['Function']).toBe(originalFunction);
       expect(selfRef['eval']).toBe(originalEval);
       expect(selfRef['WebAssembly']).toBe(originalWebAssembly);
+      expect(Function.prototype.constructor).toBe(originalFnProtoConstructor);
     });
 
     it('restores the self global bindings even after a plugin throws', async () => {
@@ -245,6 +245,7 @@ describe('plugin.worker', () => {
       const selfRef = self as unknown as Record<string, unknown>;
       const originalFunction = selfRef['Function'];
       const originalWebAssembly = selfRef['WebAssembly'];
+      const originalFnProtoConstructor = Function.prototype.constructor;
 
       const ctx = makeContext({
         payload: {
@@ -259,6 +260,30 @@ describe('plugin.worker', () => {
       // QNBS-v3: the finally block restores guards on the error path too.
       expect(selfRef['Function']).toBe(originalFunction);
       expect(selfRef['WebAssembly']).toBe(originalWebAssembly);
+      expect(Function.prototype.constructor).toBe(originalFnProtoConstructor);
+    });
+
+    it('keeps Function.prototype.constructor native across sequential plugin runs', async () => {
+      const handler = registeredHandlers.get('plugin.execute');
+      if (!handler) throw new Error('plugin.execute handler not registered');
+
+      const native = Function.prototype.constructor;
+      const makeRun = () =>
+        makeContext({
+          payload: {
+            pluginId: 'sequential',
+            code: 'run = (api) => { api.log("x"); };',
+            grantedPermissions: [],
+            readApiSnapshot: { projectTitle: '', sceneTitles: [] },
+          },
+        });
+
+      // QNBS-v3 (FU-1): two runs in a row must each leave the real constructor restored — the
+      // guard previously leaked because restore went through the poisoned `self.Function`.
+      await handler(makeRun());
+      expect(Function.prototype.constructor).toBe(native);
+      await handler(makeRun());
+      expect(Function.prototype.constructor).toBe(native);
     });
   });
 

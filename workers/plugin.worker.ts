@@ -89,8 +89,12 @@ function installRuntimeGuards(): GuardSnapshot {
   };
 
   // Snapshot originals before mutation.
+  // QNBS-v3 (FU-1): use the module-captured GlobalFunction, never the bare `Function`
+  // identifier — install reassigns the global `self.Function` to the denied stub below, so a
+  // later free `Function.prototype.constructor` reference would resolve to `denied.prototype`,
+  // not the real Function.prototype, and the constructor guard would never round-trip.
   const snapshot: GuardSnapshot = {
-    functionConstructor: Function.prototype.constructor,
+    functionConstructor: GlobalFunction.prototype.constructor,
     asyncFunctionConstructor: AsyncFunction.prototype.constructor,
     generatorFunctionConstructor: GeneratorFunction.prototype.constructor,
     asyncGeneratorFunctionConstructor: AsyncGeneratorFunction.prototype.constructor,
@@ -111,7 +115,7 @@ function installRuntimeGuards(): GuardSnapshot {
     });
   }
 
-  Function.prototype.constructor = denied;
+  GlobalFunction.prototype.constructor = denied;
   defineDenied(AsyncFunction.prototype, 'AsyncFunction');
   defineDenied(GeneratorFunction.prototype, 'GeneratorFunction');
   defineDenied(AsyncGeneratorFunction.prototype, 'AsyncGeneratorFunction');
@@ -127,7 +131,10 @@ function installRuntimeGuards(): GuardSnapshot {
 }
 
 function restoreRuntimeGuards(snapshot: GuardSnapshot): void {
-  Function.prototype.constructor = snapshot.functionConstructor;
+  // QNBS-v3 (FU-1): GlobalFunction, not the bare `Function` identifier — `self.Function` is
+  // still the denied stub at this point (it is restored further down), so a free `Function`
+  // reference here would patch the stub's prototype and leak the guard across runs.
+  GlobalFunction.prototype.constructor = snapshot.functionConstructor;
   Object.defineProperty(AsyncFunction.prototype, 'constructor', {
     value: snapshot.asyncFunctionConstructor,
     writable: false,
