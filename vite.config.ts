@@ -159,39 +159,31 @@ export default defineConfig({
           if (id.includes('packages/ai-core/src/vendor-onnx')) {
             return 'vendor-onnx';
           }
-          // @domain/ai-core source code (orchestration, tab leader, model lists) — keep it small
-          // and separate from the heavy runtime libraries so the chunk does not exceed budget.
-          if (
-            (id.includes('packages/ai-core') || id.includes('.pnpm/@domain+ai-core')) &&
-            !id.includes('vendor-webllm') &&
-            !id.includes('vendor-transformers') &&
-            !id.includes('vendor-onnx')
-          ) {
-            return 'vendor-ai-core';
-          }
-          // QNBS-v3: WebLLM runtime (~4-5 MB uncompressed) — lazy-loaded when local GPU inference is requested.
-          if (
-            id.includes('.pnpm/@mlc-ai+web-llm') ||
-            id.includes('node_modules/@mlc-ai/web-llm') ||
-            id.includes('packages/ai-core/node_modules/@mlc-ai/web-llm')
-          ) {
+          // QNBS-v3: Heavy AI runtimes route to dedicated lazy chunks. These MUST match BEFORE the
+          // @domain/ai-core source catch-all below — otherwise deps resolved under
+          // packages/ai-core/node_modules/* get swept into the precacheable vendor-ai-core chunk,
+          // re-bloating it and defeating lazy-loading (CodeAnt PR #130). The generic
+          // `node_modules/<pkg>` substring already covers the packages/ai-core/node_modules/<pkg> case.
+          // WebLLM runtime (~4-5 MB uncompressed) — lazy-loaded when local GPU inference is requested.
+          if (id.includes('.pnpm/@mlc-ai+web-llm') || id.includes('node_modules/@mlc-ai/web-llm')) {
             return 'vendor-webllm';
           }
-          // QNBS-v3: ONNX Runtime Web (~0.5 MB uncompressed) — shared by transformers.js and the ONNX engine.
-          if (
-            id.includes('.pnpm/onnxruntime-web') ||
-            id.includes('node_modules/onnxruntime-web') ||
-            id.includes('packages/ai-core/node_modules/onnxruntime-web')
-          ) {
+          // ONNX Runtime Web (~0.5 MB uncompressed) — shared by transformers.js and the ONNX engine.
+          if (id.includes('.pnpm/onnxruntime-web') || id.includes('node_modules/onnxruntime-web')) {
             return 'vendor-onnx';
           }
-          // QNBS-v3: Transformers.js (~1 MB uncompressed) — lazy-loaded for WASM text-generation fallback.
+          // Transformers.js (~1 MB uncompressed) — lazy-loaded for WASM text-generation fallback.
           if (
             id.includes('.pnpm/@huggingface+transformers') ||
-            id.includes('node_modules/@huggingface/transformers') ||
-            id.includes('packages/ai-core/node_modules/@huggingface/transformers')
+            id.includes('node_modules/@huggingface/transformers')
           ) {
             return 'vendor-transformers';
+          }
+          // @domain/ai-core source code (orchestration, tab leader, model lists) — small and
+          // precacheable. Heavy runtimes are already routed above, so this only captures ai-core
+          // source plus any lightweight deps it pulls in.
+          if (id.includes('packages/ai-core') || id.includes('.pnpm/@domain+ai-core')) {
+            return 'vendor-ai-core';
           }
           if (id.includes('packages/collab-transport')) {
             return 'collaboration-vendor';
