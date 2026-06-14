@@ -5,7 +5,7 @@
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CopilotMessageList } from '../../../components/copilot/CopilotMessageList';
 import type { CopilotMessage } from '../../../features/copilot/copilotSlice';
 
@@ -13,9 +13,14 @@ vi.mock('../../../components/ui/Spinner', () => ({
   Spinner: () => <div data-testid="copilot-spinner" />,
 }));
 
+// jsdom does not implement scrollIntoView (called in the auto-scroll effect). Stub it, then restore
+// the original in afterAll so this prototype patch can't leak into other suites (CodeAnt #136).
+const originalScrollIntoView = Element.prototype.scrollIntoView;
 beforeAll(() => {
-  // jsdom does not implement scrollIntoView (called in the auto-scroll effect).
   Element.prototype.scrollIntoView = vi.fn();
+});
+afterAll(() => {
+  Element.prototype.scrollIntoView = originalScrollIntoView;
 });
 
 let idCounter = 0;
