@@ -404,10 +404,13 @@ export const OpenRouterSection: FC = () => {
     [commitCustomModel],
   );
 
-  // Cleanup timer on unmount.
+  // Cleanup on unmount.
   useEffect(() => {
     return () => {
       if (saveMsgTimer.current) clearTimeout(saveMsgTimer.current);
+      // QNBS-v3: Invalidate any in-flight connection test so a late response can't call
+      // setTestResult/setIsTesting on an unmounted component.
+      testSeqRef.current++;
     };
   }, []);
 
