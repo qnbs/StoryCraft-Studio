@@ -45,7 +45,7 @@
   "collab.technicalDescription": "A colaboração usa Yjs + WebRTC para sincronização P2P. Os dados são transferidos diretamente entre navegadores — nenhum servidor armazena seu conteúdo.",
   "collab.technicalNote": "Nota Técnica",
   "collab.title": "Colaboração",
-  "collab.user": "Nome de usuário}}",
+  "collab.user": "Nome de usuário: {{name}}",
   "collab.waitingForUsers": "Aguardando mais participantes…",
   "collab.waitingForUsersHint": "Compartilhe o código da sala com seus parceiros de redação para convidá-los.",
   "collab.you": "Você",

@@ -5,9 +5,14 @@
  * runtime bug classes slipped through (fixed 2026-06-14):
  *   1. single-brace `{view}` placeholders — the I18nContext only interpolates `{{...}}`, so single
  *      braces render literally (user saw "Du bist hier: {view}", "common.abort", etc.).
- *   2. translated placeholder NAMES — es/pt localized `{count}`→`{contar}` / `{seconds}`→`{segundos}`,
- *      which never match the param names the code passes.
+ *   2. translated placeholder NAMES — es/pt localized `{count}`→`{contar}` / `{seconds}`→`{segundos}`
+ *      / `{{count}}`→`{{contagem}}`, which never match the param names the code passes.
  * This guard fails CI if either recurs in any of the 11 shipped locale bundles.
+ *
+ * QNBS-v3: token patterns use the Unicode letter class `\p{L}` (not `[A-Za-z]`) so a token name
+ * localized into a non-ASCII script (e.g. `{{タイトル}}`, the ja-writer bug class) is still detected
+ * rather than silently skipped (CodeAnt #135). The consistency check is bidirectional: a translation
+ * may neither INTRODUCE an unknown token nor DROP one the English source requires.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,12 +25,12 @@ function loadBundle(lang: string): Record<string, string> {
   return JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>;
 }
 
-// A single-brace placeholder NOT part of a `{{...}}` pair.
-const SINGLE_BRACE = /(?<!\{)\{[A-Za-z][A-Za-z0-9]*\}(?!\})/;
-// Extract canonical `{{token}}` names from a string.
+// A single-brace placeholder (Unicode-aware token) NOT part of a `{{...}}` pair.
+const SINGLE_BRACE = /(?<!\{)\{\p{L}[\p{L}\p{N}]*\}(?!\})/u;
+// Extract canonical `{{token}}` names (any script) from a string.
 function doubleBraceTokens(value: string): Set<string> {
   const out = new Set<string>();
-  for (const m of value.matchAll(/\{\{([A-Za-z][A-Za-z0-9]*)\}\}/g)) {
+  for (const m of value.matchAll(/\{\{(\p{L}[\p{L}\p{N}]*)\}\}/gu)) {
     if (m[1]) out.add(m[1]);
   }
   return out;
@@ -42,7 +47,7 @@ describe('i18n placeholder syntax', () => {
 
   it.each(
     LOCALES.filter((l) => l !== 'en'),
-  )('locale "%s" introduces no placeholder names absent from the English source', (lang) => {
+  )('locale "%s" uses exactly the English source placeholder names — none added or dropped', (lang) => {
     const en = loadBundle('en');
     const bundle = loadBundle(lang);
     const offenders: string[] = [];
@@ -50,12 +55,15 @@ describe('i18n placeholder syntax', () => {
       if (typeof value !== 'string') continue;
       const enValue = en[key];
       if (typeof enValue !== 'string') continue; // key not in en — parity gate covers that
-      const allowed = doubleBraceTokens(enValue);
-      for (const token of doubleBraceTokens(value)) {
-        if (!allowed.has(token))
-          offenders.push(`${key}: "{{${token}}}" not in en {${[...allowed]}}`);
+      const expected = doubleBraceTokens(enValue);
+      const actual = doubleBraceTokens(value);
+      for (const token of actual) {
+        if (!expected.has(token)) offenders.push(`${key}: introduced unknown "{{${token}}}"`);
+      }
+      for (const token of expected) {
+        if (!actual.has(token)) offenders.push(`${key}: dropped required "{{${token}}}"`);
       }
     }
-    expect(offenders, `translated/unknown placeholder names in ${lang}`).toEqual([]);
+    expect(offenders, `placeholder-name drift in ${lang}`).toEqual([]);
   });
 });
