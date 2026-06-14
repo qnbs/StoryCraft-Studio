@@ -73,6 +73,8 @@ describe('CopilotMessageList', () => {
     expect(html).toContain('<li>item one</li>');
     expect(html).toContain('<pre');
     expect(html).toContain('const x = 1;');
+    // heading '# Title' renders as a semibold paragraph (not plain text)
+    expect(html).toMatch(/font-semibold[^>]*>Title/);
     expect(screen.getByText('Co-Pilot')).toBeInTheDocument();
   });
 
@@ -85,6 +87,9 @@ describe('CopilotMessageList', () => {
     expect(html).not.toContain('<script');
     expect(html).not.toContain('onerror');
     expect(html).not.toContain('<img');
+    // safe surrounding text must survive sanitization (guards against over-stripping)
+    expect(html).toContain('before');
+    expect(html).toContain('after');
   });
 
   it('shows a spinner for a pending assistant message with no content', () => {
@@ -131,20 +136,25 @@ describe('CopilotMessageList', () => {
     expect(screen.queryByRole('button', { name: 'Apply to chapter' })).toBeNull();
   });
 
-  it('only shows the apply button on the LAST assistant message', () => {
+  it('shows one apply button, wired to the LAST assistant message', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
     render(
       <CopilotMessageList
         {...baseProps}
         hasActiveSection
-        onApply={vi.fn()}
+        onApply={onApply}
         messages={[
           msg('assistant', 'first\n```\nold\n```'),
           msg('assistant', 'second\n```\nnew\n```'),
         ]}
       />,
     );
-    // Exactly one apply button — on the second (last) assistant message.
-    expect(screen.getAllByRole('button', { name: 'Apply to chapter' })).toHaveLength(1);
+    const buttons = screen.getAllByRole('button', { name: 'Apply to chapter' });
+    expect(buttons).toHaveLength(1);
+    // Clicking applies the LAST message's code ("new"), proving placement — not "old".
+    await user.click(buttons[0]!);
+    expect(onApply).toHaveBeenCalledWith('new');
   });
 
   it('disables the apply button and shows the applying label while applying', () => {
