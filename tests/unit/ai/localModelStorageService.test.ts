@@ -70,6 +70,9 @@ describe('LOCAL_MODEL_CACHE_PATTERNS', () => {
 
 describe('estimateLocalModelStorage', () => {
   it('reports unsupported when neither Cache API nor StorageManager exists', async () => {
+    // Deterministic: explicitly assert the absence of both, not the runtime env defaults.
+    vi.stubGlobal('caches', undefined);
+    vi.stubGlobal('navigator', {}); // present, but no .storage.estimate
     const est = await estimateLocalModelStorage();
     expect(est.supported).toBe(false);
     expect(est).toMatchObject({ usageMb: 0, quotaMb: 0, freeMb: 0, modelCacheCount: 0 });
@@ -126,6 +129,8 @@ describe('clearLocalModels', () => {
   });
 
   it('is a no-op delete count when the Cache API is absent', async () => {
+    // Deterministic: explicitly remove the Cache API rather than relying on env defaults.
+    vi.stubGlobal('caches', undefined);
     const result = await clearLocalModels();
     expect(releaseAllWebLlmEngines).toHaveBeenCalledTimes(1);
     expect(result.clearedCaches).toBe(0);

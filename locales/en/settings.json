@@ -786,5 +786,6 @@
   "settings.ai.localAi.fallbackLayer4": "Heuristic — always-available offline stub when no model can run.",
   "settings.ai.localAi.perfThroughput": "Last local run: {{tps}} tokens/sec",
   "settings.ai.localAi.perfNoData": "Download and run a model to measure throughput.",
-  "settings.ai.localAi.docsLink": "Local AI setup & troubleshooting"
+  "settings.ai.localAi.docsLink": "Local AI setup & troubleshooting",
+  "settings.ai.localAi.detecting": "Detecting…"
 }

@@ -30,6 +30,7 @@ import {
   preloadLocalModel,
 } from '../../services/localAiFacade';
 import { Card, CardContent, CardHeader } from '../ui/Card';
+import { Modal } from '../ui/Modal';
 import { LocalAiDownloadProgress } from './LocalAiDownloadProgress';
 
 const DEVICE_CLASS_KEY: Record<DeviceClass, string> = {
@@ -129,7 +130,6 @@ export const LocalAiSection: FC = () => {
     }
   }, [announce, t, refreshReady, refreshStorage]);
 
-  const deviceClassText = report ? t(DEVICE_CLASS_KEY[report.deviceClass]) : '';
   const recommendedId = report ? getModelRecommendation('text-gen', report) : null;
   const freeMb = storage?.freeMb ?? null;
 
@@ -168,7 +168,9 @@ export const LocalAiSection: FC = () => {
                 {t('settings.ai.localAi.deviceClassLabel')}
               </dt>
               <dd className="text-sm font-medium text-[var(--sc-text-primary)]">
-                {deviceClassText || '—'}
+                {report
+                  ? t(DEVICE_CLASS_KEY[report.deviceClass])
+                  : t('settings.ai.localAi.detecting')}
               </dd>
             </div>
           </dl>
@@ -295,46 +297,49 @@ export const LocalAiSection: FC = () => {
             </p>
           )}
 
-          {confirmingClear ? (
-            <div
-              role="alertdialog"
-              aria-label={t('settings.ai.localAi.clearButton')}
-              className="rounded-lg border border-[var(--sc-danger-border)] bg-[var(--sc-danger-bg)] p-3"
-            >
-              <p className="mb-3 text-xs text-[var(--sc-danger-fg)]">
-                {t('settings.ai.localAi.clearConfirm')}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleClear()}
-                  disabled={clearing}
-                  className="rounded-lg bg-[var(--sc-danger-fg)] px-3 py-1.5 text-xs font-medium text-[var(--sc-text-on-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
-                >
-                  {clearing
-                    ? t('settings.ai.localAi.clearingButton')
-                    : t('settings.ai.localAi.clearConfirmYes')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingClear(false)}
-                  disabled={clearing}
-                  className="rounded-lg border border-[var(--sc-border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--sc-text-secondary)] hover:bg-[var(--sc-surface-overlay)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
-                >
-                  {t('settings.ai.localAi.clearCancel')}
-                </button>
-              </div>
+          <button
+            type="button"
+            onClick={() => setConfirmingClear(true)}
+            disabled={!storage?.supported || storage.modelCacheCount === 0}
+            className="rounded-lg border border-[var(--sc-danger-border)] px-3 py-1.5 text-xs font-medium text-[var(--sc-danger-fg)] hover:bg-[var(--sc-danger-bg)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
+          >
+            {t('settings.ai.localAi.clearButton')}
+          </button>
+
+          {/* QNBS-v3: destructive confirm via the shared Modal — focus trap + restore + Escape
+              + alertdialog semantics, matching the factory-reset pattern. */}
+          <Modal
+            isOpen={confirmingClear}
+            onClose={() => {
+              if (!clearing) setConfirmingClear(false);
+            }}
+            title={t('settings.ai.localAi.clearButton')}
+            variant="alertdialog"
+          >
+            <p className="mb-4 text-sm text-[var(--sc-text-secondary)]">
+              {t('settings.ai.localAi.clearConfirm')}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(false)}
+                disabled={clearing}
+                className="rounded-lg border border-[var(--sc-border-subtle)] px-4 py-2 text-sm font-medium text-[var(--sc-text-secondary)] hover:bg-[var(--sc-surface-overlay)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
+              >
+                {t('settings.ai.localAi.clearCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleClear()}
+                disabled={clearing}
+                className="rounded-lg bg-[var(--sc-danger-fg)] px-4 py-2 text-sm font-medium text-[var(--sc-text-on-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
+              >
+                {clearing
+                  ? t('settings.ai.localAi.clearingButton')
+                  : t('settings.ai.localAi.clearConfirmYes')}
+              </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmingClear(true)}
-              disabled={!storage?.supported || storage.modelCacheCount === 0}
-              className="rounded-lg border border-[var(--sc-danger-border)] px-3 py-1.5 text-xs font-medium text-[var(--sc-danger-fg)] hover:bg-[var(--sc-danger-bg)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
-            >
-              {t('settings.ai.localAi.clearButton')}
-            </button>
-          )}
+          </Modal>
         </CardContent>
       </Card>
 

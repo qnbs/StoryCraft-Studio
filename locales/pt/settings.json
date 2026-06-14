@@ -145,6 +145,7 @@
   "settings.ai.localAi.clearConfirmYes": "Delete models",
   "settings.ai.localAi.clearedAnnounce": "Cleared {{count}} local model cache(s)",
   "settings.ai.localAi.clearingButton": "Clearing…",
+  "settings.ai.localAi.detecting": "Detecting…",
   "settings.ai.localAi.deviceClassLabel": "Device class",
   "settings.ai.localAi.docsLink": "Local AI setup & troubleshooting",
   "settings.ai.localAi.downloadButton": "Download",
