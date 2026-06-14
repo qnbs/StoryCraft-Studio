@@ -192,6 +192,7 @@
   "palette.openRouter.enabledToast": "Fournisseur OpenRouter activé",
   "palette.openRouter.disabledToast": "Fournisseur OpenRouter désactivé",
   "palette.openRouter.resetToast": "Pause OpenRouter levée – les requêtes reprennent",
+  "palette.openRouter.noPause": "OpenRouter n'a aucune pause de limite de débit active",
   "palette.aiMode.hybrid": "Mode IA : Hybride (routage intelligent)",
   "palette.aiMode.local": "Mode IA : Local uniquement (sur l'appareil)",
   "palette.aiOutline": "/ia plan – Générer un plan IA",

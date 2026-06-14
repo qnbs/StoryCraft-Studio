@@ -590,16 +590,28 @@ export function getStaticCommandDefinitions(): CommandDefinition[] {
           d="M16.023 9.348h4.992V4.356m0 4.992l-3.181-3.183a8.25 8.25 0 00-13.803 3.7M2.985 14.652h4.992m-4.992 0v4.992m0-4.992l3.181 3.183a8.25 8.25 0 0013.803-3.7"
         />,
       ),
-      // QNBS-v3: only meaningful when OpenRouter is on AND the breaker is currently open.
-      when: (deps) => deps.openRouterEnabled && isCircuitOpen(),
+      // QNBS-v3: gate ONLY on the reactive `openRouterEnabled` dep. The circuit-open flag is
+      // module-level (non-reactive) state — reading it in `when` would be cached by the palette's
+      // deps-keyed memo and go stale when the breaker flips mid-session (CodeAnt #131). Instead the
+      // command is always available while OpenRouter is on, and `run` checks the breaker LIVE.
+      when: (deps) => deps.openRouterEnabled,
       run: (deps) => {
-        resetOpenRouterCircuit();
-        deps.dispatch(
-          statusActions.addNotification({
-            type: 'success',
-            title: deps.t('palette.openRouter.resetToast'),
-          }),
-        );
+        if (isCircuitOpen()) {
+          resetOpenRouterCircuit();
+          deps.dispatch(
+            statusActions.addNotification({
+              type: 'success',
+              title: deps.t('palette.openRouter.resetToast'),
+            }),
+          );
+        } else {
+          deps.dispatch(
+            statusActions.addNotification({
+              type: 'info',
+              title: deps.t('palette.openRouter.noPause'),
+            }),
+          );
+        }
       },
     },
   ];

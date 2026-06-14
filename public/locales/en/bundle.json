@@ -95,6 +95,7 @@
   "palette.openRouter.enabledToast": "OpenRouter provider enabled",
   "palette.openRouter.disabledToast": "OpenRouter provider disabled",
   "palette.openRouter.resetToast": "OpenRouter pause cleared — requests will resume",
+  "palette.openRouter.noPause": "OpenRouter has no active rate-limit pause",
   "palette.action.switchLanguageToDe": "Switch Language to German",
   "palette.action.switchLanguageToEn": "Switch Language to English",
   "palette.lang.switchTo": "Switch interface to {{name}}",

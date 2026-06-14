@@ -115,6 +115,9 @@ const baseDeps: CommandRuntimeDeps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // QNBS-v3: clearAllMocks only clears call history — restore the default impl each test so a
+  // per-test mockReturnValue(true) cannot leak the circuit-open state into later cases.
+  mockIsCircuitOpen.mockReturnValue(false);
 });
 
 // ---------------------------------------------------------------------------
@@ -264,27 +267,49 @@ describe('OpenRouter palette commands', () => {
     );
   });
 
-  it('resetCircuit is hidden unless OpenRouter is enabled AND the circuit is open', () => {
+  // QNBS-v3: `when` gates ONLY on the reactive openRouterEnabled dep (no module-level circuit read),
+  // so the palette's deps-keyed memo can't cache a stale visibility result (CodeAnt #131).
+  it('resetCircuit visibility depends only on openRouterEnabled, never on circuit state', () => {
     const cmd = getStaticCommandDefinitions().find(
       (c) => c.id === 'ai.mode.openrouter.resetCircuit',
     );
-    mockIsCircuitOpen.mockReturnValue(false);
-    expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: true })).toBe(false);
-    expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: false })).toBe(false);
     mockIsCircuitOpen.mockReturnValue(true);
+    expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: false })).toBe(false);
+    expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: true })).toBe(true);
+    // Visibility is identical regardless of the (non-reactive) circuit-open flag.
+    mockIsCircuitOpen.mockReturnValue(false);
     expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: false })).toBe(false);
     expect(cmd?.when?.({ ...baseDeps, openRouterEnabled: true })).toBe(true);
   });
 
-  it('resetCircuit clears the breaker and announces it', () => {
+  it('resetCircuit clears the breaker and announces it when the circuit is open', () => {
     const cmd = getStaticCommandDefinitions().find(
       (c) => c.id === 'ai.mode.openrouter.resetCircuit',
     );
+    mockIsCircuitOpen.mockReturnValue(true);
     cmd?.run({ ...baseDeps, openRouterEnabled: true });
     expect(mockResetOpenRouterCircuit).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         payload: expect.objectContaining({ title: 'palette.openRouter.resetToast' }),
+      }),
+    );
+  });
+
+  it('resetCircuit is a no-op with an info toast when the circuit is not open', () => {
+    const cmd = getStaticCommandDefinitions().find(
+      (c) => c.id === 'ai.mode.openrouter.resetCircuit',
+    );
+    mockIsCircuitOpen.mockReturnValue(false);
+    cmd?.run({ ...baseDeps, openRouterEnabled: true });
+    expect(mockResetOpenRouterCircuit).not.toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: expect.any(String),
+        payload: expect.objectContaining({
+          type: 'info',
+          title: 'palette.openRouter.noPause',
+        }),
       }),
     );
   });

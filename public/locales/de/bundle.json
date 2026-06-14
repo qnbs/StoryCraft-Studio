@@ -192,6 +192,7 @@
   "palette.openRouter.enabledToast": "OpenRouter-Anbieter aktiviert",
   "palette.openRouter.disabledToast": "OpenRouter-Anbieter deaktiviert",
   "palette.openRouter.resetToast": "OpenRouter-Pause aufgehoben – Anfragen werden fortgesetzt",
+  "palette.openRouter.noPause": "OpenRouter hat keine aktive Ratenlimit-Pause",
   "palette.aiMode.hybrid": "KI-Modus: Hybrid (Intelligentes Routing)",
   "palette.aiMode.local": "KI-Modus: Nur lokal (Auf dem Gerät)",
   "palette.aiOutline": "/ai outline – KI-Gliederung generieren",
