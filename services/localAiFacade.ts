@@ -293,6 +293,18 @@ export function abortActivePreload(): void {
 }
 
 /**
+ * QNBS-v3: True when ANY local-AI work is in flight app-wide — a held GPU mutex (WebLLM/ONNX-WebGPU
+ * inference from Copilot/ProForge/Writer/preload) or an active WebLLM download. Used to block
+ * "Clear Local Models" so it can't release engines / delete caches mid-run.
+ */
+export function isLocalAiBusy(): boolean {
+  return (
+    gpuResourceManager.getQueueState().current !== null ||
+    inferenceProgressEmitter.getWebLlmLoadingSnapshot().state === 'loading'
+  );
+}
+
+/**
  * QNBS-v3: Explicitly download/warm a local model so users can prepare offline use from Settings.
  * Routes through generateLocalText (worker-first, adaptive override bypassed) so it reuses the GPU
  * mutex, inferenceProgressEmitter, and the global LocalAiDownloadProgress modal. The download is

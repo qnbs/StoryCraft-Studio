@@ -787,5 +787,6 @@
   "settings.ai.localAi.perfThroughput": "Last local run: {{tps}} tokens/sec",
   "settings.ai.localAi.perfNoData": "Download and run a model to measure throughput.",
   "settings.ai.localAi.docsLink": "Local AI setup & troubleshooting",
-  "settings.ai.localAi.detecting": "Detecting…"
+  "settings.ai.localAi.detecting": "Detecting…",
+  "settings.ai.localAi.clearBusy": "Local AI is busy right now — try clearing again once it finishes."
 }

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   getReady: vi.fn(() => [] as string[]),
   clearReady: vi.fn(),
   abortPreload: vi.fn(),
+  busy: vi.fn(() => false),
   healthReport: vi.fn(),
   modelRec: vi.fn(() => 'm-small'),
 }));
@@ -61,6 +62,7 @@ vi.mock('../../../services/localAiFacade', () => ({
   getReadyLocalModelIds: () => mocks.getReady(),
   clearReadyLocalModels: () => mocks.clearReady(),
   abortActivePreload: () => mocks.abortPreload(),
+  isLocalAiBusy: () => mocks.busy(),
 }));
 vi.mock('../../../components/settings/LocalAiDownloadProgress', () => ({
   LocalAiDownloadProgress: () => null,
@@ -75,6 +77,7 @@ beforeEach(() => {
   mocks.clear.mockResolvedValue({ clearedCaches: 2 });
   mocks.preload.mockResolvedValue({ layer: 'webllm', modelId: 'm-small', downloaded: true });
   mocks.getReady.mockReturnValue([]);
+  mocks.busy.mockReturnValue(false);
   mocks.lastThroughput.mockReturnValue(null);
   mocks.healthReport.mockResolvedValue({ deviceClass: 'mid-range', gpuVramTier: 'medium' });
   mocks.modelRec.mockReturnValue('m-small');
@@ -184,6 +187,19 @@ describe('LocalAiSection', () => {
     // Settle to avoid act warnings.
     resolvePreload({ layer: 'webllm', modelId: 'm-small', downloaded: true });
     await waitFor(() => expect(clearBtn).not.toBeDisabled());
+  });
+
+  it('refuses to clear and announces when local AI is busy app-wide', async () => {
+    mocks.busy.mockReturnValue(true); // GPU held / download running elsewhere
+    const user = userEvent.setup();
+    render(<LocalAiSection />);
+    await screen.findByText('settings.ai.localAi.storageModelsCached');
+
+    await user.click(screen.getByText('settings.ai.localAi.clearButton'));
+    await user.click(screen.getByText('settings.ai.localAi.clearConfirmYes'));
+
+    expect(mocks.clear).not.toHaveBeenCalled();
+    expect(mocks.announce).toHaveBeenCalledWith('settings.ai.localAi.clearBusy', 'polite');
   });
 
   it('renders the four-layer fallback chain and the no-data perf line by default', async () => {

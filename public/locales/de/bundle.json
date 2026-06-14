@@ -1606,6 +1606,7 @@
   "settings.ai.loadModels": "Modelle laden",
   "settings.ai.localAi.cancelAriaLabel": "Modell-Download abbrechen",
   "settings.ai.localAi.cancelButton": "Abbrechen",
+  "settings.ai.localAi.clearBusy": "Local AI is busy right now — try clearing again once it finishes.",
   "settings.ai.localAi.clearButton": "Clear Local Models",
   "settings.ai.localAi.clearCancel": "Cancel",
   "settings.ai.localAi.clearConfirm": "Delete all downloaded local models? They will re-download the next time you use local AI.",

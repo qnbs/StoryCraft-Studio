@@ -14,6 +14,7 @@ import {
   getHealthReport,
   getModelRecommendation,
 } from '../../services/ai/deviceHealthService';
+import { inferenceProgressEmitter } from '../../services/ai/inferenceProgressEmitter';
 import {
   clearLocalModels,
   estimateLocalModelStorage,
@@ -25,6 +26,7 @@ import {
   clearReadyLocalModels,
   getLastLocalThroughput,
   getReadyLocalModelIds,
+  isLocalAiBusy,
   type LocalThroughputSample,
   preloadLocalModel,
 } from '../../services/localAiFacade';
@@ -69,6 +71,17 @@ export const LocalAiSection: FC = () => {
   const [clearing, setClearing] = useState(false);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [throughput, setThroughput] = useState<LocalThroughputSample | null>(null);
+  // QNBS-v3: reactive "a WebLLM download is running somewhere" flag (Copilot/ProForge/Writer/preload),
+  //          so Clear locks out even when this section didn't start the download.
+  const [externalLoading, setExternalLoading] = useState(false);
+
+  useEffect(
+    () =>
+      inferenceProgressEmitter.subscribeWebLlmLoading((s) =>
+        setExternalLoading(s.state === 'loading'),
+      ),
+    [],
+  );
 
   // QNBS-v3: monotonic request id so an older, slower estimate can't overwrite a newer result
   //          (initial load vs post-download/post-clear refreshes can overlap).
@@ -120,6 +133,13 @@ export const LocalAiSection: FC = () => {
   );
 
   const handleClear = useCallback(async () => {
+    // QNBS-v3: authoritative re-check at execution time — block if any local-AI work is in flight
+    //          app-wide (GPU mutex held or a WebLLM download running), not just this section's.
+    if (isLocalAiBusy()) {
+      announce(t('settings.ai.localAi.clearBusy'), 'polite');
+      setConfirmingClear(false);
+      return;
+    }
     setClearing(true);
     try {
       const { clearedCaches } = await clearLocalModels();
@@ -312,7 +332,9 @@ export const LocalAiSection: FC = () => {
             onClick={() => setConfirmingClear(true)}
             // QNBS-v3: never clear while a download is in flight — that would race clearLocalModels()
             //          against active worker preload/download work and corrupt the cache state.
-            disabled={!storage || storage.modelCacheCount === 0 || downloadingId !== null}
+            disabled={
+              !storage || storage.modelCacheCount === 0 || downloadingId !== null || externalLoading
+            }
             className="rounded-lg border border-[var(--sc-danger-border)] px-3 py-1.5 text-xs font-medium text-[var(--sc-danger-fg)] hover:bg-[var(--sc-danger-bg)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
           >
             {t('settings.ai.localAi.clearButton')}
@@ -343,7 +365,7 @@ export const LocalAiSection: FC = () => {
               <button
                 type="button"
                 onClick={() => void handleClear()}
-                disabled={clearing || downloadingId !== null}
+                disabled={clearing || downloadingId !== null || externalLoading}
                 className="rounded-lg bg-[var(--sc-danger-fg)] px-4 py-2 text-sm font-medium text-[var(--sc-text-on-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-ring-focus)]"
               >
                 {clearing
