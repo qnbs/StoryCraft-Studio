@@ -20,6 +20,7 @@
     "content:guard": "node scripts/content-guard.mjs",
     "parity:check": "tsx scripts/audit-feature-parity.ts",
     "suppressions:check": "node scripts/check-suppressions.mjs",
+    "token:audit": "node scripts/audit-tokens.mjs",
     "sync:readme": "node scripts/sync-readme-metrics.mjs",
     "graphify": "node scripts/graphify-cli.mjs",
     "graphify:install": "node scripts/graphify-cli.mjs install",
