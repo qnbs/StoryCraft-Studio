@@ -23,6 +23,20 @@ function createDb(name: string): Promise<void> {
   });
 }
 
+// QNBS-v3: production has a real 300ms settle delay before reload — drive it with fake timers so
+// the suite stays deterministic and fast (CodeAnt #132). runAllTimersAsync loops until every
+// pending timer is drained, which also flushes the fake-indexeddb deletion scheduling.
+async function runWipe(): Promise<void> {
+  vi.useFakeTimers();
+  try {
+    const done = wipeAllAppData();
+    await vi.runAllTimersAsync();
+    await done;
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 let reloadMock: ReturnType<typeof vi.fn>;
 let originalLocation: Location;
 
@@ -50,7 +64,7 @@ describe('wipeAllAppData', () => {
     sessionStorage.setItem('baz', 'qux');
     const delSpy = vi.spyOn(indexedDB, 'deleteDatabase');
 
-    await wipeAllAppData();
+    await runWipe();
 
     expect(localStorage.getItem('foo')).toBeNull();
     expect(sessionStorage.getItem('baz')).toBeNull();
@@ -64,7 +78,7 @@ describe('wipeAllAppData', () => {
     const dbSpy = vi.spyOn(indexedDB, 'databases').mockRejectedValueOnce(new Error('not allowed'));
     const delSpy = vi.spyOn(indexedDB, 'deleteDatabase');
 
-    await wipeAllAppData();
+    await runWipe();
 
     // Fallback deletes every name in the known list (e.g. the logs DB).
     expect(delSpy).toHaveBeenCalledWith('storycraft-logs-db');
@@ -80,7 +94,7 @@ describe('wipeAllAppData', () => {
       delete: del,
     });
 
-    await wipeAllAppData();
+    await runWipe();
 
     expect(del).toHaveBeenCalledWith('static-v1');
     expect(del).toHaveBeenCalledWith('dynamic-v1');
