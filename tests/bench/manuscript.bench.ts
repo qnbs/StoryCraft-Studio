@@ -47,14 +47,16 @@ function seedUndoableState(project: ProjectData): UndoableProjectState {
 }
 
 /** A content edit on the first section — the real typing hot path (immer produce over the manuscript). */
-let editCounter = 0;
+// QNBS-v3 (CodeAnt): the edit payload must be CONSTANT-SIZE so timing stays comparable across
+// iterations. Toggle a single fixed-length suffix (' A' ⇄ ' B') so the content still changes every
+// call (immer registers a diff) without the payload growing over the run.
+const BASE_CONTENT = fixture.manuscript[0]?.content ?? '';
+let editToggle = false;
 function editAction(): AnyAction {
-  editCounter += 1;
-  const section = fixture.manuscript[0];
-  const base = section?.content ?? '';
+  editToggle = !editToggle;
   return projectActions.updateManuscriptSection({
     id: FIRST_SECTION_ID,
-    changes: { content: `${base} ${editCounter}` },
+    changes: { content: `${BASE_CONTENT} ${editToggle ? 'A' : 'B'}` },
   });
 }
 

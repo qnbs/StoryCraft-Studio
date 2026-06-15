@@ -37,10 +37,15 @@ function buildParagraph(rng: () => number, wordsPerParagraph: number): string {
 /** Build the prose body for one section, ~`wordsPerSection` words across ~120-word paragraphs. */
 function buildSectionContent(rng: () => number, wordsPerSection: number): string {
   const wordsPerParagraph = 120;
-  const paragraphCount = Math.max(1, Math.round(wordsPerSection / wordsPerParagraph));
   const paragraphs: string[] = [];
-  for (let p = 0; p < paragraphCount; p++) {
-    paragraphs.push(buildParagraph(rng, wordsPerParagraph));
+  // QNBS-v3 (CodeAnt): emit EXACTLY wordsPerSection words (full paragraphs + a final partial one),
+  // instead of rounding to whole 120-word paragraphs — otherwise the corpus drifts from the request
+  // and invalidates size-based benchmark comparisons.
+  let remaining = wordsPerSection;
+  while (remaining > 0) {
+    const n = Math.min(wordsPerParagraph, remaining);
+    paragraphs.push(buildParagraph(rng, n));
+    remaining -= n;
   }
   return paragraphs.join('\n\n');
 }
@@ -126,6 +131,10 @@ export function buildLargeManuscript(options: LargeManuscriptOptions = {}): Proj
     Array.from({ length: worldCount }, (_, i) => buildWorld(i, rng)),
   );
 
+  // QNBS-v3 (CodeAnt): derive the goal from the ACTUAL generated manuscript (sum of section word
+  // counts), so goal metadata can never disagree with the real corpus size.
+  const generatedWordCount = manuscript.reduce((sum, s) => sum + (s.wordCount ?? 0), 0);
+
   return {
     id: 'bench-large-manuscript',
     title: 'The Forgetting Tide',
@@ -135,9 +144,7 @@ export function buildLargeManuscript(options: LargeManuscriptOptions = {}): Proj
     worlds,
     outline: [],
     manuscript,
-    // QNBS-v3 (CodeAnt): derive the goal from the actual generated corpus size, not a hardcoded
-    // 120_000, so custom sectionCount/wordsPerSection fixtures report coherent goal metadata.
-    projectGoals: { totalWordCount: sectionCount * wordsPerSection, targetDate: null },
+    projectGoals: { totalWordCount: generatedWordCount, targetDate: null },
     writingHistory: [],
     binderNodes: [],
   };
