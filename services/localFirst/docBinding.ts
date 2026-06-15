@@ -231,11 +231,18 @@ export class ProjectDocBinding {
       );
     }
     project.manuscript.forEach((section, i) => {
-      const r = restored.manuscript[i];
-      if (r?.id !== section.id) mismatches.push(`section[${i}] id ${r?.id} !== ${section.id}`);
-      if (r?.content !== section.content)
-        mismatches.push(`section[${i}] content drift (${section.id})`);
-      if (r?.title !== section.title) mismatches.push(`section[${i}] title drift (${section.id})`);
+      const r = restored.manuscript[i] as unknown as Record<string, unknown> | undefined;
+      if (!r) {
+        mismatches.push(`section[${i}] missing (${section.id})`);
+        return;
+      }
+      // QNBS-v3 (CodeAnt): syncFromProject writes the FULL section, so verify every field (status,
+      // sceneStart, act, …) — not just id/content/title — or non-checked drift evades self-heal.
+      for (const [key, value] of Object.entries(section)) {
+        if (JSON.stringify(r[key]) !== JSON.stringify(value)) {
+          mismatches.push(`section[${i}].${key} drift (${section.id})`);
+        }
+      }
     });
 
     if (

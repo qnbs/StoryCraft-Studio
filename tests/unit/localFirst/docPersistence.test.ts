@@ -76,6 +76,8 @@ describe('B1.1 — docPersistence (y-indexeddb)', () => {
         { timeout: 2000, interval: 50 },
       );
     } finally {
+      // QNBS-v3 (CodeAnt): wipe shared IndexedDB state in cleanup too, so nothing leaks across runs.
+      await pA.clearData();
       await pA.destroy();
     }
   });
@@ -96,6 +98,8 @@ describe('B1.1 — docPersistence (y-indexeddb)', () => {
       );
       await pA.clearData();
     } finally {
+      // QNBS-v3 (CodeAnt): wipe shared IndexedDB state in cleanup too, so nothing leaks across runs.
+      await pA.clearData();
       await pA.destroy();
     }
 

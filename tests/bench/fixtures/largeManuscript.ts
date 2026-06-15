@@ -135,7 +135,9 @@ export function buildLargeManuscript(options: LargeManuscriptOptions = {}): Proj
     worlds,
     outline: [],
     manuscript,
-    projectGoals: { totalWordCount: 120_000, targetDate: null },
+    // QNBS-v3 (CodeAnt): derive the goal from the actual generated corpus size, not a hardcoded
+    // 120_000, so custom sectionCount/wordsPerSection fixtures report coherent goal metadata.
+    projectGoals: { totalWordCount: sectionCount * wordsPerSection, targetDate: null },
     writingHistory: [],
     binderNodes: [],
   };
