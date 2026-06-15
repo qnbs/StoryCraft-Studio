@@ -70,10 +70,10 @@ export const useSettingsView = () => {
 
   useEffect(() => {
     try {
-      const pending = sessionStorage.getItem('storycraft-settings-category');
+      const pending = sessionStorage.getItem('worldscript-settings-category');
       if (pending) {
         setActiveCategory(pending);
-        sessionStorage.removeItem('storycraft-settings-category');
+        sessionStorage.removeItem('worldscript-settings-category');
       }
     } catch {
       /* storage blocked */
