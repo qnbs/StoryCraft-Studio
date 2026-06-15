@@ -1,4 +1,5 @@
 import { createSlice, type Middleware, type PayloadAction } from '@reduxjs/toolkit';
+import { loadFeatureFlags, saveFeatureFlags } from './featureFlagsStorage';
 
 export interface FeatureFlagsState {
   // QNBS-v3: enableCodexAutoTracking promoted to permanent core behaviour (v1.20).
@@ -51,9 +52,6 @@ export interface FeatureFlagsState {
   enableGlobalCopilot: boolean;
 }
 
-const FEATURE_FLAGS_STORAGE_KEY = 'worldscript-feature-flags';
-const LEGACY_FEATURE_FLAGS_STORAGE_KEY = 'worldscript-feature-flags';
-
 const defaultFeatureFlagsState: FeatureFlagsState = {
   // QNBS-v3: all flags on by default so new installs get the full feature set immediately
   enableStoryBibleAdvanced: true,
@@ -85,22 +83,8 @@ const defaultFeatureFlagsState: FeatureFlagsState = {
 };
 
 const loadFeatureFlagsState = (): FeatureFlagsState => {
-  if (typeof window === 'undefined') {
-    return defaultFeatureFlagsState;
-  }
-
   try {
-    let stored = localStorage.getItem(FEATURE_FLAGS_STORAGE_KEY);
-
-    // QNBS-v3: Rebrand migration — migrate legacy WorldScript feature flags once, then drop the old key.
-    if (!stored) {
-      const legacy = localStorage.getItem(LEGACY_FEATURE_FLAGS_STORAGE_KEY);
-      if (legacy) {
-        localStorage.setItem(FEATURE_FLAGS_STORAGE_KEY, legacy);
-        localStorage.removeItem(LEGACY_FEATURE_FLAGS_STORAGE_KEY);
-        stored = legacy;
-      }
-    }
+    const stored = loadFeatureFlags();
 
     if (!stored) {
       return defaultFeatureFlagsState;
@@ -114,15 +98,7 @@ const loadFeatureFlagsState = (): FeatureFlagsState => {
 };
 
 const saveFeatureFlagsState = (state: FeatureFlagsState) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    localStorage.setItem(FEATURE_FLAGS_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // localStorage may be blocked or unavailable.
-  }
+  saveFeatureFlags(state);
 };
 
 const initialState: FeatureFlagsState = loadFeatureFlagsState();
