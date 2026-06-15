@@ -3,7 +3,7 @@ module.exports = {
     collect: {
       startServerCommand: 'pnpm run preview',
       startServerReadyPattern: 'Local',
-      url: ['http://127.0.0.1:4173/StoryCraft-Studio/'],
+      url: ['http://127.0.0.1:4173/WorldScript-Studio/'],
       numberOfRuns: 3,
       settings: {
         // QNBS-v3: harden Chrome launch on CI runners. `--disable-dev-shm-usage` is the fix for the
