@@ -52,17 +52,38 @@ const NOOP_PERSISTENCE: DocPersistence = {
 export function persistProjectDoc(projectId: string, doc: Y.Doc): DocPersistence {
   if (!isIndexedDbAvailable()) return NOOP_PERSISTENCE;
 
+  let provider: IndexeddbPersistence;
   try {
-    const provider = new IndexeddbPersistence(dbNameForProject(projectId), doc);
-    return {
-      whenSynced: provider.whenSynced.then(() => undefined),
-      active: true,
-      destroy: () => provider.destroy(),
-      clearData: () => provider.clearData(),
-    };
+    provider = new IndexeddbPersistence(dbNameForProject(projectId), doc);
   } catch {
     // QNBS-v3 (CodeAnt): some environments expose `indexedDB` but reject access (private/restricted
     // mode), so construction can throw. Honor the no-op fallback rather than breaking the app.
     return NOOP_PERSISTENCE;
   }
+
+  // QNBS-v3 (CodeAnt): make destroy idempotent and swallow its own errors so the whenSynced-rejection
+  // handler and an explicit caller destroy() can't double-destroy or throw.
+  let destroyed = false;
+  const destroy = (): Promise<void> => {
+    if (destroyed) return Promise.resolve();
+    destroyed = true;
+    return provider.destroy().catch(() => undefined);
+  };
+
+  // QNBS-v3 (CodeAnt): if IndexedDB fails *asynchronously* after construction, provider.whenSynced
+  // rejects. Without handling, callers would receive a rejected promise and the provider would leak.
+  // Downgrade to the no-op guarantee instead: tear the provider down and resolve (never reject the
+  // caller), so the shadow-sync layer keeps running against Redux without a dangling provider.
+  const whenSynced = provider.whenSynced.then(
+    () => undefined,
+    () => destroy(),
+  );
+
+  return {
+    whenSynced,
+    active: true,
+    destroy,
+    // After a teardown the provider can no longer clear its store — degrade to a resolved no-op.
+    clearData: () => (destroyed ? Promise.resolve() : provider.clearData().catch(() => undefined)),
+  };
 }
