@@ -52,11 +52,17 @@ const NOOP_PERSISTENCE: DocPersistence = {
 export function persistProjectDoc(projectId: string, doc: Y.Doc): DocPersistence {
   if (!isIndexedDbAvailable()) return NOOP_PERSISTENCE;
 
-  const provider = new IndexeddbPersistence(dbNameForProject(projectId), doc);
-  return {
-    whenSynced: provider.whenSynced.then(() => undefined),
-    active: true,
-    destroy: () => provider.destroy(),
-    clearData: () => provider.clearData(),
-  };
+  try {
+    const provider = new IndexeddbPersistence(dbNameForProject(projectId), doc);
+    return {
+      whenSynced: provider.whenSynced.then(() => undefined),
+      active: true,
+      destroy: () => provider.destroy(),
+      clearData: () => provider.clearData(),
+    };
+  } catch {
+    // QNBS-v3 (CodeAnt): some environments expose `indexedDB` but reject access (private/restricted
+    // mode), so construction can throw. Honor the no-op fallback rather than breaking the app.
+    return NOOP_PERSISTENCE;
+  }
 }

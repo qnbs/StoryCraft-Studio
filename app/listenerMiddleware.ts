@@ -16,6 +16,7 @@ import { saveEnvelopeFromProjectData } from '../services/storageBackend';
 import { storageService } from '../services/storageService';
 import type { Character, StorySection, World } from '../types';
 import type { AppDispatch, RootState } from './store';
+import { appStoreRef } from './storeRef';
 
 type ProjectStateWithHistory = {
   present?: { data?: ProjectData };
@@ -686,6 +687,19 @@ listenerMiddleware.startListening({
     logger.info('Local-First shadow sync disabled — binding torn down');
   },
 });
+
+// QNBS-v3 (CodeAnt): cold-start init — when enableLocalFirstSync is already true in persisted state,
+// neither the edit listener nor the OFF→ON listener fires, so the shadow doc would stay uninitialized
+// until the next edit. Call this once on mount (App.tsx) to run an initial projection + verify.
+export async function initLocalFirstSyncOnStartup(enabled: boolean): Promise<void> {
+  if (!enabled) return;
+  const store = appStoreRef.current;
+  if (!store) return;
+  await runLocalFirstShadowSync(
+    store.getState(),
+    () => store.getState().featureFlags?.enableLocalFirstSync === true,
+  );
+}
 
 export const startAppListening = listenerMiddleware.startListening as TypedStartListening<
   RootState,
