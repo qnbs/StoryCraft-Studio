@@ -57,14 +57,16 @@ export async function initTauriDeepLink(
           // or handle direct file paths if passed.
           let filePath = url;
 
-          // Check if it's a worldscript:// URL and extract the path
-          if (url.startsWith('worldscript://') || url.startsWith('worldscript:')) {
+          // Check if it's a worldscript:// (or legacy storycraft://) URL and extract the path.
+          // QNBS-v3: accept BOTH schemes — tauri.conf.json registers both during migration (#142),
+          // so storycraft:// links/file-associations created before the rename still resolve.
+          if (/^(?:worldscript|storycraft):/i.test(url)) {
             // On Windows, the URL might be worldscript:///C:/path/to/file.worldscript
             // On Linux, it might be worldscript:///home/user/file.worldscript
-            // QNBS-v3: Strip worldscript:// prefix and normalize Windows drive-letter paths
-            filePath = url.replace(/^worldscript:\/{0,2}/, '');
-            // Windows paths like /C:/... need the leading slash removed
-            if (/^[A-Za-z]:/.test(filePath)) {
+            filePath = url.replace(/^(?:worldscript|storycraft):\/{0,2}/i, '');
+            // Windows drive-letter path, incl. the canonical triple-slash form `…:///C:/…` which
+            // leaves a leading slash (/C:/…) — strip any leading slash(es) so exists() resolves it.
+            if (/^\/*[A-Za-z]:/.test(filePath)) {
               filePath = filePath.replace(/^\/+/, '');
             } else {
               filePath = filePath.replace(/^\/+/, '/');
