@@ -565,6 +565,84 @@ listenerMiddleware.startListening({
   },
 });
 
+// QNBS-v3: B1.1 — Local-First shadow sync (ADR-0008). When enableLocalFirstSync is on, mirror the
+// authoritative Redux project into a per-project Yjs doc (+ y-indexeddb). Redux stays the source of
+// truth: on any read-verify drift we self-heal via full re-projection and only log (never surface to
+// the user). All local-first modules are dynamically imported so they stay out of the main bundle.
+type LocalFirstHandle = {
+  projectId: string;
+  binding: import('../services/localFirst/docBinding').ProjectDocBinding;
+  persistence: import('../services/localFirst/docPersistence').DocPersistence;
+};
+let localFirstHandle: LocalFirstHandle | null = null;
+
+async function getLocalFirstHandle(project: ProjectData): Promise<LocalFirstHandle> {
+  const projectId = project.id ?? 'default';
+  if (localFirstHandle?.projectId === projectId) return localFirstHandle;
+  // Project switched (or first run) — tear down the previous handle before creating a new one.
+  if (localFirstHandle) {
+    await localFirstHandle.persistence.destroy().catch(() => undefined);
+    localFirstHandle = null;
+  }
+  const [{ createBlankProjectDoc }, { ProjectDocBinding }, { persistProjectDoc }] =
+    await Promise.all([
+      import('../services/localFirst/projectDoc'),
+      import('../services/localFirst/docBinding'),
+      import('../services/localFirst/docPersistence'),
+    ]);
+  const doc = createBlankProjectDoc();
+  const persistence = persistProjectDoc(projectId, doc);
+  await persistence.whenSynced; // load any persisted state first …
+  const binding = new ProjectDocBinding(project, doc); // … then project Redux over it (SoT wins)
+  localFirstHandle = { projectId, binding, persistence };
+  return localFirstHandle;
+}
+
+async function teardownLocalFirst(): Promise<void> {
+  const handle = localFirstHandle;
+  localFirstHandle = null;
+  if (handle) await handle.persistence.destroy().catch(() => undefined);
+}
+
+addDebouncedListener(
+  (curr, prev) =>
+    curr.featureFlags?.enableLocalFirstSync === true &&
+    curr.project?.present !== prev.project?.present,
+  1200,
+  async (api) => {
+    const state = api.getState();
+    if (state.featureFlags?.enableLocalFirstSync !== true) return;
+    const projectState = state.project as ProjectStateWithHistory;
+    const presentData = projectState.present?.data ?? projectState.data;
+    if (!presentData || presentData.title === undefined) return;
+    try {
+      const handle = await getLocalFirstHandle(presentData);
+      handle.binding.syncFromProject(presentData);
+      const result = handle.binding.verify(presentData);
+      if (!result.ok) {
+        // Shadow phase: never affect the user. Log a count (no ids/content → no PII) and self-heal.
+        logger.warn('Local-First shadow drift — self-healing via re-projection', {
+          mismatchCount: result.mismatches.length,
+        });
+        handle.binding.reproject(presentData);
+      }
+    } catch (err) {
+      logger.warn('Local-First shadow sync failed (non-critical):', err);
+    }
+  },
+);
+
+// Tear down the shadow binding when the flag is turned off.
+listenerMiddleware.startListening({
+  predicate: (_action, curr, prev) =>
+    (curr as RootState).featureFlags?.enableLocalFirstSync !== true &&
+    (prev as RootState).featureFlags?.enableLocalFirstSync === true,
+  effect: async () => {
+    await teardownLocalFirst();
+    logger.info('Local-First shadow sync disabled — binding torn down');
+  },
+});
+
 export const startAppListening = listenerMiddleware.startListening as TypedStartListening<
   RootState,
   AppDispatch

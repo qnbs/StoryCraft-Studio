@@ -100,6 +100,11 @@ export function createProjectDoc(project: ProjectData): Y.Doc {
   return doc;
 }
 
+/** A blank Y.Doc — used to attach persistence before projecting, so the middleware needn't import Yjs. */
+export function createBlankProjectDoc(): Y.Doc {
+  return new Y.Doc();
+}
+
 /** Read a Y.Doc back into a ProjectData snapshot — the inverse of {@link applyProjectDataToDoc}. */
 export function readProjectDoc(doc: Y.Doc): ProjectData {
   const yManuscript = doc.getArray<Y.Map<unknown>>(MANUSCRIPT);

@@ -155,6 +155,11 @@ export class ProjectDocBinding {
     }
   }
 
+  /** Force a full re-projection — the self-heal path when verify() reports drift. */
+  reproject(project: ProjectData): void {
+    applyProjectDataToDoc(this.doc, project);
+  }
+
   /** Write the current Redux project state into the doc — incrementally where structurally possible. */
   syncFromProject(project: ProjectData): void {
     const nextIds = project.manuscript.map((s) => s.id);
