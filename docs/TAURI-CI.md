@@ -119,12 +119,12 @@ Complete these steps once before pushing the first signed release tag:
 | Updater | `docs/TAURI-UPDATER.md` when publishing signed tags |
 | Local CI | Heavy builds optional — `infra/low-end-ci/` act + native `pnpm run ci:quick` |
 | Version UI | Settings shows app version; matches release tag after install |
-| File Associations | `.worldscript` and `.scst` extensions registered; double-click opens project |
+| File Associations | `.worldscript` and `.wsst` extensions registered; double-click opens project |
 | Single-Instance | Second instance focuses main window + opens file via `RunEvent::SecondInstance` |
 
 ## Native File Associations (v1.20)
 
-WorldScript Studio registers `.worldscript` and `.scst` file extensions for native project opening.
+WorldScript Studio registers `.worldscript` and `.wsst` file extensions for native project opening.
 
 ### Configuration
 
@@ -135,7 +135,7 @@ WorldScript Studio registers `.worldscript` and `.scst` file extensions for nati
 
 ### Behavior
 
-1. **Double-click** a `.worldscript` or `.scst` file → App opens (or activates existing instance) and loads the project
+1. **Double-click** a `.worldscript` or `.wsst` file → App opens (or activates existing instance) and loads the project
 2. **Drag-drop** file onto app icon → Same behavior as double-click
 3. **Second instance** → Main window focused, file opened in existing instance
 4. **Error handling** → Toast notification with error details if file cannot be loaded
