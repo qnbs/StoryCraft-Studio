@@ -21,7 +21,7 @@ function resolveBase(): string {
   if (process.env['DEPLOY_TARGET'] === 'edge') {
     return '/';
   }
-  return '/StoryCraft-Studio/';
+  return '/WorldScript-Studio/';
 }
 
 const deployBase = resolveBase();
@@ -49,10 +49,10 @@ export default defineConfig({
     tailwindcss(),
     react(),
     {
-      name: 'storycraft-deploy-base-html',
+      name: 'worldscript-deploy-base-html',
       transformIndexHtml(html) {
-        if (deployBase === '/StoryCraft-Studio/') return html;
-        return html.replaceAll('/StoryCraft-Studio/', deployBase);
+        if (deployBase === '/WorldScript-Studio/') return html;
+        return html.replaceAll('/WorldScript-Studio/', deployBase);
       },
     },
     VitePWA({
