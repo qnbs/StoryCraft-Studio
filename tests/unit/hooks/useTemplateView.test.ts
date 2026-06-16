@@ -201,8 +201,8 @@ describe('applyCommunityTemplate', () => {
       });
     });
     const manuscriptCall = mockDispatch.mock.calls.find(
-      // biome-ignore lint/suspicious/noExplicitAny: test inspects dispatched action payload
-      (call: any[]) => call[0]?.type === 'project/setManuscript',
+      (call: unknown[]) =>
+        (call[0] as { type?: string } | undefined)?.type === 'project/setManuscript',
     );
     const manuscript = (
       manuscriptCall?.[0] as { payload: Array<{ content: string; prompt: string }> } | undefined
