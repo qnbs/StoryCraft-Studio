@@ -187,8 +187,11 @@ export const OpenRouterSection: FC = () => {
       if (policyBlocked) {
         if (isLatest()) {
           // QNBS-v3: Cloud access is blocked — drop any previously loaded catalog so the Select
-          // doesn't keep offering stale paid options the user can no longer reach.
-          setModels([]);
+          // doesn't keep offering stale paid options the user can no longer reach. Use a functional
+          // update that returns the SAME reference when already empty: emitting a fresh [] on every
+          // run would change models' identity each render and — when an unstable t re-runs this
+          // effect — spin an infinite render loop instead of settling.
+          setModels((prev) => (prev.length === 0 ? prev : []));
           setIsModelsLoading(false);
         }
         return;
@@ -200,8 +203,9 @@ export const OpenRouterSection: FC = () => {
         logger.warn('OpenRouter: failed to fetch model catalog', { error: String(err) });
         if (isLatest()) {
           setModelFetchError(t('settings.openRouter.modelFetch.failed'));
-          // QNBS-v3: Drop stale paid models on error so the Select only offers guaranteed options.
-          setModels([]);
+          // QNBS-v3: Drop stale paid models on error so the Select only offers guaranteed options;
+          // keep the same ref when already empty to avoid a needless re-render (mirrors the blocked path).
+          setModels((prev) => (prev.length === 0 ? prev : []));
         }
       } finally {
         if (isLatest()) setIsModelsLoading(false);
