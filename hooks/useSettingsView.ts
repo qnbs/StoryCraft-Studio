@@ -354,7 +354,7 @@ export const useSettingsView = () => {
 
   const handleRepeatOnboarding = useCallback(() => {
     // QNBS-v3: useApp.ts listens for this event and re-opens the WelcomePortal.
-    window.dispatchEvent(new CustomEvent('storycraft:openPortal'));
+    window.dispatchEvent(new CustomEvent('worldscript:openPortal'));
   }, []);
 
   const handleCreateSnapshot = useCallback(async () => {
