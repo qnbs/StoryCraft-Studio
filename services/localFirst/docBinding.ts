@@ -14,6 +14,7 @@
 // NOT yet here (deferred to the next increment): the enableLocalFirstSync flag, listenerMiddleware
 // wiring, and y-indexeddb persistence. This module is pure and unit-tested in isolation.
 
+import type { EntityState } from '@reduxjs/toolkit';
 import * as Y from 'yjs';
 import type { ProjectData } from '../../features/project/projectState';
 import type { StorySection } from '../../types';
@@ -130,15 +131,22 @@ export class ProjectDocBinding {
     }
   }
 
-  private reconcileEntities(
+  private reconcileEntities<T extends { id: string }>(
     yMap: Y.Map<unknown>,
-    entities: Record<string, { id: string } | undefined>,
+    state: EntityState<T, string>,
   ): void {
-    const nextIds = new Set(Object.keys(entities));
+    const nextIdSet = new Set(state.ids);
+    // Remove entities no longer present.
     for (const key of [...yMap.keys()]) {
-      if (!nextIds.has(key)) yMap.delete(key);
+      if (!nextIdSet.has(key)) yMap.delete(key);
     }
-    for (const [id, entity] of Object.entries(entities)) {
+    // QNBS-v3 (CodeAnt): iterate the canonical EntityState.ids ORDER (not dictionary key order), so
+    // newly-added entities are written in the same order as the full applyProjectDataToDoc path.
+    // NOTE: a Y.Map is unordered, so REORDERING already-present members cannot be preserved here —
+    // that is a documented shadow-phase limitation; entities move to an ordered Y.Array in the
+    // B2.x migration. The load-bearing check (membership + per-entity fields) is fully synced.
+    for (const id of state.ids) {
+      const entity = state.entities[id];
       if (!entity) continue;
       if (JSON.stringify(yMap.get(id)) !== JSON.stringify(entity)) {
         yMap.set(id, structuredClone(entity));
@@ -211,8 +219,8 @@ export class ProjectDocBinding {
         }
       }
 
-      this.reconcileEntities(this.doc.getMap(CHARACTERS), project.characters.entities);
-      this.reconcileEntities(this.doc.getMap(WORLDS), project.worlds.entities);
+      this.reconcileEntities(this.doc.getMap(CHARACTERS), project.characters);
+      this.reconcileEntities(this.doc.getMap(WORLDS), project.worlds);
       this.reconcileMeta(project);
     }, this.origin);
   }
@@ -262,6 +270,16 @@ export class ProjectDocBinding {
       if (skip.has(key) || value === undefined) continue;
       if (JSON.stringify(restoredMeta[key]) !== JSON.stringify(value)) {
         mismatches.push(`meta.${key} drift`);
+      }
+    }
+    // QNBS-v3 (CodeAnt): the forward loop skips keys that are undefined in Redux, so a value left
+    // stale in the doc's META map after a field is cleared would evade detection. Walk the doc's
+    // META keys too and flag any present in the doc but undefined/absent in the project.
+    const yMeta = this.doc.getMap(META);
+    for (const key of yMeta.keys()) {
+      if (skip.has(key)) continue;
+      if ((project as unknown as Record<string, unknown>)[key] === undefined) {
+        mismatches.push(`meta.${key} stale (present in doc, undefined in project)`);
       }
     }
 

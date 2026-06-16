@@ -197,6 +197,19 @@ describe('B1.1 — ProjectDocBinding (incremental shadow write-through)', () => 
     expect(result.mismatches).toContain('meta.logline drift');
   });
 
+  it('verify() flags a stale meta value left in the doc after the field is cleared', () => {
+    const project = smallProject();
+    const binding = new ProjectDocBinding(project);
+    // Simulate a stale write-through: a key in the doc that the project no longer defines.
+    binding.getDoc().getMap('meta').set('orphanField', 'left over');
+
+    const result = binding.verify(project);
+    expect(result.ok).toBe(false);
+    expect(result.mismatches).toContain(
+      'meta.orphanField stale (present in doc, undefined in project)',
+    );
+  });
+
   it('observe() stamps the binding origin on self-writes (echo filtering)', () => {
     const project = smallProject();
     const binding = new ProjectDocBinding(project);
