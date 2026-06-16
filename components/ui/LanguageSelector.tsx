@@ -20,6 +20,13 @@ const LANGUAGE_METADATA: Record<
   zh: { label: 'Chinese', nativeName: '简体中文', flag: '🇨🇳', isBeta: true },
   pt: { label: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', isBeta: true },
   el: { label: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷', isBeta: true },
+  // QNBS-v3: Phase X Beta — Basque has no Unicode flag emoji (ikurriña absent); use 🌐 globe.
+  fi: { label: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮', isBeta: true },
+  sv: { label: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪', isBeta: true },
+  hu: { label: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺', isBeta: true },
+  is: { label: 'Icelandic', nativeName: 'Íslenska', flag: '🇮🇸', isBeta: true },
+  eu: { label: 'Basque', nativeName: 'Euskara', flag: '🌐', isBeta: true },
+  fa: { label: 'Persian', nativeName: 'فارسی', flag: '🇮🇷', isBeta: true },
 };
 
 interface LanguageSelectorProps {
