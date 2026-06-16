@@ -7,7 +7,7 @@ import {
   generateCustomTemplateThunk,
   personalizeTemplateThunk,
 } from '../features/project/thunks/outlineThunks';
-import type { OutlineSection, StorySection, Template } from '../types';
+import type { CommunityTemplate, OutlineSection, StorySection, Template } from '../types';
 import { useTranslation } from './useTranslation';
 
 interface UseTemplateViewProps {
@@ -116,6 +116,33 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
     [dispatch, onNavigate, toast, t],
   );
 
+  // QNBS-v3: Apply a community template directly via Redux (setManuscript/setOutline), mirroring
+  // applyToManuscript. Previously the Community tab dispatched a `*:applyTemplate` window event that
+  // had no listener anywhere, so applying a community template was a silent no-op (pre-existing bug).
+  const applyCommunityTemplate = useCallback(
+    (ct: CommunityTemplate) => {
+      const stamp = Date.now();
+      const newManuscript: StorySection[] = ct.sections.map((s, i) => ({
+        id: `sec-${stamp}-${i}`,
+        title: s.title,
+        // QNBS-v3: section guidance goes into `prompt` (writing brief), NOT `content` — mirrors the
+        // built-in-template path so a freshly applied template starts with an EMPTY manuscript.
+        content: '',
+        prompt: s.description ?? '',
+      }));
+      const newOutline: OutlineSection[] = ct.sections.map((s, i) => ({
+        id: `out-${stamp}-${i}`,
+        title: s.title,
+        description: s.description ?? '',
+      }));
+      dispatch(projectActions.setManuscript(newManuscript));
+      dispatch(projectActions.setOutline(newOutline));
+      toast.success(t('common.saved'), t('sidebar.manuscript'));
+      onNavigate('manuscript');
+    },
+    [dispatch, onNavigate, toast, t],
+  );
+
   const handleAiApply = useCallback(async () => {
     if (!selectedTemplate) return;
     setIsAiLoading(true);
@@ -207,6 +234,7 @@ export const useTemplateView = ({ onNavigate }: UseTemplateViewProps) => {
     setAiConcept,
     handleAiApply,
     handleStandardApply,
+    applyCommunityTemplate,
     // Custom
     customConcept,
     setCustomConcept,

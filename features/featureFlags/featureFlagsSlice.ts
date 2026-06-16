@@ -1,4 +1,5 @@
 import { createSlice, type Middleware, type PayloadAction } from '@reduxjs/toolkit';
+import { loadFeatureFlags, saveFeatureFlags } from './featureFlagsStorage';
 
 export interface FeatureFlagsState {
   // QNBS-v3: enableCodexAutoTracking promoted to permanent core behaviour (v1.20).
@@ -51,8 +52,6 @@ export interface FeatureFlagsState {
   enableGlobalCopilot: boolean;
 }
 
-const FEATURE_FLAGS_STORAGE_KEY = 'storycraft-feature-flags';
-
 const defaultFeatureFlagsState: FeatureFlagsState = {
   // QNBS-v3: all flags on by default so new installs get the full feature set immediately
   enableStoryBibleAdvanced: true,
@@ -84,12 +83,9 @@ const defaultFeatureFlagsState: FeatureFlagsState = {
 };
 
 const loadFeatureFlagsState = (): FeatureFlagsState => {
-  if (typeof window === 'undefined') {
-    return defaultFeatureFlagsState;
-  }
-
   try {
-    const stored = localStorage.getItem(FEATURE_FLAGS_STORAGE_KEY);
+    const stored = loadFeatureFlags();
+
     if (!stored) {
       return defaultFeatureFlagsState;
     }
@@ -102,15 +98,7 @@ const loadFeatureFlagsState = (): FeatureFlagsState => {
 };
 
 const saveFeatureFlagsState = (state: FeatureFlagsState) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    localStorage.setItem(FEATURE_FLAGS_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // localStorage may be blocked or unavailable.
-  }
+  saveFeatureFlags(state);
 };
 
 const initialState: FeatureFlagsState = loadFeatureFlagsState();

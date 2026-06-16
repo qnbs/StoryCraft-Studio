@@ -1,7 +1,7 @@
 /**
  * Tauri Deep Link Service — handles native file associations and single-instance behavior.
  * QNBS-v3: Listens for `deep-link://new-url` events emitted from the deep-link plugin
- * when a .storycraft or .scst file is double-clicked or dragged onto the app icon.
+ * when a .worldscript or .wsst file is double-clicked or dragged onto the app icon.
  * Integrates with the existing importProjectThunk flow for seamless project loading.
  */
 
@@ -48,28 +48,14 @@ export async function initTauriDeepLink(
 
         log.info('Received deep-link event', { url });
 
-        // Parse the URL to get the file path (storycraft://path/to/file.storycraft)
+        // Parse the URL to get the file path (storycraft://path/to/file.worldscript)
         // The deep-link plugin handles custom schemes, but for file associations we need
         // to handle the case where the file path is passed as a CLI argument
         try {
           // For file associations on Windows/Linux, the deep-link plugin parses CLI args
-          // and emits the URL. We need to convert storycraft:// URLs back to file paths
+          // and emits the URL. We need to convert worldscript:// URLs back to file paths
           // or handle direct file paths if passed.
-          let filePath = url;
-
-          // Check if it's a storycraft:// URL and extract the path
-          if (url.startsWith('storycraft://') || url.startsWith('storycraft:')) {
-            // On Windows, the URL might be storycraft:///C:/path/to/file.storycraft
-            // On Linux, it might be storycraft:///home/user/file.storycraft
-            // QNBS-v3: Strip storycraft:// prefix and normalize Windows drive-letter paths
-            filePath = url.replace(/^storycraft:\/\/?/, '');
-            // Windows paths like /C:/... need the leading slash removed
-            if (/^[A-Za-z]:/.test(filePath)) {
-              filePath = filePath.replace(/^\/+/, '');
-            } else {
-              filePath = filePath.replace(/^\/+/, '/');
-            }
-          }
+          const filePath = deepLinkUrlToPath(url);
 
           // Read file via Tauri FS plugin
           const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
@@ -127,11 +113,34 @@ export async function initTauriDeepLink(
 }
 
 /**
- * Check if a file path is a StoryCraft project file.
+ * Convert a deep-link URL into a filesystem path.
+ * QNBS-v3: the desktop deep-link scheme was rebranded `storycraft` → `worldscript`
+ * (src-tauri/tauri.conf.json). Accept BOTH schemes so links/file-associations created
+ * before the rename keep resolving during migration. Non-scheme inputs (raw paths passed
+ * as CLI args) are returned unchanged.
  */
-export function isStoryCraftProjectFile(filePath: string): boolean {
+export function deepLinkUrlToPath(url: string): string {
+  if (!/^(?:worldscript|storycraft):/i.test(url)) {
+    return url;
+  }
+  // Strip the scheme prefix (with 0–2 slashes, e.g. `worldscript:`, `worldscript://`,
+  // or Windows-style `worldscript:///C:/...`).
+  const filePath = url.replace(/^(?:worldscript|storycraft):\/{0,2}/i, '');
+  if (/^\/*[A-Za-z]:/.test(filePath)) {
+    // Windows drive-letter path, incl. the canonical triple-slash form `worldscript:///C:/...`
+    // which leaves a leading slash after the scheme strip — drop any leading slash(es).
+    return filePath.replace(/^\/+/, '');
+  }
+  // POSIX path — collapse any leading slashes to a single root slash.
+  return filePath.replace(/^\/+/, '/');
+}
+
+/**
+ * Check if a file path is a WorldScript project file.
+ */
+export function isWorldScriptProjectFile(filePath: string): boolean {
   const ext = filePath.split('.').pop()?.toLowerCase();
-  return ext === 'storycraft' || ext === 'scst' || filePath.endsWith('.json');
+  return ext === 'worldscript' || ext === 'wsst' || ext === 'json';
 }
 
 /**
@@ -140,5 +149,5 @@ export function isStoryCraftProjectFile(filePath: string): boolean {
 export function getProjectIdFromPath(filePath: string): string {
   const lastSegment = filePath.split(/[/\\]/).pop();
   if (!lastSegment) return 'unknown';
-  return lastSegment.replace(/\.(storycraft|scst|json)$/, '') || 'unknown';
+  return lastSegment.replace(/\.(worldscript|wsst|json)$/i, '') || 'unknown';
 }
