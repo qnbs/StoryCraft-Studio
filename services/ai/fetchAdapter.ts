@@ -86,9 +86,3 @@ export function createWorldScriptFetch(options?: WorldScriptFetchOptions): Fetch
     return impl(input, init);
   };
 }
-
-// QNBS-v3: Rebrand aliases — WorldScript names are canonical; StoryCraft names kept until phase 4c finishes the full rename.
-export type {
-  createStoryCraftFetch as createWorldScriptFetch,
-  StoryCraftFetchOptions as WorldScriptFetchOptions,
-};
