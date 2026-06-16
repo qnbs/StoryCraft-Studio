@@ -62,8 +62,11 @@ function setAttemptCount(n: number): void {
 }
 
 function getLockoutUntil(): number {
-  // Clamp to now + the max backoff window — a corrupt far-future timestamp expires within 60s.
-  return readInt(LOCKOUT_STORAGE_KEY, LEGACY_LOCKOUT_STORAGE_KEY, Date.now() + MAX_LOCKOUT_MS);
+  const ts = readInt(LOCKOUT_STORAGE_KEY, LEGACY_LOCKOUT_STORAGE_KEY);
+  // QNBS-v3 (CodeAnt): a valid lockout never exceeds now + the max backoff window. Treat a
+  // beyond-bound (corrupt) value as INVALID → no lockout (0). A moving `now + MAX` clamp would
+  // re-clamp every read and never count down, permanently locking the user out.
+  return ts > Date.now() + MAX_LOCKOUT_MS ? 0 : ts;
 }
 
 function setLockoutUntil(ts: number): void {

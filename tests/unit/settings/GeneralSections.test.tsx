@@ -6,6 +6,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import packageJson from '../../../package.json';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -213,6 +214,9 @@ describe('AboutSection', () => {
     // QNBS-v3: assert the exact product display name so a regression (e.g. dropping "Studio"
     // or rendering a different label that still contains "WorldScript") fails the test.
     expect(screen.getByText('WorldScript Studio')).toBeInTheDocument();
+    // QNBS-v3 (CodeAnt): also assert the app version actually renders, so a version regression
+    // (e.g. packageJson.version no longer shown) fails this test as its name implies.
+    expect(screen.getByText(packageJson.version, { exact: false })).toBeInTheDocument();
   });
 });
 
