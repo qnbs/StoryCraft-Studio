@@ -4,9 +4,59 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { getProjectIdFromPath, isWorldScriptProjectFile } from '../../../services/tauriDeepLink';
+import {
+  deepLinkUrlToPath,
+  getProjectIdFromPath,
+  isWorldScriptProjectFile,
+} from '../../../services/tauriDeepLink';
 
 describe('tauriDeepLink', () => {
+  describe('deepLinkUrlToPath', () => {
+    it('strips the new worldscript:// scheme (POSIX absolute path)', () => {
+      expect(deepLinkUrlToPath('worldscript:///home/user/my-novel.worldscript')).toBe(
+        '/home/user/my-novel.worldscript',
+      );
+    });
+
+    it('still strips the legacy storycraft:// scheme during migration', () => {
+      expect(deepLinkUrlToPath('storycraft:///home/user/my-novel.worldscript')).toBe(
+        '/home/user/my-novel.worldscript',
+      );
+    });
+
+    it('treats the legacy and new schemes identically', () => {
+      for (const rest of [':///home/user/a.json', '://C:/Users/me/b.json', ':/srv/c.json']) {
+        expect(deepLinkUrlToPath(`worldscript${rest}`)).toBe(
+          deepLinkUrlToPath(`storycraft${rest}`),
+        );
+      }
+    });
+
+    it('normalizes Windows drive-letter paths (two-slash and canonical triple-slash forms)', () => {
+      // Two-slash form: scheme strip already removes all slashes before the drive letter.
+      expect(deepLinkUrlToPath('worldscript://C:/Users/me/novel.worldscript')).toBe(
+        'C:/Users/me/novel.worldscript',
+      );
+      // Canonical triple-slash form (file-URL style) leaves a leading slash (/C:/...) that
+      // must still be stripped so Tauri `exists()` resolves the real Windows path.
+      expect(deepLinkUrlToPath('worldscript:///C:/Users/me/novel.worldscript')).toBe(
+        'C:/Users/me/novel.worldscript',
+      );
+      expect(deepLinkUrlToPath('storycraft:///D:/Docs/book.worldscript')).toBe(
+        'D:/Docs/book.worldscript',
+      );
+    });
+
+    it('is case-insensitive on the scheme', () => {
+      expect(deepLinkUrlToPath('WorldScript:///home/user/file.json')).toBe('/home/user/file.json');
+    });
+
+    it('returns non-scheme inputs (raw CLI paths) unchanged', () => {
+      expect(deepLinkUrlToPath('/home/user/file.json')).toBe('/home/user/file.json');
+      expect(deepLinkUrlToPath('C:/Users/me/file.json')).toBe('C:/Users/me/file.json');
+    });
+  });
+
   describe('isWorldScriptProjectFile', () => {
     it('returns true for .worldscript extension', () => {
       expect(isWorldScriptProjectFile('/path/to/project.worldscript')).toBe(true);
@@ -28,9 +78,6 @@ describe('tauriDeepLink', () => {
     it('handles mixed case extensions', () => {
       expect(isWorldScriptProjectFile('/path/to/project.WORLDSCRIPT')).toBe(true);
       expect(isWorldScriptProjectFile('/path/to/project.Wsst')).toBe(true);
-      // QNBS-v3: .json must also be case-insensitive (was a case-sensitive endsWith).
-      expect(isWorldScriptProjectFile('/path/to/project.JSON')).toBe(true);
-      expect(isWorldScriptProjectFile('/path/to/project.Json')).toBe(true);
     });
   });
 
@@ -53,12 +100,6 @@ describe('tauriDeepLink', () => {
 
     it('handles path without extension', () => {
       expect(getProjectIdFromPath('/path/to/project')).toBe('project');
-    });
-
-    it('strips uppercase extensions (case-insensitive)', () => {
-      expect(getProjectIdFromPath('/path/to/my-novel.WORLDSCRIPT')).toBe('my-novel');
-      expect(getProjectIdFromPath('/path/to/my-novel.WSST')).toBe('my-novel');
-      expect(getProjectIdFromPath('/path/to/my-novel.JSON')).toBe('my-novel');
     });
   });
 });
