@@ -6,6 +6,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # QNBS-v3: cooldown is the dependabot.yml mechanism to delay PRs until a release has aged 3 days
+    # (the .npmrc `minimum-release-age` only gates pnpm install-time, not Dependabot PR creation).
+    cooldown:
+      default-days: 3
     open-pull-requests-limit: 10
     groups:
       # QNBS-v3: react and react-dom must stay in lockstep; split bumps cause version-mismatch errors at test time.
@@ -35,6 +39,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 3
     open-pull-requests-limit: 5
     groups:
       tauri-deps:
@@ -50,4 +56,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 3
     open-pull-requests-limit: 5
