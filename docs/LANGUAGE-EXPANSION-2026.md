@@ -16,14 +16,25 @@ that delivered ja/zh/pt/el (P1-5).
 ## What shipped vs. what's machine-pending
 
 **Hand-translated to production quality (all 6 langs):**
-- `portal.json` (welcome screen), `sidebar.json` (nav chrome), `dashboard.json`, and the
-  high-traffic `common.*` action verbs.
+- `sidebar.json` (nav chrome) and `dashboard.json` — **~100 %** translated (EN-identical < 3 %).
+- `portal.json` (welcome screen) — **100 %** of localizable strings, including the **17 language-name
+  exonyms** (`portal.language.names.<code>`) shown in the `LanguageSelector` subtitle/search. The lone
+  EN-identical key is `portal.features.ai.title` = "AI Co-Pilot" (brand term, verbatim by glossary).
+- The high-traffic `common.*` action verbs (Save/Cancel/Delete/Close/Undo/… — the ~31 ubiquitous keys).
 - Cold-start values (`services/i18nBootstrap.ts`) — native title/logline/chapter-1, no English flash.
 - Glossary blocks (`locales/translation-glossary.json`).
 
+**Language picker (`components/ui/LanguageSelector.tsx`):** the visible **exonym** label is resolved
+at render time via `t('portal.language.names.<code>')` (no hardcoded UI strings); the **endonym**
+(`nativeName` — `Suomi`, `Svenska`, …) stays hardcoded by design so a speaker always finds their own
+language regardless of the active UI locale. `portal.language.names.*` is hand-translated for the 5
+core + 6 new languages and English-fallback for the other Beta locales (filled by the bulk translator).
+
 **English-fallback stubs (parity-green) — awaiting the bulk job + human QA:**
-- The other 16 modules (`writer`, `manuscript`, `settings`, `help`, `export`, …). They pass the
-  `i18n:check` parity gate as EN stubs and are filled by the user-run bulk translator.
+- The bulk of `common.json` (~95 % — feature subtrees: `voice.*`, `error.*`, `critic.*`, `palette.*`,
+  `consistencyChecker.*`) and the other 16 modules (`writer`, `manuscript`, `settings`, `help`,
+  `export`, …). They pass the `i18n:check` parity gate as EN stubs and are filled by the user-run
+  bulk translator. Measure current coverage any time with `node scripts/check-i18n-keys.mjs --quality`.
 
 ## Running the bulk translator (user-run; the agent makes no network calls)
 

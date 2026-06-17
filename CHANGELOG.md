@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Language expansion — 6 new locales (11 → 17):** Finnish (`fi`), Swedish (`sv`), Hungarian (`hu`), Icelandic (`is`), Basque (`eu`) and Persian/Farsi (`fa`, **RTL**, Arabic script). All ship as Beta. The high-traffic chrome (`portal`, `sidebar`, `dashboard`, top `common.*` verbs) plus native cold-start strings (`i18nBootstrap`) and glossary blocks are hand-translated; the remaining 16 modules ship as English-fallback stubs (parity-green) pending the user-run bulk translator. `fa` direction/fonts are automatic via `RTL_LOCALES` + the existing `[dir="rtl"]` Noto Arabic swap — no App/CSS/font changes. New guide: [`docs/LANGUAGE-EXPANSION-2026.md`](docs/LANGUAGE-EXPANSION-2026.md).
 - **Bulk-translate hardening (`scripts/bulk-translate-locales.mjs`):** placeholder masking (`{{token}}` → sentinel → restore, so MT can't mangle interpolation) and a `--dry-run` mode (per-file key + glossary-hit counts, no network calls, no writes). The 6 new languages are added to `SUPPORTED_LANGS`, `check-i18n-keys.mjs`, and `build-i18n.mjs`. The `i18nPlaceholders` guard now covers all 17 locale bundles.
+- **Localized language picker:** `LanguageSelector` now resolves each language's exonym label (e.g. "Finnish", "Swedish") through `t('portal.language.names.<code>')` at render time instead of a hardcoded string — the native endonym (`Suomi`, `Svenska`, …) stays hardcoded by design so users always find their own language regardless of the active UI locale. Adds `portal.language.names.*` (17 names) to all 17 locales, hand-translated for the 5 core + 6 new languages (Beta locales fall back to English pending the bulk translator). `portal` chrome is now fully localized for the 6 new languages.
+
+### Changed
+
+- **Docs completion (language-expansion pass):** README i18n badge, language list, capability table and metrics line updated to **17 locales / 2716 keys**; Persian added to the RTL-Beta section; `AUDIT.md` follow-up chain + quality-gate entry for 2026-06-17.
 
 ## [1.23.0] — 2026-06-16
 
