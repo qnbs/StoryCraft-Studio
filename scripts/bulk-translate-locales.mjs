@@ -85,21 +85,13 @@ function glossaryTranslate(text, lang, glossary) {
   const langGlossary = glossary[lang];
   if (!langGlossary) return null;
 
-  // Exact match
-  if (langGlossary[text]) return langGlossary[text];
-
-  // Partial match for short terms embedded in longer strings
-  // (conservative: only replace whole words)
-  let result = text;
-  for (const [en, translated] of Object.entries(langGlossary)) {
-    if (en.startsWith('_')) continue;
-    // Word-boundary replacement for standalone terms
-    const regex = new RegExp(`\\b${en}\\b`, 'g');
-    if (regex.test(result)) {
-      result = result.replace(regex, translated);
-    }
-  }
-  return result === text ? null : result;
+  // QNBS-v3: EXACT full-string match only. The previous whole-word partial substitution was a
+  // correctness footgun: a non-null partial result skipped the MT step entirely, leaving the rest
+  // of a multi-word string in English (e.g. "Export your project…" → "Exportálás your project…").
+  // Exact labels still anchor here; everything else flows to MT in full. Cross-module term
+  // consistency is enforced via the glossary + native review, not by mangling sentences.
+  if (langGlossary[text] !== undefined) return langGlossary[text];
+  return null;
 }
 
 function loadCheckpoint(lang, file) {

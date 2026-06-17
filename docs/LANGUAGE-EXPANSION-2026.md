@@ -30,13 +30,26 @@ at render time via `t('portal.language.names.<code>')` (no hardcoded UI strings)
 language regardless of the active UI locale. `portal.language.names.*` is hand-translated for the 5
 core + 6 new languages and English-fallback for the other Beta locales (filled by the bulk translator).
 
-**English-fallback stubs (parity-green) — awaiting the bulk job + human QA:**
-- The bulk of `common.json` (~95 % — feature subtrees: `voice.*`, `error.*`, `critic.*`, `palette.*`,
-  `consistencyChecker.*`) and the other 16 modules (`writer`, `manuscript`, `settings`, `help`,
-  `export`, …). They pass the `i18n:check` parity gate as EN stubs and are filled by the user-run
-  bulk translator. Measure current coverage any time with `node scripts/check-i18n-keys.mjs --quality`.
+**Machine-translated — bulk run completed 2026-06-17 (Beta; human native review pending):**
+- All remaining modules (`common`, `writer`, `manuscript`, `settings`, `copilot`, `export`, `help`, …)
+  were completed via `scripts/bulk-translate-locales.mjs` — glossary-anchored (v2.0, ~44 anchor
+  terms/locale) and placeholder-masked. Post-run coverage (translated, EN-identical residual is mostly
+  brand/format verbatim terms):
 
-## Running the bulk translator (user-run; the agent makes no network calls)
+  | fi | sv | hu | is | eu | fa | ja | zh | pt | el |
+  |----|----|----|----|----|----|----|----|----|----|
+  | 97 % | 96 % | 97 % | 97 % | 98 % | 99 % | 99 % | 100 % | 98 % | 97 % |
+
+- Quality bar is **Beta / machine translation**; human native review is the tracked follow-up (checklist
+  in [`TRANSLATION-GUIDE.md`](TRANSLATION-GUIDE.md) §6). Measure coverage any time with
+  `node scripts/check-i18n-keys.mjs --quality`.
+
+> **Bug fixed during this run:** `glossaryTranslate` previously did partial whole-word substitution and
+> returned early, leaving the rest of multi-word strings in English (e.g. "Exportálás your project…").
+> It is now **exact-match only** (`scripts/bulk-translate-locales.mjs`); the ~1,300 strings it had
+> mangled were reset and re-translated in full.
+
+## Running the bulk translator (glossary-first, placeholder-masked, resumable)
 
 ```bash
 node scripts/bulk-translate-locales.mjs --lang=fi,sv,hu,is,eu,fa --all --delay=600
