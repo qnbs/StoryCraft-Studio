@@ -165,8 +165,11 @@ export function useCommandPalette({
     }
   }, [isOpen, isListening, stopListening, isTouchDevice]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `pinTick` only exists to invalidate cached prefs after pin/unpin writes to storage
-  const prefs = useMemo(() => loadPalettePreferences(), [pinTick]);
+  // QNBS-v3: `pinTick` + `isOpen` are invalidation ticks, not memo inputs — `pinTick` reloads prefs
+  // after pin/unpin writes; `isOpen` reloads them on each open so recents recorded by
+  // recordRecentCommand (which doesn't bump `pinTick`) aren't stale on reopen.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pinTick/isOpen are storage-invalidation ticks, intentionally driving the reload
+  const prefs = useMemo(() => loadPalettePreferences(), [pinTick, isOpen]);
 
   const suggestionEntries = useMemo(() => {
     const sug = getLocalAiSuggestions(runtimeDeps);
@@ -224,20 +227,27 @@ export function useCommandPalette({
 
   const flatList = useMemo(() => {
     if (!query) {
-      const pinned = sortedCommands.filter((c) => prefs.pinnedIds.includes(c.id));
-      const recentIds = prefs.recentIds.filter((id) => !prefs.pinnedIds.includes(id));
+      const pinnedSet = new Set(prefs.pinnedIds);
+      const pinned = sortedCommands.filter((c) => pinnedSet.has(c.id));
+      const recentIds = prefs.recentIds.filter((id) => !pinnedSet.has(id));
+      const recentSet = new Set(recentIds);
       const recent = recentIds
         .map((id) => sortedCommands.find((c) => c.id === id))
         .filter((c): c is PaletteCommandModel => c != null);
-      const sugIds = new Set(suggestionEntries.map((s) => s.model.id));
+      // QNBS-v3: a command can be suggested AND pinned/recent — dedupe so it appears once. Suggestions
+      // yield to the pinned/recent sections; only the leftovers render under "Suggestions".
+      const visibleSuggestions = suggestionEntries.filter(
+        (s) => !pinnedSet.has(s.model.id) && !recentSet.has(s.model.id),
+      );
+      const sugIds = new Set(visibleSuggestions.map((s) => s.model.id));
       const rest = sortedCommands.filter(
-        (c) => !prefs.pinnedIds.includes(c.id) && !recentIds.includes(c.id) && !sugIds.has(c.id),
+        (c) => !pinnedSet.has(c.id) && !recentSet.has(c.id) && !sugIds.has(c.id),
       );
       const blocks: { heading?: string; items: PaletteCommandModel[] }[] = [];
-      if (suggestionEntries.length) {
+      if (visibleSuggestions.length) {
         blocks.push({
           heading: t('palette.section.suggestions'),
-          items: suggestionEntries.map((s) => s.model),
+          items: visibleSuggestions.map((s) => s.model),
         });
       }
       if (pinned.length) blocks.push({ heading: t('palette.section.pinned'), items: pinned });
@@ -333,6 +343,10 @@ export function useCommandPalette({
         return;
       }
       if (e.key === 'Enter') {
+        // QNBS-v3: let focused buttons/links handle their own Enter (e.g. the mic toggle) instead of
+        // hijacking it to run the selected command. Only the search input / listbox triggers a run.
+        const active = document.activeElement;
+        if (active instanceof HTMLButtonElement || active instanceof HTMLAnchorElement) return;
         e.preventDefault();
         const row = flatItems[selectedIndex]?.item;
         if (row) runCommand(row);

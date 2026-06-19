@@ -2,8 +2,10 @@ import { render, renderHook, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CommandPalette } from '../../components/CommandPalette';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
+import { getLocalAiSuggestions } from '../../services/commands/aiSuggestions';
 import { buildPaletteCommandModels } from '../../services/commands/commandBuilder';
 import type { PaletteCommandModel } from '../../services/commands/commandTypes';
+import { loadPalettePreferences } from '../../services/commands/palettePreferences';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -214,5 +216,26 @@ describe('CommandPalette', () => {
     // Row 0 is the section heading, so option index 0 lives at row index 1.
     expect(result.current.optionIndexToRowIndex.get(0)).toBe(1);
     expect(result.current.optionIndexToRowIndex.get(59)).toBe(60);
+  });
+
+  it('dedupes a command that is both suggested and pinned (appears once)', () => {
+    vi.mocked(buildPaletteCommandModels).mockReturnValue(makeCommands(5));
+    vi.mocked(loadPalettePreferences).mockReturnValue({ pinnedIds: ['cmd-1'], recentIds: [] });
+    // cmd-1 is also surfaced as an AI suggestion — it must not appear twice.
+    vi.mocked(getLocalAiSuggestions).mockReturnValue([
+      { id: 'cmd-1', reasonKey: 'palette.reason.x' },
+    ]);
+    const { result } = renderHook(() =>
+      useCommandPalette({
+        isOpen: true,
+        onClose: mockOnClose,
+        onNavigate: mockOnNavigate,
+        currentView: 'dashboard',
+      }),
+    );
+    const ids = result.current.flatItems.map((fi) => fi.item.id);
+    expect(ids.filter((id) => id === 'cmd-1').length).toBe(1);
+    vi.mocked(loadPalettePreferences).mockReturnValue({ pinnedIds: [], recentIds: [] });
+    vi.mocked(getLocalAiSuggestions).mockReturnValue([]);
   });
 });
