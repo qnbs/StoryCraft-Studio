@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "Πράξη 3 – Ψήφισμα",
   "sceneboard.addScene": "Προσθήκη Scene",
   "sceneboard.addSceneToAct": "Προσθήκη scene to this act",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Δεν υπάρχουν προτάσεις ακόμα. Εκτελέστε ξανά μετά την προσθήκη περιεχομένου σκηνής.",
   "sceneboard.ai.panelTitle": "Προτάσεις πλοκής AI",
   "sceneboard.ai.ragChunks": "{{count}} αποσπάσματα ιστορίας",

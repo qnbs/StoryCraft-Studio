@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "3. akta – Ebazpena",
   "sceneboard.addScene": "Gehitu eszena",
   "sceneboard.addSceneToAct": "Gehitu eszena ekintza honi",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Oraindik ez dago iradokizunik. Exekutatu berriro eszenaren edukia gehitu ondoren.",
   "sceneboard.ai.panelTitle": "AI trama iradokizunak",
   "sceneboard.ai.ragChunks": "{{count}} ipuin pasarteak",

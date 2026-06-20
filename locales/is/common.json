@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "3. lög – Ályktun",
   "sceneboard.addScene": "Bæta við senu",
   "sceneboard.addSceneToAct": "Bættu senu við þennan leik",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Engar tillögur ennþá. Hlaupa aftur eftir að hafa bætt við atriðinu.",
   "sceneboard.ai.panelTitle": "Tillögur um AI söguþræði",
   "sceneboard.ai.ragChunks": "{{count}} söguþættir",

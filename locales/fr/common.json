@@ -505,6 +505,7 @@
   "sceneboard.addSceneToAct": "Ajouter une scène à cet acte",
   "sceneboard.ai.empty": "Aucune suggestion. Réessayez après du contenu.",
   "sceneboard.ai.panelTitle": "Suggestions de plot IA",
+  "sceneboard.ai.contextNote": "L'analyse utilise les titres de scène et les premières lignes, jusqu'à ~2 000 caractères.",
   "sceneboard.ai.ragChunks": "{{count}} passages de l'histoire",
   "sceneboard.ai.retry": "Resuggérer",
   "sceneboard.ai.suggestBeat": "Beat IA",

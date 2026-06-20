@@ -505,6 +505,7 @@
   "sceneboard.addSceneToAct": "Szene in diesem Akt hinzufügen",
   "sceneboard.ai.empty": "Noch keine Vorschläge. Erneut ausführen nach Szenen-Inhalt.",
   "sceneboard.ai.panelTitle": "KI-Plot-Vorschläge",
+  "sceneboard.ai.contextNote": "Die Analyse nutzt Szenentitel und Anfangszeilen, bis zu ~2.000 Zeichen.",
   "sceneboard.ai.ragChunks": "{{count}} Story-Passagen",
   "sceneboard.ai.retry": "Erneut vorschlagen",
   "sceneboard.ai.suggestBeat": "KI Beat vorschlagen",

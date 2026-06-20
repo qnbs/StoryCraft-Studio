@@ -152,6 +152,7 @@
   "sceneboard.ai.suggestBeat": "AI suggest beat",
   "sceneboard.ai.suggesting": "Suggesting…",
   "sceneboard.ai.panelTitle": "AI plot suggestions",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.dnd.start": "Grabbed scene {{title}}. Use arrow keys to move, Space to drop, Escape to cancel.",
   "sceneboard.dnd.over": "Scene {{title}} is over act {{act}}.",
   "sceneboard.dnd.dropped": "Scene {{title}} dropped into act {{act}}.",

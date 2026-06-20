@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "قانون 3 - قطعنامه",
   "sceneboard.addScene": "اضافه کردن صحنه",
   "sceneboard.addSceneToAct": "صحنه را به این عمل اضافه کنید",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "هنوز پیشنهادی وجود ندارد. پس از افزودن محتوای صحنه دوباره اجرا کنید.",
   "sceneboard.ai.panelTitle": "پیشنهادات طرح هوش مصنوعی",
   "sceneboard.ai.ragChunks": "{{count}} قسمت های داستان",

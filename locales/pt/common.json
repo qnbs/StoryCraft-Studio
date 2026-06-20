@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "Ato 3 – Resolução",
   "sceneboard.addScene": "Adicionar Scene",
   "sceneboard.addSceneToAct": "Adicionar scene to this act",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Nenhuma sugestão ainda. Execute novamente após adicionar o conteúdo da cena.",
   "sceneboard.ai.panelTitle": "IA plot suggestions",
   "sceneboard.ai.ragChunks": "{{count}} passagens da história",
