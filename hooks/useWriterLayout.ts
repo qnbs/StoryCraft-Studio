@@ -47,6 +47,15 @@ export function useWriterLayout() {
     setCollapsedPanels((prev) => ({ ...prev, [panel]: !prev[panel] }));
   };
 
+  // QNBS-v3: one-click "restore standard layout" — clears focus mode + panel collapse and exits
+  // flow mode, returning the writer to the default 3-column view. ProForge lives in Redux and is
+  // reset by the caller (WriterViewUI) since it isn't owned by this layout hook.
+  const resetLayout = useCallback(() => {
+    setFocusMode(false);
+    setCollapsedPanels({});
+    if (flowMode) toggleFlowMode();
+  }, [flowMode, toggleFlowMode]);
+
   return {
     flowMode,
     toggleFlowMode,
@@ -56,6 +65,7 @@ export function useWriterLayout() {
     togglePanel,
     focusMode,
     setFocusMode,
+    resetLayout,
     mobilePanelRef,
     mobileTabs: MOBILE_TABS,
   };
