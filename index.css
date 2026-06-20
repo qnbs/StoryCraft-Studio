@@ -960,10 +960,11 @@ body.is-desktop .view-shell--wide {
 }
 
 /* QNBS-v3 (D3): denser touch targets for mouse-driven desktop. Guarded by
-   `(pointer: fine)` so touchscreen laptops/tablets in the Tauri WebView keep the
-   full 44px (AAA). 36px still satisfies WCAG 2.2 AA (2.5.8 — 24px minimum). Drives
-   `min-h-touch` / `min-w-touch` via `--size-touch-target`. */
-@media (pointer: fine) {
+   `(pointer: fine) and (not (any-pointer: coarse))` so HYBRID touchscreen laptops
+   (precise mouse AND a coarse touch input) keep the full 44px (AAA) rather than being
+   shrunk to 36px — only pure-pointer devices densify. 36px still satisfies WCAG 2.2
+   AA (2.5.8 — 24px minimum). Drives `min-h-touch` / `min-w-touch` via `--size-touch-target`. */
+@media (pointer: fine) and (not (any-pointer: coarse)) {
   body.is-desktop {
     --size-touch-target: 2.25rem;
   }
