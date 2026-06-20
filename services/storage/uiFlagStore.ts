@@ -8,23 +8,30 @@
 
 const PREFIX = 'worldscript-';
 
+// QNBS-v3: module-level session fallback. When localStorage is blocked (private mode, embedded
+// webview), persistence falls back to this map so a dismissal still survives component
+// unmount/remount within the session — otherwise a coachmark would reappear on every navigation.
+const sessionMemory = new Map<string, boolean>();
+
 export const uiFlagStore = {
-  /** Read a boolean UI flag. Returns false when unset or when storage is unavailable. */
+  /** Read a boolean UI flag. Returns false when unset; consults the session map if storage fails. */
   get(key: string): boolean {
+    if (sessionMemory.get(key) === true) return true;
     try {
       return typeof localStorage !== 'undefined' && localStorage.getItem(`${PREFIX}${key}`) === '1';
     } catch {
       return false;
     }
   },
-  /** Persist a boolean UI flag. Silently degrades when storage is blocked (e.g. private mode). */
+  /** Persist a boolean UI flag. Always records the session map; localStorage is best-effort. */
   set(key: string, value: boolean): void {
+    sessionMemory.set(key, value);
     try {
       if (typeof localStorage === 'undefined') return;
       if (value) localStorage.setItem(`${PREFIX}${key}`, '1');
       else localStorage.removeItem(`${PREFIX}${key}`);
     } catch {
-      // storage unavailable — non-fatal for ephemeral UI prefs
+      // storage unavailable — the session map above keeps the value for this session
     }
   },
 };

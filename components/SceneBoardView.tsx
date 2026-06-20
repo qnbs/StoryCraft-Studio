@@ -115,17 +115,28 @@ const SceneBoardUI: FC = () => {
     [sections, handleUpdateSection],
   );
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    // QNBS-v3: highlight-only — track the hovered act column for the drop-zone glow. The actual
-    // act reassignment happens in handleDragEnd, so merely passing over a column no longer
-    // rewrites the scene's act on every hover frame.
-    const { over } = event;
-    if (over?.id && String(over.id).startsWith('act-')) {
-      setDragOverActId(parseInt(String(over.id).replace('act-', ''), 10));
-    } else {
-      setDragOverActId(null);
-    }
-  }, []);
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      // QNBS-v3: highlight-only — track the hovered act column for the drop-zone glow. The actual
+      // act reassignment happens in handleDragEnd, so merely passing over a column no longer
+      // rewrites the scene's act on every hover frame.
+      const { over } = event;
+      if (!over) {
+        setDragOverActId(null);
+        return;
+      }
+      const overId = String(over.id);
+      if (overId.startsWith('act-')) {
+        // Empty lane: the lane droppable (ActSwimlane useDroppable) is the closest target.
+        setDragOverActId(parseInt(overId.replace('act-', ''), 10));
+      } else {
+        // Over a scene card (closest droppable inside a populated lane) — highlight its lane.
+        const overSection = sections.find((s) => s.id === over.id);
+        setDragOverActId(overSection?.act ?? 1);
+      }
+    },
+    [sections],
+  );
 
   const activeSection = activeId ? sections.find((s) => s.id === activeId) : null;
 

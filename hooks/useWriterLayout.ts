@@ -53,6 +53,9 @@ export function useWriterLayout() {
   const resetLayout = useCallback(() => {
     setFocusMode(false);
     setCollapsedPanels({});
+    // QNBS-v3: also restore the default mobile tab, so "restore standard layout" returns small
+    // screens to the Tools panel rather than leaving them stuck on a non-default tab.
+    setActiveMobileTab('tools');
     if (flowMode) toggleFlowMode();
   }, [flowMode, toggleFlowMode]);
 

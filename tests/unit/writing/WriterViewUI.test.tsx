@@ -297,4 +297,16 @@ describe('WriterViewUI', () => {
     await user.click(screen.getByTitle('writer.focusMode.enter'));
     expect(screen.getByText('writer.modeBadge.focus')).toBeInTheDocument();
   });
+
+  it('restore-layout also returns the mobile tab to the default (tools)', async () => {
+    const user = userEvent.setup();
+    // ProForge active → the mode badge (with the reset button) is rendered.
+    mockIsProForgeEnabled = true;
+    mockIsProForgeActive = true;
+    render(<WriterViewUI />);
+    await user.click(screen.getByTestId('writer-tab-context'));
+    expect(screen.getByTestId('writer-tab-context')).toHaveAttribute('aria-selected', 'true');
+    await user.click(screen.getByTitle('writer.modeBadge.resetTitle'));
+    expect(screen.getByTestId('writer-tab-tools')).toHaveAttribute('aria-selected', 'true');
+  });
 });
