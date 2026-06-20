@@ -130,7 +130,9 @@ describe('useConsistencyCheckerView', () => {
       expect.any(Object),
     );
 
-    await waitFor(() => expect(result.current.checkResult).toBe('Consistency OK'));
+    await waitFor(() =>
+      expect(result.current.checkResult).toEqual({ kind: 'text', text: 'Consistency OK' }),
+    );
     expect(result.current.isChecking).toBe(false);
   });
 
@@ -156,7 +158,7 @@ describe('useConsistencyCheckerView', () => {
       await result.current.runCheck('c1');
     });
 
-    expect(result.current.checkResult).toBe('');
+    expect(result.current.checkResult).toBeNull();
     expect(result.current.isChecking).toBe(false);
   });
 
@@ -168,8 +170,56 @@ describe('useConsistencyCheckerView', () => {
       await result.current.runCheck('c1');
     });
 
-    await waitFor(() => expect(result.current.checkResult).toContain('Error:'));
+    await waitFor(() => {
+      const r = result.current.checkResult;
+      expect(r?.kind).toBe('text');
+      expect(r?.kind === 'text' ? r.text : '').toContain('Error:');
+    });
     expect(result.current.isChecking).toBe(false);
+  });
+
+  it('parses a JSON finding array into structured results', async () => {
+    mockGenerateText.mockReset().mockImplementation(async () =>
+      JSON.stringify([
+        {
+          severity: 'error',
+          title: 'Eye colour',
+          detail: 'Blue in Ch1, brown in Ch3.',
+          ref: 'Chapter 3',
+        },
+        { severity: 'info', title: 'Age', detail: 'Consistent throughout.' },
+      ]),
+    );
+    const { result } = renderHook(() => useConsistencyCheckerView());
+
+    await act(async () => {
+      await result.current.runCheck('c1');
+    });
+
+    await waitFor(() => {
+      const r = result.current.checkResult;
+      expect(r?.kind).toBe('structured');
+      if (r?.kind === 'structured') {
+        expect(r.findings).toHaveLength(2);
+        expect(r.findings[0]).toEqual({
+          severity: 'error',
+          title: 'Eye colour',
+          detail: 'Blue in Ch1, brown in Ch3.',
+          ref: 'Chapter 3',
+        });
+      }
+    });
+  });
+
+  it('falls back to text when JSON output is fenced but malformed', async () => {
+    mockGenerateText.mockReset().mockImplementation(async () => '```json\nnot-an-array\n```');
+    const { result } = renderHook(() => useConsistencyCheckerView());
+
+    await act(async () => {
+      await result.current.runCheck('c1');
+    });
+
+    await waitFor(() => expect(result.current.checkResult?.kind).toBe('text'));
   });
 
   it('aborts active consistency checks when the component unmounts', async () => {
@@ -245,7 +295,9 @@ describe('useConsistencyCheckerView', () => {
     });
 
     expect(mockGenerateText).toHaveBeenCalled();
-    await waitFor(() => expect(result.current.checkResult).toBe('Consistency OK'));
+    await waitFor(() =>
+      expect(result.current.checkResult).toEqual({ kind: 'text', text: 'Consistency OK' }),
+    );
   });
 
   it('sets storyCodex to null when no project data exists', async () => {

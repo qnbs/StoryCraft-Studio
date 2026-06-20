@@ -15,6 +15,56 @@ import { retrieveContext } from '../services/localRagService';
 import { logger } from '../services/logger';
 import type { CharacterRelationship, StoryCodex } from '../types';
 
+// QNBS-v3: structured consistency findings — the AI is asked to return a JSON array so results can
+// be rendered as a severity-tagged list (mirroring the Story Bible hints) instead of a raw <pre>.
+export type ConsistencySeverity = 'info' | 'warn' | 'error';
+
+export interface ConsistencyFinding {
+  severity: ConsistencySeverity;
+  title: string;
+  detail: string;
+  ref?: string;
+}
+
+export type ConsistencyResult =
+  | { kind: 'structured'; findings: ConsistencyFinding[] }
+  | { kind: 'text'; text: string };
+
+/**
+ * Parse the model's response into structured findings, falling back to raw text when the output
+ * is not valid finding-array JSON (so the results pane never regresses to empty).
+ */
+export const parseConsistencyResult = (raw: string): ConsistencyResult => {
+  const fenced = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  try {
+    const parsed: unknown = JSON.parse(fenced);
+    if (Array.isArray(parsed)) {
+      const findings: ConsistencyFinding[] = parsed
+        .filter((f): f is Record<string, unknown> => typeof f === 'object' && f !== null)
+        .map((f) => {
+          const sev = f['severity'];
+          const severity: ConsistencySeverity = sev === 'error' || sev === 'warn' ? sev : 'info';
+          const ref = typeof f['ref'] === 'string' && f['ref'] ? { ref: f['ref'] } : {};
+          return {
+            severity,
+            title: typeof f['title'] === 'string' ? f['title'] : '',
+            detail: typeof f['detail'] === 'string' ? f['detail'] : '',
+            ...ref,
+          };
+        })
+        .filter((f) => f.title || f.detail);
+      if (findings.length > 0) return { kind: 'structured', findings };
+    }
+  } catch {
+    // Not JSON — fall back to the raw string below.
+  }
+  return { kind: 'text', text: raw };
+};
+
 export const useConsistencyCheckerView = () => {
   const { t, language } = useTranslation();
   const aiCreativity = useAppSelector(selectAiCreativity);
@@ -38,7 +88,7 @@ export const useConsistencyCheckerView = () => {
   );
 
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
-  const [checkResult, setCheckResult] = useState<string>('');
+  const [checkResult, setCheckResult] = useState<ConsistencyResult | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [storyCodex, setStoryCodex] = useState<StoryCodex | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -140,10 +190,13 @@ export const useConsistencyCheckerView = () => {
 
         const { prompt } = getPrompts('consistencyCheck', promptArgs);
         const result = await generateText(prompt, aiCreativity, aiOptions, controller.signal);
-        setCheckResult(result);
+        setCheckResult(parseConsistencyResult(result));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
-        setCheckResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setCheckResult({
+          kind: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
       } finally {
         setIsChecking(false);
         abortControllerRef.current = null;
