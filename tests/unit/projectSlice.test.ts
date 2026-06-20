@@ -528,9 +528,9 @@ describe('projectSlice', () => {
     it('deleteBinderNode removes a node and its subtree', () => {
       const store = createTestStore({
         binderNodes: [
-          { id: 'root', parentId: null, title: 'Root', type: 'folder' },
-          { id: 'child', parentId: 'root', title: 'Child', type: 'note' },
-          { id: 'other', parentId: null, title: 'Other', type: 'note' },
+          { id: 'root', parentId: null, title: 'Root', type: 'folder', sortIndex: 0 },
+          { id: 'child', parentId: 'root', title: 'Child', type: 'note', sortIndex: 0 },
+          { id: 'other', parentId: null, title: 'Other', type: 'note', sortIndex: 1 },
         ],
       });
       store.dispatch(projectActions.deleteBinderNode('root'));
@@ -542,8 +542,8 @@ describe('projectSlice', () => {
       const store = createTestStore({
         // QNBS-v3: corrupted/imported cycle a→b→a — must not hang the reducer.
         binderNodes: [
-          { id: 'a', parentId: 'b', title: 'A', type: 'note' },
-          { id: 'b', parentId: 'a', title: 'B', type: 'note' },
+          { id: 'a', parentId: 'b', title: 'A', type: 'note', sortIndex: 0 },
+          { id: 'b', parentId: 'a', title: 'B', type: 'note', sortIndex: 1 },
         ],
       });
       store.dispatch(projectActions.deleteBinderNode('a'));
