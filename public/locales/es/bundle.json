@@ -2715,27 +2715,21 @@
   "copilot.suggestionWorldBuilding": "¿Qué detalles de construcción del mundo me faltan?",
   "copilot.title": "Copiloto IA",
   "copilot.you": "Tú",
-  "menu": {
-    "file": "Archivo",
-    "export": "Exportar proyecto…",
-    "settings": "Ajustes",
-    "edit": "Editar",
-    "view": "Ver",
-    "commandPalette": "Paleta de comandos",
-    "window": "Ventana",
-    "help": "Ayuda",
-    "helpCenter": "Centro de ayuda"
-  },
-  "tray": {
-    "tooltip": "WorldScript Studio",
-    "show": "Mostrar WorldScript Studio",
-    "settings": "Ajustes",
-    "commandPalette": "Paleta de comandos",
-    "quit": "Salir"
-  },
-  "settings": {
-    "sectionTitle": "Escritorio",
-    "minimizeToTray": "Minimizar a la bandeja al cerrar",
-    "minimizeToTrayHint": "Mantén WorldScript Studio en la bandeja del sistema en lugar de salir al cerrar la ventana."
-  }
+  "desktop.menu.file": "Archivo",
+  "desktop.menu.export": "Exportar proyecto…",
+  "desktop.menu.settings": "Ajustes",
+  "desktop.menu.edit": "Editar",
+  "desktop.menu.view": "Ver",
+  "desktop.menu.commandPalette": "Paleta de comandos",
+  "desktop.menu.window": "Ventana",
+  "desktop.menu.help": "Ayuda",
+  "desktop.menu.helpCenter": "Centro de ayuda",
+  "desktop.tray.tooltip": "WorldScript Studio",
+  "desktop.tray.show": "Mostrar WorldScript Studio",
+  "desktop.tray.settings": "Ajustes",
+  "desktop.tray.commandPalette": "Paleta de comandos",
+  "desktop.tray.quit": "Salir",
+  "desktop.settings.sectionTitle": "Escritorio",
+  "desktop.settings.minimizeToTray": "Minimizar a la bandeja al cerrar",
+  "desktop.settings.minimizeToTrayHint": "Mantén WorldScript Studio en la bandeja del sistema en lugar de salir al cerrar la ventana."
 }
