@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "מערכה 3 – התרה",
   "sceneboard.addScene": "הוספת סצנה",
   "sceneboard.addSceneToAct": "הוספת סצנה למערכה זו",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "אין עדיין הצעות. הריצו שוב לאחר הוספת תוכן סצנה.",
   "sceneboard.ai.panelTitle": "הצעות עלילה של ה‑AI",
   "sceneboard.ai.ragChunks": "{{count}} קטעי סיפור",

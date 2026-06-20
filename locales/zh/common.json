@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "第三幕——决议",
   "sceneboard.addScene": "添加 Scene",
   "sceneboard.addSceneToAct": "添加 scene to this act",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "还没有建议。添加场景内容后再次运行。",
   "sceneboard.ai.panelTitle": "AI剧情建议",
   "sceneboard.ai.ragChunks": "{{count}} 个故事段落",

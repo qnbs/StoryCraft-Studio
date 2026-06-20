@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "الفصل 3 – الحل",
   "sceneboard.addScene": "إضافة مشهد",
   "sceneboard.addSceneToAct": "إضافة مشهد إلى هذا الفصل",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "لا توجد اقتراحات بعد. شغّل مرة أخرى بعد إضافة محتوى المشهد.",
   "sceneboard.ai.panelTitle": "اقتراحات الحبكة بالذكاء الاصطناعي",
   "sceneboard.ai.ragChunks": "{{count}} مقطع من القصة",

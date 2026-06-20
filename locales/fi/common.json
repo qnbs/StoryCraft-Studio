@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "Laki 3 – Päätöslauselma",
   "sceneboard.addScene": "Lisää kohtaus",
   "sceneboard.addSceneToAct": "Lisää kohtaus tähän tekoon",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Ei vielä ehdotuksia. Suorita uudelleen, kun olet lisännyt kohtauksen sisällön.",
   "sceneboard.ai.panelTitle": "AI juoniehdotuksia",
   "sceneboard.ai.ragChunks": "{{count}} tarinan kohdat",

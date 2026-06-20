@@ -503,6 +503,7 @@
   "sceneboard.act3.label": "3. törvény – Határozat",
   "sceneboard.addScene": "Jelenet hozzáadása",
   "sceneboard.addSceneToAct": "Adjon hozzá jelenetet ehhez az aktushoz",
+  "sceneboard.ai.contextNote": "Analysis uses scene titles and opening lines, up to ~2,000 characters.",
   "sceneboard.ai.empty": "Még nincsenek javaslatok. A jelenettartalom hozzáadása után futtassa újra.",
   "sceneboard.ai.panelTitle": "AI tervjavaslatok",
   "sceneboard.ai.ragChunks": "{{count}} történetrészletek",
