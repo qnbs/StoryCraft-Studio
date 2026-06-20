@@ -60,7 +60,8 @@ export const WriterModeBadge: FC<WriterModeBadgeProps> = ({
         title={t('writer.modeBadge.resetTitle')}
         className="text-xs min-h-[44px] sm:min-h-0 px-2 py-1 rounded border border-[var(--sc-border-subtle)] text-[var(--sc-text-muted)] hover:text-[var(--sc-text-primary)] hover:bg-[var(--sc-surface-raised)] transition-colors"
       >
-        ↺ {t('writer.modeBadge.reset')}
+        <span aria-hidden="true">↺ </span>
+        {t('writer.modeBadge.reset')}
       </button>
     </div>
   );

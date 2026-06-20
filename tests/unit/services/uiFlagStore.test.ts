@@ -34,6 +34,17 @@ describe('uiFlagStore', () => {
     expect(uiFlagStore.get('hint-proforge')).toBe(true);
   });
 
+  it('honors a cleared flag even when localStorage removal fails (no stale resurrection)', () => {
+    uiFlagStore.set('hint-clearme', true);
+    const removeSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    uiFlagStore.set('hint-clearme', false); // session map = false; localStorage still '1'
+    removeSpy.mockRestore();
+    // get() trusts the session map (false), not the stale localStorage '1'.
+    expect(uiFlagStore.get('hint-clearme')).toBe(false);
+  });
+
   it('returns false (does not throw) when localStorage read throws and no session value exists', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');

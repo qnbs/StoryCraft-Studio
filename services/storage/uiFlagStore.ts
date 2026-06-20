@@ -14,9 +14,11 @@ const PREFIX = 'worldscript-';
 const sessionMemory = new Map<string, boolean>();
 
 export const uiFlagStore = {
-  /** Read a boolean UI flag. Returns false when unset; consults the session map if storage fails. */
+  /** Read a boolean UI flag. The session map is authoritative once a key has been written this
+   *  session (true OR false), so a failed-removal stale '1' in localStorage can't resurrect a
+   *  cleared flag; only falls back to localStorage when the key was never set this session. */
   get(key: string): boolean {
-    if (sessionMemory.get(key) === true) return true;
+    if (sessionMemory.has(key)) return sessionMemory.get(key) === true;
     try {
       return typeof localStorage !== 'undefined' && localStorage.getItem(`${PREFIX}${key}`) === '1';
     } catch {
