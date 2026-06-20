@@ -1,10 +1,12 @@
 import { isTauriRuntime } from './tauriRuntime';
 
+// QNBS-v3 (#187): 'menu-quit' is intentionally NOT in this union — Quit is a PredefinedMenuItem
+// handled natively by the OS and never emitted as a 'menu-action', so exposing it would invite
+// consumers to implement unreachable handlers (API contract mismatch).
 export type TauriMenuAction =
   | 'menu-export'
   | 'menu-settings'
   | 'menu-help'
-  | 'menu-quit'
   | 'menu-command-palette';
 
 type MenuHandler = (action: TauriMenuAction) => void;
