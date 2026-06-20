@@ -58,10 +58,16 @@ export const proForgeMachine = setup({
       context.currentStage === 'intake' && (context.lastDecision?.qualityScore ?? 0) < 30,
     hasNextStage: ({ context }) => context.stageIndex + 1 < context.selectedStages.length,
     isEditingStage: ({ context }) => EDITING_STAGES.includes(context.currentStage),
-    // QNBS-v3: only roll back to a stage that's actually in the selected pipeline, so currentStage
-    // and stageIndex never diverge (an unknown stage forced stageIndex to 0 while pointing elsewhere).
-    isRollbackStageSelected: ({ context, event }) =>
-      event.type === 'ROLLBACK' && context.selectedStages.includes(event.stage),
+    // QNBS-v3: never start a run with no selected stages — defaulting currentStage to 'intake' would
+    // otherwise execute a stage the user never selected (the orchestrator doesn't run in that case).
+    hasStages: ({ context }) => context.selectedStages.length > 0,
+    // QNBS-v3: rollback may only target an EARLIER (or current) selected stage — a target that is in
+    // selectedStages but ahead of stageIndex would be an invalid forward jump, breaking rollback
+    // semantics (and re-running a stage that never ran).
+    canRollback: ({ context, event }) =>
+      event.type === 'ROLLBACK' &&
+      context.selectedStages.includes(event.stage) &&
+      context.selectedStages.indexOf(event.stage) <= context.stageIndex,
   },
   actions: {
     // QNBS-v3: cast through `unknown` — these onDone actions only ever fire on the invoke's
@@ -69,6 +75,14 @@ export const proForgeMachine = setup({
     // ABORT (no `output`), so a direct cast no longer overlaps (TS2352).
     setPreSnapshot: assign({
       prePipelineSnapshotId: ({ event }) => (event as unknown as { output: string }).output,
+    }),
+    // QNBS-v3: record each stage's pre-run snapshot id keyed by stageIndex so ROLLBACK can restore
+    // the exact checkpoint of its target stage (deterministic rollback restore).
+    setStageSnapshot: assign({
+      stageSnapshots: ({ context, event }) => ({
+        ...context.stageSnapshots,
+        [context.stageIndex]: (event as unknown as { output: string }).output,
+      }),
     }),
     setResult: assign({
       lastResult: ({ event }) => (event as unknown as { output: StageAgentResult }).output,
@@ -135,17 +149,24 @@ export const proForgeMachine = setup({
     stageIndex: 0,
     currentStage: input.selectedStages[0] ?? 'intake',
     attempt: 0,
-    maxRetries: input.maxRetries,
+    // QNBS-v3: default to 1 when omitted (mirrors proForgeOrchestrator's `config.maxRetries ?? 1`) —
+    // an undefined maxRetries would make `attempt < maxRetries` always false and silently disable retries.
+    maxRetries: input.maxRetries ?? 1,
     retryFeedback: '',
     lastResult: null,
     lastDecision: null,
     reviewDecisions: null,
     prePipelineSnapshotId: null,
+    stageSnapshots: {},
     error: null,
   }),
   states: {
     idle: {
-      on: { START: 'preparing' },
+      on: {
+        // QNBS-v3: only enter the pipeline when at least one stage is selected; otherwise complete
+        // immediately rather than executing an unselected default stage.
+        START: [{ guard: 'hasStages', target: 'preparing' }, { target: 'completed' }],
+      },
     },
     preparing: {
       // QNBS-v3: accept ABORT while the pre-pipeline snapshot actor runs — otherwise a cancel sent
@@ -168,8 +189,22 @@ export const proForgeMachine = setup({
           invoke: {
             src: 'snapshot',
             input: ({ context }) => ({ stage: context.currentStage, label: context.label }),
-            onDone: 'executingStage',
+            // QNBS-v3: capture the snapshot id (keyed by stageIndex) so ROLLBACK can restore it.
+            onDone: { target: 'executingStage', actions: 'setStageSnapshot' },
             onError: 'executingStage',
+          },
+        },
+        rollingBack: {
+          // QNBS-v3: restore the target stage's captured snapshot before re-running it, so rollback
+          // is a true checkpoint restore (not just a counter rewind). applyRollback already moved
+          // stageIndex to the target, so stageSnapshots[stageIndex] is the right checkpoint.
+          invoke: {
+            src: 'restore',
+            input: ({ context }) => ({
+              snapshotId: context.stageSnapshots[context.stageIndex] ?? null,
+            }),
+            onDone: 'preStageSnapshot',
+            onError: 'preStageSnapshot',
           },
         },
         executingStage: {
@@ -224,8 +259,8 @@ export const proForgeMachine = setup({
             ],
             SKIP: 'advancing',
             ROLLBACK: {
-              guard: 'isRollbackStageSelected',
-              target: 'preStageSnapshot',
+              guard: 'canRollback',
+              target: 'rollingBack',
               actions: 'applyRollback',
             },
           },

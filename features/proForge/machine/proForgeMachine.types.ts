@@ -11,6 +11,11 @@ import type {
   SupervisionDecision,
 } from '../types';
 
+// QNBS-v3: the pipeline only ever executes the real editing/production stages — 'idle' and 'archived'
+// are run-lifecycle control states, never things an agent runs. Narrowing here stops an invalid
+// control state from reaching runStage/supervise/rollback as if it were executable.
+export type ExecutablePipelineStage = Exclude<PipelineStage, 'idle' | 'archived'>;
+
 /** Minimal shape of a stage agent's output, mirroring what proForgeOrchestrator consumes. */
 export interface StageAgentResult {
   reviewItems: ReviewItem[];
@@ -27,18 +32,18 @@ export interface ProForgeMachineInput {
   projectId: string;
   label: string;
   /** Ordered stages selected for this run (excludes 'idle'/'archived'). */
-  selectedStages: PipelineStage[];
-  /** Supervisor-triggered retries per stage (0 or 1). */
-  maxRetries: number;
+  selectedStages: ExecutablePipelineStage[];
+  /** Supervisor-triggered retries per stage. Optional — defaults to 1 (mirrors the orchestrator). */
+  maxRetries?: number;
 }
 
 export interface ProForgeMachineContext {
   projectId: string;
   label: string;
-  selectedStages: PipelineStage[];
+  selectedStages: ExecutablePipelineStage[];
   /** Pointer into selectedStages. */
   stageIndex: number;
-  currentStage: PipelineStage;
+  currentStage: ExecutablePipelineStage;
   /** Retry counter for the current stage. */
   attempt: number;
   maxRetries: number;
@@ -48,6 +53,9 @@ export interface ProForgeMachineContext {
   lastDecision: SupervisionDecision | null;
   reviewDecisions: ReviewDecision[] | null;
   prePipelineSnapshotId: string | null;
+  /** Per-stage snapshot ids keyed by stageIndex, captured before each stage runs, so ROLLBACK can
+   * restore the target stage's checkpoint deterministically. */
+  stageSnapshots: Record<number, string>;
   error: string | null;
 }
 
@@ -55,24 +63,24 @@ export type ProForgeMachineEvent =
   | { type: 'START' }
   | { type: 'SUBMIT_REVIEW'; decisions: ReviewDecision[] }
   | { type: 'SKIP' }
-  | { type: 'ROLLBACK'; stage: PipelineStage }
+  | { type: 'ROLLBACK'; stage: ExecutablePipelineStage }
   | { type: 'ABORT' };
 
 /** Actor input/output contracts (implementations injected via .provide in the hook + tests). */
 export interface RunStageInput {
-  stage: PipelineStage;
+  stage: ExecutablePipelineStage;
   retryFeedback: string;
 }
 export interface SuperviseInput {
-  stage: PipelineStage;
+  stage: ExecutablePipelineStage;
   result: StageAgentResult;
 }
 export interface SnapshotInput {
-  stage: PipelineStage | 'prePipeline';
+  stage: ExecutablePipelineStage | 'prePipeline';
   label: string;
 }
 export interface ApplyEditsInput {
-  stage: PipelineStage;
+  stage: ExecutablePipelineStage;
   decisions: ReviewDecision[];
   result: StageAgentResult | null;
 }

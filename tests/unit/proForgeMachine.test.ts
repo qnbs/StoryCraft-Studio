@@ -3,12 +3,13 @@ import { createActor, fromPromise, waitFor } from 'xstate';
 import { proForgeMachine } from '../../features/proForge/machine/proForgeMachine';
 import type {
   ApplyEditsInput,
+  ExecutablePipelineStage,
   RunStageInput,
   SnapshotInput,
   StageAgentResult,
   SuperviseInput,
 } from '../../features/proForge/machine/proForgeMachine.types';
-import type { PipelineStage, SupervisionDecision } from '../../features/proForge/types';
+import type { SupervisionDecision } from '../../features/proForge/types';
 
 // QNBS-v3: Headless machine tests — no React, no live store. Actors are injected via .provide so we
 // assert the control flow (snapshot → run → supervise gate → review → apply → advance, plus retry,
@@ -40,10 +41,11 @@ interface Overrides {
   supervise?: (input: SuperviseInput) => Promise<SupervisionDecision>;
   runStage?: (input: RunStageInput) => Promise<StageAgentResult>;
   applyEdits?: (input: ApplyEditsInput) => Promise<{ applied: number }>;
+  restore?: (input: { snapshotId: string | null }) => void;
 }
 
 function makeActor(
-  selectedStages: PipelineStage[],
+  selectedStages: ExecutablePipelineStage[],
   opts: { maxRetries?: number; overrides?: Overrides } = {},
 ) {
   const machine = proForgeMachine.provide({
@@ -58,7 +60,9 @@ function makeActor(
       applyEdits: fromPromise<{ applied: number }, ApplyEditsInput>(
         async ({ input }) => opts.overrides?.applyEdits?.(input) ?? { applied: 0 },
       ),
-      restore: fromPromise<void, { snapshotId: string | null }>(async () => {}),
+      restore: fromPromise<void, { snapshotId: string | null }>(async ({ input }) => {
+        opts.overrides?.restore?.(input);
+      }),
     },
   });
   return createActor(machine, {
@@ -66,7 +70,9 @@ function makeActor(
       projectId: 'p1',
       label: 'Run',
       selectedStages,
-      maxRetries: opts.maxRetries ?? 1,
+      // QNBS-v3: omit maxRetries entirely when not given (exactOptionalPropertyTypes) so the machine's
+      // own default (1) is exercised.
+      ...(opts.maxRetries !== undefined ? { maxRetries: opts.maxRetries } : {}),
     },
   });
 }
@@ -226,5 +232,69 @@ describe('proForgeMachine', () => {
     expect(actor.getSnapshot().value).toBe('preparing');
     actor.send({ type: 'ABORT' });
     expect(actor.getSnapshot().value).toBe('aborting');
+  });
+
+  it('completes immediately when no stages are selected (never runs a default stage)', async () => {
+    const runStage = vi.fn(async () => result());
+    const actor = makeActor([], { overrides: { runStage } });
+    actor.start();
+    actor.send({ type: 'START' });
+    await waitFor(actor, (s) => s.status === 'done');
+    expect(actor.getSnapshot().value).toBe('completed');
+    expect(runStage).not.toHaveBeenCalled();
+  });
+
+  it('restores the target stage snapshot on ROLLBACK before re-running it', async () => {
+    const restored: Array<string | null> = [];
+    const actor = makeActor(['intake', 'structural'], {
+      overrides: { restore: ({ snapshotId }) => restored.push(snapshotId) },
+    });
+    actor.start();
+    actor.send({ type: 'START' });
+    await waitFor(actor, (s) => s.matches({ running: 'awaitingReview' }));
+    actor.send({ type: 'SUBMIT_REVIEW', decisions: [] });
+    await waitFor(
+      actor,
+      (s) => s.matches({ running: 'awaitingReview' }) && s.context.currentStage === 'structural',
+    );
+    actor.send({ type: 'ROLLBACK', stage: 'intake' });
+    await waitFor(
+      actor,
+      (s) => s.matches({ running: 'awaitingReview' }) && s.context.currentStage === 'intake',
+    );
+    // The restore actor ran with intake's captured snapshot id (every snapshot actor returns 'snap').
+    expect(restored).toContain('snap');
+  });
+
+  it('ignores a ROLLBACK to a later stage that has not run yet (no forward jump)', async () => {
+    const actor = makeActor(['intake', 'structural']);
+    actor.start();
+    actor.send({ type: 'START' });
+    await waitFor(actor, (s) => s.matches({ running: 'awaitingReview' }));
+    // We are on intake (index 0); 'structural' (index 1) is ahead — the guard must reject it.
+    actor.send({ type: 'ROLLBACK', stage: 'structural' });
+    expect(actor.getSnapshot().matches({ running: 'awaitingReview' })).toBe(true);
+    expect(actor.getSnapshot().context.currentStage).toBe('intake');
+    expect(actor.getSnapshot().context.stageIndex).toBe(0);
+  });
+
+  it('defaults maxRetries to 1 when omitted so supervisor retries still fire', async () => {
+    let calls = 0;
+    // No maxRetries passed — the machine must default to 1, not disable retries.
+    const actor = makeActor(['intake'], {
+      overrides: {
+        supervise: async () => {
+          calls += 1;
+          return calls === 1
+            ? { pass: false, retryRecommended: true, qualityScore: 80, reasons: ['weak'] }
+            : PASS;
+        },
+      },
+    });
+    actor.start();
+    actor.send({ type: 'START' });
+    await waitFor(actor, (s) => s.matches({ running: 'awaitingReview' }));
+    expect(calls).toBe(2);
+    expect(actor.getSnapshot().context.attempt).toBe(1);
   });
 });
