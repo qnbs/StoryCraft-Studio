@@ -161,7 +161,9 @@ describe('VoiceControlPanel', () => {
 
   it('shows the dictation chip when dictation is active', () => {
     mockEnabled = true;
-    mockMode = 'dictation';
+    // QNBS-v3: use the real VoiceMode contract value ('dictating', per features/voice/voiceSlice.ts),
+    // not 'dictation' — asserting an impossible runtime state would let mode-dependent regressions slip.
+    mockMode = 'dictating';
     mockDictationActive = true;
     render(<VoiceControlPanel />);
     expect(screen.getByText('voice.modeChip.dictation')).toBeInTheDocument();
