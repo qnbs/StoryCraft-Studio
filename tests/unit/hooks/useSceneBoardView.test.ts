@@ -238,3 +238,33 @@ describe('handleAddSection', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// handleAddSectionForAct (deterministic — no setTimeout, act set on the new section)
+// ---------------------------------------------------------------------------
+describe('handleAddSectionForAct', () => {
+  it('dispatches a single addManuscriptSection carrying the target act', () => {
+    const { result } = renderHook(() => useSceneBoardView());
+    act(() => {
+      result.current.handleAddSectionForAct(2);
+    });
+    // Exactly one dispatch — no follow-up updateManuscriptSection / timeout.
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'project/addManuscriptSection',
+        payload: expect.objectContaining({ title: 'sceneboard.newSceneTitle', act: 2 }),
+      }),
+    );
+  });
+
+  it('does not dispatch updateManuscriptSection for the new act', () => {
+    const { result } = renderHook(() => useSceneBoardView());
+    act(() => {
+      result.current.handleAddSectionForAct(3);
+    });
+    expect(mockDispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'project/updateManuscriptSection' }),
+    );
+  });
+});
