@@ -124,7 +124,16 @@ pub fn run() {
     })
     .on_menu_event(|app, event| {
       let id = event.id().0.clone();
-      let _ = app.emit("menu-action", id);
+      // QNBS-v3 (#187): only forward the custom ids the frontend actually handles. The predefined
+      // Edit/Window items (undo/redo/cut/copy/paste/select-all/minimize/…) are handled natively by the
+      // OS; emitting them too would flood the JS bridge with high-frequency events during editing that
+      // the frontend just ignores.
+      if matches!(
+        id.as_str(),
+        "menu-export" | "menu-settings" | "menu-help" | "menu-command-palette"
+      ) {
+        let _ = app.emit("menu-action", id);
+      }
     })
     // QNBS-v3: RunEvent handlers removed because tauri_plugin_single_instance
     // handles SecondInstance/Opened via "deep-link://new-url" events and
