@@ -46,7 +46,7 @@ interface Overrides {
 
 function makeActor(
   selectedStages: ExecutablePipelineStage[],
-  opts: { maxRetries?: number; overrides?: Overrides } = {},
+  opts: { maxRetries?: 0 | 1; overrides?: Overrides } = {},
 ) {
   const machine = proForgeMachine.provide({
     actors: {

@@ -33,8 +33,12 @@ export interface ProForgeMachineInput {
   label: string;
   /** Ordered stages selected for this run (excludes 'idle'/'archived'). */
   selectedStages: ExecutablePipelineStage[];
-  /** Supervisor-triggered retries per stage. Optional — defaults to 1 (mirrors the orchestrator). */
-  maxRetries?: number;
+  /**
+   * Supervisor-triggered retries per stage. Optional — defaults to 1 (mirrors the orchestrator).
+   * Constrained to `0 | 1` to match the pipeline config contract (PipelineRunConfig.maxRetries),
+   * so an invalid retry policy can't pass type-checking and diverge at runtime.
+   */
+  maxRetries?: 0 | 1;
 }
 
 export interface ProForgeMachineContext {

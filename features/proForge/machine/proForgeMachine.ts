@@ -149,9 +149,10 @@ export const proForgeMachine = setup({
     stageIndex: 0,
     currentStage: input.selectedStages[0] ?? 'intake',
     attempt: 0,
-    // QNBS-v3: default to 1 when omitted (mirrors proForgeOrchestrator's `config.maxRetries ?? 1`) —
-    // an undefined maxRetries would make `attempt < maxRetries` always false and silently disable retries.
-    maxRetries: input.maxRetries ?? 1,
+    // QNBS-v3: clamp to {0,1} (mirrors proForgeOrchestrator's `config.maxRetries ?? 1`). Only an
+    // explicit 0 disables retries; undefined or any out-of-contract value (a huge number / Infinity
+    // from tampered persisted config) collapses to 1, so it can never drive runaway stage re-execution.
+    maxRetries: input.maxRetries === 0 ? 0 : 1,
     retryFeedback: '',
     lastResult: null,
     lastDecision: null,
