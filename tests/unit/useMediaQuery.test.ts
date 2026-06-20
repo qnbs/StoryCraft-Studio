@@ -88,4 +88,17 @@ describe('useMediaQuery', () => {
     unmount();
     expect(mm.removeListener).toHaveBeenCalled();
   });
+
+  it('evaluates innerWidth + tracks resize when matchMedia is unavailable', () => {
+    // No matchMedia at all (very old/non-standard runtime) — must NOT stay stuck at false.
+    vi.stubGlobal('matchMedia', undefined);
+    Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true });
+    const { result } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+    expect(result.current).toBe(true); // 1024 >= 768
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(result.current).toBe(false); // 500 < 768
+  });
 });

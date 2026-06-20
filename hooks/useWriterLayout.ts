@@ -1,7 +1,7 @@
 // QNBS-v3: Local UI/layout state for WriterViewUI, extracted so the view component focuses on
 // rendering. Owns mobile tab, panel collapse, desktop focus mode, the flow-mode Escape handler,
 // and the mobile swipe-to-switch-panel wiring.
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWriterViewContext } from '../contexts/WriterViewContext';
 import { useSwipeGesture } from './useSwipeGesture';
 
@@ -25,22 +25,23 @@ export function useWriterLayout() {
     return () => window.removeEventListener('keydown', handler);
   }, [flowMode, toggleFlowMode]);
 
-  useSwipeGesture(mobilePanelRef, {
-    onSwipeLeft: () => {
-      // QNBS-v3: Swipe left = next panel. Functional update derives from the latest tab so rapid
-      // consecutive swipes aren't collapsed into one move by a stale captured value.
-      setActiveMobileTab((prev) => {
-        const idx = MOBILE_TABS.indexOf(prev);
-        return idx < MOBILE_TABS.length - 1 ? MOBILE_TABS[idx + 1]! : prev;
-      });
-    },
-    onSwipeRight: () => {
-      setActiveMobileTab((prev) => {
-        const idx = MOBILE_TABS.indexOf(prev);
-        return idx > 0 ? MOBILE_TABS[idx - 1]! : prev;
-      });
-    },
-  });
+  // QNBS-v3: stable handler refs (useCallback) — useSwipeGesture's effect depends on the callbacks,
+  // so inline closures recreated every render would tear down + reattach the DOM touch listeners on
+  // each rerender (e.g. while writer state streams). Functional setState keeps these dependency-free.
+  const onSwipeLeft = useCallback(() => {
+    // Swipe left = next panel; derive from the latest tab so rapid swipes aren't collapsed.
+    setActiveMobileTab((prev) => {
+      const idx = MOBILE_TABS.indexOf(prev);
+      return idx < MOBILE_TABS.length - 1 ? MOBILE_TABS[idx + 1]! : prev;
+    });
+  }, []);
+  const onSwipeRight = useCallback(() => {
+    setActiveMobileTab((prev) => {
+      const idx = MOBILE_TABS.indexOf(prev);
+      return idx > 0 ? MOBILE_TABS[idx - 1]! : prev;
+    });
+  }, []);
+  useSwipeGesture(mobilePanelRef, { onSwipeLeft, onSwipeRight });
 
   const togglePanel = (panel: string) => {
     setCollapsedPanels((prev) => ({ ...prev, [panel]: !prev[panel] }));

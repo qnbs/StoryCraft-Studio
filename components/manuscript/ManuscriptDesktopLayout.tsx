@@ -129,7 +129,12 @@ export const ManuscriptDesktopLayout: FC<ManuscriptDesktopLayoutProps> = ({
         {!isFocusMode && (
           <Resizer
             onPointerDown={startLeftResize}
-            onKeyAdjust={(delta) => setLeftPanelWidth((w) => Math.max(15, Math.min(50, w + delta)))}
+            // QNBS-v3: combined constraint — cap so left + the (current) right panel never exceed 80%,
+            // leaving the center editor at least 20%. Clamping each side to 50% independently let both
+            // reach 50% and collapse the editor pane entirely.
+            onKeyAdjust={(delta) =>
+              setLeftPanelWidth((w) => Math.max(15, Math.min(50, 80 - rightPanelWidth, w + delta)))
+            }
             label={t('manuscript.resizer.left')}
             value={leftPanelWidth}
           />
@@ -160,8 +165,10 @@ export const ManuscriptDesktopLayout: FC<ManuscriptDesktopLayoutProps> = ({
         {!isFocusMode && (
           <Resizer
             onPointerDown={startRightResize}
+            // QNBS-v3: combined constraint — keep right + (current) left ≤ 80% so the center editor
+            // retains at least 20% (see the left resizer above).
             onKeyAdjust={(delta) =>
-              setRightPanelWidth((w) => Math.max(15, Math.min(50, w + delta)))
+              setRightPanelWidth((w) => Math.max(15, Math.min(50, 80 - leftPanelWidth, w + delta)))
             }
             label={t('manuscript.resizer.right')}
             value={rightPanelWidth}
