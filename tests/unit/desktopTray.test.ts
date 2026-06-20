@@ -21,6 +21,9 @@ const h = vi.hoisted(() => ({
   setVisible: vi.fn(),
   closeCb: null as ((e: { preventDefault: () => void }) => void) | null,
   hide: vi.fn(),
+  setMenu: vi.fn(),
+  setTooltip: vi.fn(),
+  trayNew: vi.fn(),
   isTauri: { value: true },
 }));
 
@@ -32,7 +35,8 @@ vi.mock('@tauri-apps/api/tray', () => ({
   TrayIcon: {
     new: vi.fn(async (o: typeof h.trayOpts) => {
       h.trayOpts = o;
-      return {};
+      h.trayNew();
+      return { setMenu: h.setMenu, setTooltip: h.setTooltip };
     }),
   },
 }));
@@ -68,6 +72,9 @@ describe('installDesktopTray', () => {
     h.itemCalls.length = 0;
     h.trayOpts = null;
     h.setVisible.mockClear();
+    h.setMenu.mockClear();
+    h.setTooltip.mockClear();
+    h.trayNew.mockClear();
     h.isTauri.value = true;
     _resetTrayInstalledForTest();
   });
@@ -88,9 +95,14 @@ describe('installDesktopTray', () => {
     ]);
   });
 
-  it('is created only once per session (idempotent guard)', async () => {
-    expect(await installDesktopTray((k) => k, vi.fn())).toBe(true);
-    expect(await installDesktopTray((k) => k, vi.fn())).toBe(false);
+  it('relabels the existing tray on a re-call instead of recreating it', async () => {
+    expect(await installDesktopTray((k) => `A:${k}`, vi.fn())).toBe(true);
+    expect(h.trayNew).toHaveBeenCalledTimes(1);
+    // A second call (e.g. language change) relabels via setMenu/setTooltip — no second TrayIcon.
+    expect(await installDesktopTray((k) => `B:${k}`, vi.fn())).toBe(true);
+    expect(h.trayNew).toHaveBeenCalledTimes(1);
+    expect(h.setMenu).toHaveBeenCalledTimes(1);
+    expect(h.setTooltip).toHaveBeenCalledWith('B:desktop.tray.tooltip');
   });
 
   it('rejects a concurrent second install (in-flight guard, no double tray)', async () => {

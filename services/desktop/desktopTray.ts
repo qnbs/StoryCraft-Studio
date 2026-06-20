@@ -6,9 +6,10 @@
  * predefined OS item. The Rust side only enables the `tray-icon` Cargo feature + tray capability.
  *
  * No-op on the web (guarded by `isTauriRuntime()`), so the PWA is untouched. Created once per
- * session (idempotent) — relabel-on-language-change is a future refinement.
+ * session; subsequent calls RELABEL the existing tray (e.g. on language change) rather than recreating.
  */
 
+import type { TrayIcon as TrayIconHandle } from '@tauri-apps/api/tray';
 import { createLogger } from '../logger';
 import { isTauriRuntime } from '../tauriRuntime';
 import { setTauriMainWindowVisible } from '../tauriTrayService';
@@ -25,22 +26,27 @@ let trayInstalled = false;
 // creation finish, so two concurrent installDesktopTray() calls could both pass the early check and
 // race to create the same tray. This flag rejects the second caller while the first is still running.
 let trayInstalling = false;
+// QNBS-v3 (#190): the created tray handle, kept so a re-call can relabel it (setMenu/setTooltip) on
+// language change instead of being a no-op that leaves labels stuck in the old locale until restart.
+let trayHandle: TrayIconHandle | null = null;
 
 /** @internal test-only reset for the once-per-session guard. */
 export function _resetTrayInstalledForTest(): void {
   trayInstalled = false;
   trayInstalling = false;
+  trayHandle = null;
 }
 
 /**
- * Create the system tray. Returns `true` when created, `false` on the web, if already created, or
- * if the tray API is unavailable (never throws — a tray failure must not break startup).
+ * Create the system tray, or relabel it on a re-call (e.g. language change). Returns `true` when
+ * created/relabelled, `false` on the web, while another call is in flight, or if the tray API is
+ * unavailable (never throws — a tray failure must not break startup).
  */
 export async function installDesktopTray(
   t: MenuTranslate,
   runCommand: TrayCommandRunner,
 ): Promise<boolean> {
-  if (!isTauriRuntime() || trayInstalled || trayInstalling) return false;
+  if (!isTauriRuntime() || trayInstalling) return false;
   trayInstalling = true;
   try {
     const [{ TrayIcon }, { Menu, MenuItem, PredefinedMenuItem }, { defaultWindowIcon }] =
@@ -74,8 +80,16 @@ export async function installDesktopTray(
       ],
     });
 
+    // QNBS-v3 (#190): already created — relabel the existing tray (new localized menu + tooltip)
+    // instead of no-op'ing, so a language change is reflected without a restart.
+    if (trayInstalled && trayHandle) {
+      await trayHandle.setMenu(menu);
+      await trayHandle.setTooltip(t('desktop.tray.tooltip'));
+      return true;
+    }
+
     const icon = await defaultWindowIcon();
-    await TrayIcon.new({
+    trayHandle = await TrayIcon.new({
       id: TRAY_ID,
       tooltip: t('desktop.tray.tooltip'),
       // Only set the icon when the app exposes one (null on some setups); `icon` rejects undefined.

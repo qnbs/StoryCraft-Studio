@@ -537,26 +537,37 @@ const App: FC<AppProps> = ({ isNewUser }) => {
   }, [t, executeCommand]);
 
   // QNBS-v3 (T2): system tray (created once; guard makes re-calls a no-op). No-op on the web.
+  // QNBS-v3 (#190): executeCommand in a ref so the tray rebuilds on language (t) change only, not on
+  // every executeCommand identity change. installDesktopTray relabels the existing tray on re-call.
+  const trayCommandRef = useRef(executeCommand);
+  trayCommandRef.current = executeCommand;
   useEffect(() => {
     void installDesktopTray(
       (key) => t(key),
-      (id) => {
-        executeCommand(id);
-      },
+      (id) => trayCommandRef.current(id),
     );
-  }, [t, executeCommand]);
+  }, [t]);
 
   // QNBS-v3 (T2): close-to-tray — hide instead of quit when the setting is on (read live from store).
   useEffect(() => {
     let unlisten: (() => void) | null = null;
+    // QNBS-v3 (#190): guard the async race — if the component unmounts before installCloseToTray
+    // resolves, `unlisten` is still null during cleanup and the resolved listener would leak. Track a
+    // cancelled flag and tear the resolved listener down immediately in that case.
+    let cancelled = false;
     void installCloseToTray(
-      // QNBS-v3 (#190): defensive read — imported/malformed persisted settings can leave `desktop`
-      // null/undefined, which would crash the close handler; default to false (don't trap the window).
+      // Defensive read — imported/malformed persisted settings can leave `desktop` null/undefined,
+      // which would crash the close handler; default to false (don't trap the window).
       () => (store.getState() as RootState).settings.desktop?.minimizeToTray ?? false,
     ).then((fn) => {
+      if (cancelled) {
+        fn?.();
+        return;
+      }
       unlisten = fn;
     });
     return () => {
+      cancelled = true;
       unlisten?.();
     };
   }, [store]);
