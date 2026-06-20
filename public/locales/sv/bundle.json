@@ -2715,15 +2715,13 @@
   "copilot.suggestionWorldBuilding": "Vilka världsbyggande detaljer saknar jag?",
   "copilot.title": "AI Copilot",
   "copilot.you": "Du",
-  "menu": {
-    "file": "File",
-    "export": "Export Project…",
-    "settings": "Settings",
-    "edit": "Edit",
-    "view": "View",
-    "commandPalette": "Command Palette",
-    "window": "Window",
-    "help": "Help",
-    "helpCenter": "Help Center"
-  }
+  "desktop.menu.file": "File",
+  "desktop.menu.export": "Export Project…",
+  "desktop.menu.settings": "Settings",
+  "desktop.menu.edit": "Edit",
+  "desktop.menu.view": "View",
+  "desktop.menu.commandPalette": "Command Palette",
+  "desktop.menu.window": "Window",
+  "desktop.menu.help": "Help",
+  "desktop.menu.helpCenter": "Help Center"
 }

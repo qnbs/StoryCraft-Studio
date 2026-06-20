@@ -1,13 +1,11 @@
 {
-  "menu": {
-    "file": "Fichier",
-    "export": "Exporter le projet…",
-    "settings": "Paramètres",
-    "edit": "Édition",
-    "view": "Affichage",
-    "commandPalette": "Palette de commandes",
-    "window": "Fenêtre",
-    "help": "Aide",
-    "helpCenter": "Centre d'aide"
-  }
+  "desktop.menu.file": "Fichier",
+  "desktop.menu.export": "Exporter le projet…",
+  "desktop.menu.settings": "Paramètres",
+  "desktop.menu.edit": "Édition",
+  "desktop.menu.view": "Affichage",
+  "desktop.menu.commandPalette": "Palette de commandes",
+  "desktop.menu.window": "Fenêtre",
+  "desktop.menu.help": "Aide",
+  "desktop.menu.helpCenter": "Centre d'aide"
 }
