@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Native Intel-Mac (x86_64) desktop builds.** `tauri-build.yml` now builds on `macos-13` (Intel) in
+  addition to `macos-latest` (Apple Silicon), so Intel Macs get a native bundle and in-app updates.
+  The `latest.json` updater manifest already mapped `*_x64.app.tar.gz` → `darwin-x86_64`, so the Intel
+  entry appears automatically; the generator now also emits a per-arch warning when one arch produces
+  no signed bundle (a half-failed matrix is diagnosable) and hard-fails only if **no** arch signed.
+  Builds remain unsigned/un-notarized (cert provisioning still deferred). See [`docs/TAURI-CI.md`](docs/TAURI-CI.md).
+
 ### Changed
 
 - **ProForge is now opt-in (default off).** The experimental 8-stage agentic editing pipeline
@@ -18,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Performance, Voice, …) with maturity + risk hints, dependency-aware disabling (a flag whose
   prerequisite is off — e.g. Voice WASM without Voice Support — is disabled with an explanation), a
   "Desktop app only" note for Rust Compute, and a **Reset to defaults** action.
+- **Voice-nightly annotation cleanup.** The informational `voice-nightly.yml` real-Whisper job no
+  longer surfaces a red "Process completed with exit code 1" annotation when the HF-CDN model download
+  times out (a known transient). The download step is now step-level `continue-on-error` with a
+  bounded 2-attempt retry, and a summary step writes the pass/fail signal to `$GITHUB_STEP_SUMMARY`,
+  so the nightly signal is preserved without the misleading error annotation.
 
 ### Fixed
 
