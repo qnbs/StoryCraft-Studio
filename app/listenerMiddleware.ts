@@ -363,10 +363,17 @@ listenerMiddleware.startListening({
       // opt-out at each DuckDB write step and abort (without marking done) if it flips off mid-run.
       const gate = () => isAnalyticsPersistenceAllowed(listenerApi.getState() as RootState);
       const { runMigrationWithRollback } = await loadDuckdbMigration();
-      await runMigrationWithRollback(project, gate);
+      const seedResult = await runMigrationWithRollback(project, gate);
       const projectId = project.id || 'default';
       const { runRagVectorMigration } = await loadRagVectorMigration();
-      await runRagVectorMigration(projectId, project.manuscript, gate);
+      const ragResult = await runRagVectorMigration(projectId, project.manuscript, gate);
+      // QNBS-v3: SEC — if either migration aborted because analytics was opted out mid-run, do NOT mark
+      // it 'done' (no markers were written). Reset to 'idle' so re-enabling analytics re-triggers the
+      // backfill (the predicate re-fires on analyticsEnabled→true while DuckDB is ready + status idle).
+      if (seedResult.aborted || ragResult.aborted) {
+        listenerApi.dispatch(analyticsActions.setMigrationStatus('idle'));
+        return;
+      }
       listenerApi.dispatch(analyticsActions.setMigrationStatus('done'));
       listenerApi.dispatch(analyticsActions.setLastSyncAt(new Date().toISOString()));
     } catch (err) {

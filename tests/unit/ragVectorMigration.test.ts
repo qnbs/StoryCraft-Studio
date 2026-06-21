@@ -109,7 +109,7 @@ describe('runRagVectorMigration', () => {
     // _meta query returns a row → migration already done
     mockQuery.mockResolvedValueOnce({ messageId: 'm', ok: true, rows: [{ value: '1' }] });
     const result = await runRagVectorMigration('proj-1', []);
-    expect(result).toEqual({ migrated: 0 });
+    expect(result).toEqual({ migrated: 0, aborted: false });
     expect(mockExec).not.toHaveBeenCalled();
   });
 
@@ -135,7 +135,7 @@ describe('runRagVectorMigration', () => {
     const { duckdbRagWrite } = await import('../../services/duckdb/duckdbAnalytics');
     mockQuery.mockResolvedValueOnce({ messageId: 'm', ok: true, rows: [] }); // migration not done
     const result = await runRagVectorMigration('proj-1', [] as never, () => false);
-    expect(result).toEqual({ migrated: 0 });
+    expect(result).toEqual({ migrated: 0, aborted: true });
     expect(vi.mocked(duckdbRagWrite)).not.toHaveBeenCalled();
     expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('rag_vectors_v2_migrated'));
   });

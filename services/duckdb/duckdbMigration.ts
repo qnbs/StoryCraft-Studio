@@ -50,8 +50,10 @@ export async function runIfNeeded(
   // the (async) migration aborts before any row is written. Defaults to always-allow for callers that
   // have no privacy context (the gate is enforced by the middleware that schedules the migration).
   shouldPersist: () => boolean = () => true,
-): Promise<void> {
-  if (await isMigrated()) return;
+  // QNBS-v3: SEC — `aborted: true` means a privacy opt-out stopped the run before the done-marker was
+  // written; the caller MUST keep migration status retryable so re-opt-in re-runs the seed.
+): Promise<{ aborted: boolean }> {
+  if (await isMigrated()) return { aborted: false };
 
   const projectId = project.id ?? 'default';
   logger.debug('[duckdbMigration] Starting P1 seed migration for project', projectId);
@@ -71,7 +73,7 @@ export async function runIfNeeded(
     // setup, abort WITHOUT writing the migration marker so the seed retries cleanly on re-opt-in.
     if (!shouldPersist()) {
       logger.debug('[duckdbMigration] Seed migration skipped — analytics opt-out');
-      return;
+      return { aborted: true };
     }
 
     if (!DRY_RUN) {
@@ -96,6 +98,7 @@ export async function runIfNeeded(
     }
 
     logger.debug('[duckdbMigration] Seed migration complete');
+    return { aborted: false };
   } catch (err) {
     logger.warn('[duckdbMigration] Seed migration failed (non-fatal):', err);
     // Marker NOT written → will retry on next app load
@@ -112,19 +115,19 @@ export async function runMigrationWithRollback(
   project: MigratableProjectData,
   // QNBS-v3: SEC — gate callback threaded to the seed write site (see runIfNeeded).
   shouldPersist: () => boolean = () => true,
-): Promise<void> {
-  if (await isMigrated()) return;
+): Promise<{ aborted: boolean }> {
+  if (await isMigrated()) return { aborted: false };
 
   const projectId = project.id ?? 'default';
   logger.debug('[duckdbMigration] Starting migration with rollback for project', projectId);
 
   if (DRY_RUN) {
     logger.debug('[duckdbMigration] DRY_RUN — skipping migration');
-    return;
+    return { aborted: false };
   }
 
   try {
-    await runIfNeeded(project, shouldPersist);
+    return await runIfNeeded(project, shouldPersist);
   } catch (err) {
     // QNBS-v3: Best-effort rollback — delete partial rows for this project so the next retry starts clean.
     try {
