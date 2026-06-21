@@ -381,29 +381,42 @@ describe('debounce stress tests', () => {
 // Analytics privacy opt-out gates the DuckDB mirror (SEC)
 // ---------------------------------------------------------------------------
 describe('analytics privacy opt-out gating', () => {
-  // QNBS-v3: SEC — the RAG index always rebuilds, but its DuckDB vector mirror is gated by a thunk
-  // (third rebuildHybridRagIndex arg) that re-evaluates isAnalyticsPersistenceAllowed at write time,
-  // not the flag alone. The thunk reads the live store, so it must reflect the privacy opt-out.
-  function lastDuckDbGateResult(): boolean {
+  // QNBS-v3: SEC — the RAG index always rebuilds, but its DuckDB vector mirror is gated by a THUNK
+  // (third rebuildHybridRagIndex arg) that re-evaluates isAnalyticsPersistenceAllowed at write time.
+  // The contract is the live-callback itself: asserting a function (not a precomputed boolean) catches
+  // a regression where the middleware reverts to passing a stale snapshot.
+  function lastDuckDbGate(): () => boolean {
     const call = mockRebuildHybridRagIndex.mock.calls.at(-1);
     const gate = call?.[2];
-    return typeof gate === 'function' ? Boolean(gate()) : Boolean(gate);
+    expect(typeof gate).toBe('function'); // enforce the live-callback contract, not a boolean
+    return gate as () => boolean;
   }
 
-  it('the DuckDB-mirror gate resolves true when the analytics opt-out is on (default)', async () => {
+  it('passes a live thunk that resolves true when the analytics opt-out is on (default)', async () => {
     const store = makeFullStore();
     store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
     await vi.advanceTimersByTimeAsync(6000);
     expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
-    expect(lastDuckDbGateResult()).toBe(true);
+    expect(lastDuckDbGate()()).toBe(true);
   });
 
-  it('the DuckDB-mirror gate resolves false when the analytics opt-out is off', async () => {
+  it('passes a live thunk that resolves false when the analytics opt-out is off', async () => {
     const store = makeFullStore();
     store.dispatch(settingsActions.setPrivacy({ analyticsEnabled: false }));
     store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
     await vi.advanceTimersByTimeAsync(6000);
     expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
-    expect(lastDuckDbGateResult()).toBe(false);
+    expect(lastDuckDbGate()()).toBe(false);
+  });
+
+  it('the thunk reflects a LIVE opt-out toggled after the rebuild call (proves it is not a snapshot)', async () => {
+    const store = makeFullStore();
+    store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
+    await vi.advanceTimersByTimeAsync(6000);
+    const gate = lastDuckDbGate();
+    expect(gate()).toBe(true);
+    // Opt out AFTER the call was made — a live thunk must now report false; a captured boolean wouldn't.
+    store.dispatch(settingsActions.setPrivacy({ analyticsEnabled: false }));
+    expect(gate()).toBe(false);
   });
 });

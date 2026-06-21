@@ -100,6 +100,8 @@ const defaultSettings: Settings = {
     localStorageOnly: true,
     shareUsageData: false,
     euDataResidency: true,
+    // QNBS-v3: SEC — fresh installs are born post-migration so the normalizer respects this default.
+    analyticsGateMigrated: true,
   },
   performance: {
     autoSaveInterval: 30,
