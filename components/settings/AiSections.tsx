@@ -343,9 +343,12 @@ export const AdvancedAiSection: FC = () => {
                 {/* QNBS-v3: device-aware recommendation + one-click pull (PR E). */}
                 <OllamaDevicePull
                   baseUrl={settings.advancedAi.ollamaBaseUrl}
-                  onUseModel={(tag) =>
-                    handleSettingChange('advancedAi', { ...settings.advancedAi, model: tag })
-                  }
+                  onUseModel={(tag) => {
+                    handleSettingChange('advancedAi', { ...settings.advancedAi, model: tag });
+                    // QNBS-v3: recommended tags aren't in the known-options list, so applying one takes
+                    // the custom-model path — sync the custom input so the selector isn't left stale.
+                    if (isCustomOllamaModel(tag)) setCustomModelInput(tag.replace(/^ollama\//, ''));
+                  }}
                   t={t}
                 />
               </>

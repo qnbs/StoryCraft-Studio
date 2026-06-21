@@ -118,16 +118,22 @@ export async function pullOllamaModel(name: string, opts: OllamaPullOptions = {}
     });
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split(/\r?\n/);
-    buffer = lines.pop() ?? '';
-    for (const line of lines) handleLine(line);
+  // QNBS-v3: cancel the reader in finally so an inline-{error} throw (or any parse error) does not
+  // leave the HTTP body streaming in the background. cancel() is a no-op once the stream is drained.
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? '';
+      for (const line of lines) handleLine(line);
+    }
+    // Flush any trailing buffered line (final "success" status without a newline).
+    if (buffer.trim()) handleLine(buffer);
+  } finally {
+    await reader.cancel().catch(() => {});
   }
-  // Flush any trailing buffered line (final "success" status without a newline).
-  if (buffer.trim()) handleLine(buffer);
 }
 
 export async function listOllamaModels(baseUrl?: string): Promise<string[]> {
