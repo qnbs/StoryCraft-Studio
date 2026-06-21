@@ -160,8 +160,10 @@ addDebouncedListener(
       // updates on save. The DuckDB mirror is analytics persistence, so it honours the same privacy
       // gate as the other DuckDB writes (search still works fully from the IDB index when off).
       if (presentData.id) {
-        const duckDbOn = isAnalyticsPersistenceAllowed(api.getState());
         const { indexProject } = await import('../services/crossProjectIndexService');
+        // QNBS-v3: SEC — read the gate AFTER the dynamic import resolves so a mid-await opt-out
+        // toggle can't slip one stale DuckDB mirror write through.
+        const duckDbOn = isAnalyticsPersistenceAllowed(api.getState());
         indexProject(presentData.id, enriched, duckDbOn).catch((err: unknown) =>
           logger.warn('Cross-project index update failed (non-critical):', err),
         );
@@ -283,7 +285,9 @@ addDebouncedListener(
       );
       await saveStoryCodex(codex);
 
-      if (isAnalyticsPersistenceAllowed(state)) {
+      // QNBS-v3: SEC — re-read live state at the gate (not the pre-await snapshot) so toggling the
+      // Analytics opt-out off during codex extraction/save is honoured for the DuckDB write.
+      if (isAnalyticsPersistenceAllowed(api.getState())) {
         const entities = codex.entities.map((e) => ({
           id: e.id,
           name: e.name,
@@ -338,6 +342,12 @@ listenerMiddleware.startListening({
     const project = state.project.present?.data;
     if (!project) return;
 
+    // QNBS-v3: SEC — the DuckDB seed migration + RAG vector migration both persist analytics rows,
+    // so they honour the same opt-out as every other DuckDB write. DuckDB still initialises (the hook
+    // gates on the flag), but no analytics data is written while the Privacy toggle is off; the
+    // going-forward auto-save dual-write seeds DuckDB once the user re-enables analytics.
+    if (!isAnalyticsPersistenceAllowed(state)) return;
+
     listenerApi.dispatch(analyticsActions.setMigrationStatus('running'));
     try {
       const { runMigrationWithRollback } = await loadDuckdbMigration();
@@ -370,7 +380,9 @@ listenerMiddleware.startListening({
     if (!project) return;
 
     const projectId = project.id || 'default';
-    const duckDbOn = state.featureFlags?.enableDuckDbAnalytics ?? false;
+    // QNBS-v3: SEC — the local RAG index always rebuilds (retrieval keeps working); only its DuckDB
+    // vector mirror is analytics persistence, so it honours the combined opt-out gate.
+    const duckDbOn = isAnalyticsPersistenceAllowed(state);
     try {
       const { rebuildHybridRagIndex } = await loadLocalRagService();
       await rebuildHybridRagIndex(projectId, project.manuscript, duckDbOn);

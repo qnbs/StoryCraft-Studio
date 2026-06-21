@@ -376,3 +376,35 @@ describe('debounce stress tests', () => {
     expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Analytics privacy opt-out gates the DuckDB mirror (SEC)
+// ---------------------------------------------------------------------------
+describe('analytics privacy opt-out gating', () => {
+  // QNBS-v3: SEC — the RAG index always rebuilds, but its DuckDB vector mirror (the third
+  // rebuildHybridRagIndex arg) must follow isAnalyticsPersistenceAllowed, not the flag alone.
+  it('passes duckDbOn=true to rebuildHybridRagIndex when analytics opt-out is on (default)', async () => {
+    const store = makeFullStore();
+    store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
+    expect(mockRebuildHybridRagIndex).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      true,
+    );
+  });
+
+  it('passes duckDbOn=false to rebuildHybridRagIndex when the analytics opt-out is off', async () => {
+    const store = makeFullStore();
+    store.dispatch(settingsActions.setPrivacy({ analyticsEnabled: false }));
+    store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
+    expect(mockRebuildHybridRagIndex).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      false,
+    );
+  });
+});
