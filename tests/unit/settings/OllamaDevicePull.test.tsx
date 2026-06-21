@@ -3,7 +3,7 @@
  * pull. Mocks the device profiler, the recommendation mapper, and pullOllamaModel.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -83,19 +83,30 @@ describe('OllamaDevicePull', () => {
   });
 
   it('returns to idle (not error) when the pull is aborted', async () => {
-    mockPull.mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+    // Deferred pull so we can confirm the in-flight (pulling) state BEFORE rejecting with AbortError,
+    // making the post-abort transition a definitive assertion rather than a trivially-true one.
+    let rejectPull!: (reason: unknown) => void;
+    mockPull.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectPull = reject;
+      }),
+    );
     const user = userEvent.setup();
     render(<OllamaDevicePull baseUrl="http://localhost:11434" onUseModel={vi.fn()} t={t} />);
     await user.click(
       await screen.findByRole('button', { name: 'settings.advancedAi.ollamaPull.pull' }),
     );
-    await waitFor(() => {
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-    // back to the idle Pull button
+    // pull is in flight → the Cancel button is shown (pulling state confirmed)
+    expect(await screen.findByRole('button', { name: 'common.cancel' })).toBeInTheDocument();
+
+    // user aborts → the pull promise rejects with an AbortError
+    rejectPull(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+
+    // definitive transition: the idle Pull button returns (findBy waits) and no error alert appears
     expect(
-      screen.getByRole('button', { name: 'settings.advancedAi.ollamaPull.pull' }),
+      await screen.findByRole('button', { name: 'settings.advancedAi.ollamaPull.pull' }),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('shows the battery-downgrade note when the tier was stepped down', async () => {
