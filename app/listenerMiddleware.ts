@@ -359,11 +359,14 @@ listenerMiddleware.startListening({
 
     listenerApi.dispatch(analyticsActions.setMigrationStatus('running'));
     try {
+      // QNBS-v3: SEC — pass a live gate thunk so the long-running migrations re-check the analytics
+      // opt-out at each DuckDB write step and abort (without marking done) if it flips off mid-run.
+      const gate = () => isAnalyticsPersistenceAllowed(listenerApi.getState() as RootState);
       const { runMigrationWithRollback } = await loadDuckdbMigration();
-      await runMigrationWithRollback(project);
+      await runMigrationWithRollback(project, gate);
       const projectId = project.id || 'default';
       const { runRagVectorMigration } = await loadRagVectorMigration();
-      await runRagVectorMigration(projectId, project.manuscript);
+      await runRagVectorMigration(projectId, project.manuscript, gate);
       listenerApi.dispatch(analyticsActions.setMigrationStatus('done'));
       listenerApi.dispatch(analyticsActions.setLastSyncAt(new Date().toISOString()));
     } catch (err) {

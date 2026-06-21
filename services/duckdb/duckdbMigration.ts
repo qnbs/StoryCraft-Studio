@@ -44,7 +44,13 @@ export async function isMigrated(): Promise<boolean> {
  * Run the one-time seed migration if the marker is absent.
  * Safe to call multiple times — no-ops if already done.
  */
-export async function runIfNeeded(project: MigratableProjectData): Promise<void> {
+export async function runIfNeeded(
+  project: MigratableProjectData,
+  // QNBS-v3: SEC — re-checked right before the DuckDB writes so an analytics opt-out toggled during
+  // the (async) migration aborts before any row is written. Defaults to always-allow for callers that
+  // have no privacy context (the gate is enforced by the middleware that schedules the migration).
+  shouldPersist: () => boolean = () => true,
+): Promise<void> {
   if (await isMigrated()) return;
 
   const projectId = project.id ?? 'default';
@@ -60,6 +66,13 @@ export async function runIfNeeded(project: MigratableProjectData): Promise<void>
     }));
 
     const totalWordCount = sections.reduce((acc, s) => acc + s.wordCount, 0);
+
+    // QNBS-v3: SEC — final gate check at the write site. If analytics was opted out during the async
+    // setup, abort WITHOUT writing the migration marker so the seed retries cleanly on re-opt-in.
+    if (!shouldPersist()) {
+      logger.debug('[duckdbMigration] Seed migration skipped — analytics opt-out');
+      return;
+    }
 
     if (!DRY_RUN) {
       await duckdbDualWrite(
@@ -95,7 +108,11 @@ export async function runIfNeeded(project: MigratableProjectData): Promise<void>
  * so the tables stay consistent. The _meta marker is never written on failure, so the next
  * app load retries cleanly.
  */
-export async function runMigrationWithRollback(project: MigratableProjectData): Promise<void> {
+export async function runMigrationWithRollback(
+  project: MigratableProjectData,
+  // QNBS-v3: SEC — gate callback threaded to the seed write site (see runIfNeeded).
+  shouldPersist: () => boolean = () => true,
+): Promise<void> {
   if (await isMigrated()) return;
 
   const projectId = project.id ?? 'default';
@@ -107,7 +124,7 @@ export async function runMigrationWithRollback(project: MigratableProjectData): 
   }
 
   try {
-    await runIfNeeded(project);
+    await runIfNeeded(project, shouldPersist);
   } catch (err) {
     // QNBS-v3: Best-effort rollback — delete partial rows for this project so the next retry starts clean.
     try {

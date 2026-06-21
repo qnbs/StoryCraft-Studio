@@ -120,8 +120,24 @@ describe('runRagVectorMigration', () => {
     mockGetRagVectors.mockResolvedValueOnce([]);
     const manuscript = [{ id: 's1', title: 'Ch1', content: 'Text.' }];
     await runRagVectorMigration('proj-1', manuscript as never);
-    expect(vi.mocked(rebuildHybridRagIndex)).toHaveBeenCalledWith('proj-1', manuscript, true);
+    // QNBS-v3: SEC — the gate is now threaded through as a callback (default () => true) so the rebuild
+    // re-checks the analytics opt-out at its own DuckDB write site rather than receiving a fixed boolean.
+    const ragCall = vi.mocked(rebuildHybridRagIndex).mock.calls.at(-1);
+    expect(ragCall?.[0]).toBe('proj-1');
+    expect(ragCall?.[1]).toBe(manuscript);
+    expect(typeof ragCall?.[2]).toBe('function');
+    expect((ragCall?.[2] as () => boolean)()).toBe(true);
     expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('rag_vectors_v2_migrated'));
+  });
+
+  // QNBS-v3: SEC — opt-out aborts the migration WITHOUT writing the done-marker (so it retries on opt-in).
+  it('aborts without marking done when the shouldPersist gate returns false', async () => {
+    const { duckdbRagWrite } = await import('../../services/duckdb/duckdbAnalytics');
+    mockQuery.mockResolvedValueOnce({ messageId: 'm', ok: true, rows: [] }); // migration not done
+    const result = await runRagVectorMigration('proj-1', [] as never, () => false);
+    expect(result).toEqual({ migrated: 0 });
+    expect(vi.mocked(duckdbRagWrite)).not.toHaveBeenCalled();
+    expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('rag_vectors_v2_migrated'));
   });
 
   it('migrates stored IDB chunks into DuckDB and marks migration done', async () => {

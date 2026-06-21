@@ -92,18 +92,23 @@ export async function indexProject(
     req.onerror = () => reject(req.error);
   });
 
-  // SEC: evaluate the gate HERE (after the IDB put), honouring a mid-call opt-out.
-  if (typeof duckDbEnabled === 'function' ? duckDbEnabled() : duckDbEnabled) {
+  // SEC: normalize to a gate function and re-evaluate it INSIDE the async write chain — both after the
+  // IDB put AND after the dynamic loadDuckdbAnalytics() import — so a mid-call opt-out is honoured at
+  // the actual write, not merely at entry.
+  const gateAllows: () => boolean =
+    typeof duckDbEnabled === 'function' ? duckDbEnabled : () => duckDbEnabled;
+  if (gateAllows()) {
     void loadDuckdbAnalytics()
-      .then(({ duckdbCrossProjectWrite }) =>
-        duckdbCrossProjectWrite({
+      .then(({ duckdbCrossProjectWrite }) => {
+        if (!gateAllows()) return undefined;
+        return duckdbCrossProjectWrite({
           projectId,
           title: record.title,
           logline: record.logline,
           manuscriptWordCount: record.manuscriptWordCount,
           characterNames: record.characterNames,
-        }),
-      )
+        });
+      })
       .catch(() => {});
   }
 }
@@ -188,19 +193,23 @@ export async function enrichProjectIndex(
   });
 
   // QNBS-v3: P3 — update DuckDB entry with the now-computed embedding vector.
-  // SEC: evaluate the gate HERE (after async embedding + IDB put), honouring a mid-call opt-out.
-  if (typeof duckDbEnabled === 'function' ? duckDbEnabled() : duckDbEnabled) {
+  // SEC: re-evaluate the gate INSIDE the async chain — after the embedding + IDB put AND after the
+  // dynamic loadDuckdbAnalytics() import — so a mid-call opt-out is honoured at the actual write.
+  const gateAllows: () => boolean =
+    typeof duckDbEnabled === 'function' ? duckDbEnabled : () => duckDbEnabled;
+  if (gateAllows()) {
     void loadDuckdbAnalytics()
-      .then(({ duckdbCrossProjectWrite }) =>
-        duckdbCrossProjectWrite({
+      .then(({ duckdbCrossProjectWrite }) => {
+        if (!gateAllows()) return undefined;
+        return duckdbCrossProjectWrite({
           projectId,
           title: enriched.title,
           logline: enriched.logline,
           manuscriptWordCount: enriched.manuscriptWordCount,
           characterNames: enriched.characterNames,
           embeddingVector: embedding,
-        }),
-      )
+        });
+      })
       .catch(() => {});
   }
 }

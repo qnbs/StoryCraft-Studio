@@ -34,8 +34,16 @@ export async function isRagVectorMigrationDone(): Promise<boolean> {
 export async function runRagVectorMigration(
   projectId: string,
   manuscript: StorySection[],
+  // QNBS-v3: SEC — re-checked before each DuckDB write so an analytics opt-out toggled during the
+  // (async, looped) migration aborts before persisting, and WITHOUT writing the done-marker so it
+  // retries on re-opt-in. Defaults to always-allow for callers without a privacy context.
+  shouldPersist: () => boolean = () => true,
 ): Promise<{ migrated: number }> {
   if (await isRagVectorMigrationDone()) {
+    return { migrated: 0 };
+  }
+  // SEC: abort up-front if analytics persistence is already disallowed (no marker → retries on opt-in).
+  if (!shouldPersist()) {
     return { migrated: 0 };
   }
 
@@ -44,7 +52,10 @@ export async function runRagVectorMigration(
 
   const raw = (await storageService.getRagVectors(projectId)) as StoredRagRecord[];
   if (raw.length === 0 && manuscript.length > 0) {
-    await rebuildHybridRagIndex(projectId, manuscript, true);
+    // Pass the gate through — rebuildHybridRagIndex re-checks it at its own DuckDB write site.
+    await rebuildHybridRagIndex(projectId, manuscript, shouldPersist);
+    // Only record the migration as done if persistence is still allowed; else retry on re-opt-in.
+    if (!shouldPersist()) return { migrated: 0 };
     await duckdbClient.exec(
       `INSERT INTO _meta (key, value) VALUES ('${RAG_VECTORS_V2_KEY}', '1')
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
@@ -72,6 +83,11 @@ export async function runRagVectorMigration(
     });
     migrated++;
     if (migrated % 10 === 0) await Promise.resolve();
+  }
+
+  // QNBS-v3: SEC — final gate check at the write site; abort without the done-marker on opt-out.
+  if (!shouldPersist()) {
+    return { migrated: 0 };
   }
 
   if (batch.length > 0) {
