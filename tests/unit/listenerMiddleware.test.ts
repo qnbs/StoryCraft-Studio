@@ -381,30 +381,29 @@ describe('debounce stress tests', () => {
 // Analytics privacy opt-out gates the DuckDB mirror (SEC)
 // ---------------------------------------------------------------------------
 describe('analytics privacy opt-out gating', () => {
-  // QNBS-v3: SEC — the RAG index always rebuilds, but its DuckDB vector mirror (the third
-  // rebuildHybridRagIndex arg) must follow isAnalyticsPersistenceAllowed, not the flag alone.
-  it('passes duckDbOn=true to rebuildHybridRagIndex when analytics opt-out is on (default)', async () => {
+  // QNBS-v3: SEC — the RAG index always rebuilds, but its DuckDB vector mirror is gated by a thunk
+  // (third rebuildHybridRagIndex arg) that re-evaluates isAnalyticsPersistenceAllowed at write time,
+  // not the flag alone. The thunk reads the live store, so it must reflect the privacy opt-out.
+  function lastDuckDbGateResult(): boolean {
+    const call = mockRebuildHybridRagIndex.mock.calls.at(-1);
+    const gate = call?.[2];
+    return typeof gate === 'function' ? Boolean(gate()) : Boolean(gate);
+  }
+
+  it('the DuckDB-mirror gate resolves true when the analytics opt-out is on (default)', async () => {
     const store = makeFullStore();
     store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
     await vi.advanceTimersByTimeAsync(6000);
     expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
-    expect(mockRebuildHybridRagIndex).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.anything(),
-      true,
-    );
+    expect(lastDuckDbGateResult()).toBe(true);
   });
 
-  it('passes duckDbOn=false to rebuildHybridRagIndex when the analytics opt-out is off', async () => {
+  it('the DuckDB-mirror gate resolves false when the analytics opt-out is off', async () => {
     const store = makeFullStore();
     store.dispatch(settingsActions.setPrivacy({ analyticsEnabled: false }));
     store.dispatch(projectActions.addManuscriptSection({ title: 'Scene' }));
     await vi.advanceTimersByTimeAsync(6000);
     expect(mockRebuildHybridRagIndex).toHaveBeenCalledTimes(1);
-    expect(mockRebuildHybridRagIndex).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.anything(),
-      false,
-    );
+    expect(lastDuckDbGateResult()).toBe(false);
   });
 });

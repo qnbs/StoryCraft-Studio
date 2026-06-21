@@ -94,8 +94,11 @@ interface HybridRagRecord extends LocalRagChunkRecord {
 export async function rebuildHybridRagIndex(
   projectId: string,
   manuscript: StorySection[],
-  // QNBS-v3: P2 dual-write — vectors (not text) mirrored to DuckDB when analytics flag is on.
-  duckDbEnabled = false,
+  // QNBS-v3: P2 dual-write — vectors (not text) mirrored to DuckDB when analytics persistence is
+  // allowed. SEC: accepts a callback so the caller can re-evaluate the privacy gate at write time
+  // (the embedding loop is async — a boolean captured up-front would let an opt-out toggled mid-rebuild
+  // leak one stale mirror write). A plain boolean is still accepted for simple/synchronous callers.
+  duckDbEnabled: boolean | (() => boolean) = false,
 ): Promise<number> {
   const records: HybridRagRecord[] = [];
 
@@ -134,7 +137,9 @@ export async function rebuildHybridRagIndex(
   await storageService.saveRagVectors(projectId, records);
 
   // QNBS-v3: Mirror vector-only data to DuckDB; text stays in IDB to avoid BLOB encryption.
-  if (duckDbEnabled && records.length > 0) {
+  // SEC: evaluate the gate HERE (after the async embedding loop), so a mid-rebuild opt-out is honored.
+  const persistToDuckDb = typeof duckDbEnabled === 'function' ? duckDbEnabled() : duckDbEnabled;
+  if (persistToDuckDb && records.length > 0) {
     const duckChunks = records
       .filter((r) => r.semanticVec && r.semanticVec.length > 0)
       .map((r) => ({

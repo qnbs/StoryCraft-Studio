@@ -71,6 +71,20 @@ describe('rebuildHybridRagIndex — DuckDB dual-write', () => {
     await Promise.resolve();
     expect(mockRagWrite).not.toHaveBeenCalled();
   });
+
+  // QNBS-v3: SEC — the gate may be a callback re-evaluated at write time (after the async embedding
+  // loop), so a privacy opt-out toggled mid-rebuild is honoured.
+  it('calls duckdbRagWrite when the duckDbEnabled callback returns true at write time', async () => {
+    await rebuildHybridRagIndex('p1', manuscript, () => true);
+    await Promise.resolve();
+    expect(mockRagWrite).toHaveBeenCalledOnce();
+  });
+
+  it('does NOT call duckdbRagWrite when the duckDbEnabled callback returns false at write time', async () => {
+    await rebuildHybridRagIndex('p1', manuscript, () => false);
+    await Promise.resolve();
+    expect(mockRagWrite).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------

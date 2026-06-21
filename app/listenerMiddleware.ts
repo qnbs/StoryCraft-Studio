@@ -15,6 +15,7 @@ import { logger } from '../services/logger';
 import { saveEnvelopeFromProjectData } from '../services/storageBackend';
 import { storageService } from '../services/storageService';
 import type { Character, StorySection, World } from '../types';
+import { isAnalyticsPersistenceAllowed } from './analyticsGate';
 import type { AppDispatch, RootState } from './store';
 import { appStoreRef } from './storeRef';
 
@@ -25,16 +26,9 @@ type ProjectStateWithHistory = {
 
 export const listenerMiddleware = createListenerMiddleware();
 
-// QNBS-v3: SEC — DuckDB analytics persistence requires BOTH the feature flag (enableDuckDbAnalytics)
-// AND the user-facing Settings → Privacy "Analytics" opt-out (settings.privacy.analyticsEnabled).
-// Before this gate the privacy toggle was cosmetic — only the flag controlled writes. Analytics data
-// is local-only metadata (titles/loglines/word-counts/codex excerpts; never manuscript prose), but a
-// privacy toggle that does nothing is a dark pattern. Single source of truth for every write site.
-export function isAnalyticsPersistenceAllowed(state: RootState): boolean {
-  return (
-    Boolean(state.featureFlags?.enableDuckDbAnalytics) && state.settings.privacy.analyticsEnabled
-  );
-}
+// QNBS-v3: SEC — analytics persistence gate now lives in app/analyticsGate.ts so middleware AND
+// components share the one enforcement point. Re-exported here for existing importers/tests.
+export { isAnalyticsPersistenceAllowed };
 
 // QNBS-v3: Listener categories in this file:
 //   1. Auto-Save        — project data + version control → IDB (debounced 1s)
@@ -330,22 +324,27 @@ listenerMiddleware.startListening({
   predicate: (_action, currentState, previousState) => {
     const curr = currentState as RootState;
     const prev = previousState as RootState;
-    return (
-      curr.featureFlags?.enableDuckDbAnalytics === true &&
+    // QNBS-v3: SEC — the seed migration may only run when analytics persistence is allowed (flag +
+    // privacy opt-out). It fires when EITHER DuckDB just became ready OR the user just opted back in
+    // while DuckDB is already ready — so a user who starts opted-out and later enables analytics still
+    // gets the one-time historical backfill (no reload required).
+    const eligible =
+      isAnalyticsPersistenceAllowed(curr) &&
       curr.analytics?.duckDbStatus === 'ready' &&
-      curr.analytics?.migrationStatus === 'idle' &&
-      prev.analytics?.duckDbStatus !== 'ready'
-    );
+      curr.analytics?.migrationStatus === 'idle';
+    if (!eligible) return false;
+    const duckDbJustReady = prev.analytics?.duckDbStatus !== 'ready';
+    const analyticsJustEnabled = !isAnalyticsPersistenceAllowed(prev);
+    return duckDbJustReady || analyticsJustEnabled;
   },
   effect: async (_action, listenerApi) => {
     const state = listenerApi.getState() as RootState;
     const project = state.project.present?.data;
     if (!project) return;
 
-    // QNBS-v3: SEC — the DuckDB seed migration + RAG vector migration both persist analytics rows,
-    // so they honour the same opt-out as every other DuckDB write. DuckDB still initialises (the hook
-    // gates on the flag), but no analytics data is written while the Privacy toggle is off; the
-    // going-forward auto-save dual-write seeds DuckDB once the user re-enables analytics.
+    // QNBS-v3: SEC — defence in depth; the predicate already requires the combined gate, but re-check
+    // here in case state changed between predicate and effect. DuckDB still initialises (the hook gates
+    // on the flag); no analytics rows are written while the Privacy opt-out is off.
     if (!isAnalyticsPersistenceAllowed(state)) return;
 
     listenerApi.dispatch(analyticsActions.setMigrationStatus('running'));
@@ -380,12 +379,14 @@ listenerMiddleware.startListening({
     if (!project) return;
 
     const projectId = project.id || 'default';
-    // QNBS-v3: SEC — the local RAG index always rebuilds (retrieval keeps working); only its DuckDB
-    // vector mirror is analytics persistence, so it honours the combined opt-out gate.
-    const duckDbOn = isAnalyticsPersistenceAllowed(state);
     try {
       const { rebuildHybridRagIndex } = await loadLocalRagService();
-      await rebuildHybridRagIndex(projectId, project.manuscript, duckDbOn);
+      // QNBS-v3: SEC — the local RAG index always rebuilds (retrieval keeps working); only its DuckDB
+      // vector mirror is analytics persistence. Pass a thunk so the gate is re-checked at write time
+      // (after the async embedding loop), honouring an opt-out toggled during the rebuild.
+      await rebuildHybridRagIndex(projectId, project.manuscript, () =>
+        isAnalyticsPersistenceAllowed(listenerApi.getState() as RootState),
+      );
     } catch (err) {
       logger.warn('RAG auto-rebuild failed (non-critical):', err);
     }
