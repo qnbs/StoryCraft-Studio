@@ -129,16 +129,18 @@ export const FeatureFlagsSection: FC = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {entries.map((entry) => {
-                  const { blockedBy } = resolveFlagAvailability(
+                  const { blockedBy, blockedByDesktop } = resolveFlagAvailability(
                     entry.flagKey,
                     featureFlags,
                     isDesktop,
                   );
                   const isOn = featureFlags[entry.flagKey];
-                  // QNBS-v3: only block the "turn on" attempt when a prerequisite is missing — never
-                  // trap an already-enabled flag in a non-interactive checked state (the user must
-                  // still be able to turn it back off). So disable only when blocked AND currently off.
-                  const disabled = blockedBy.length > 0 && !isOn;
+                  // QNBS-v3: block only the "turn on" attempt when a prerequisite is missing — either a
+                  // required flag (e.g. Voice WASM ⇠ Voice Support) OR the desktop runtime (e.g. Rust
+                  // Compute on web). Never trap an already-enabled flag in a non-interactive checked
+                  // state — the user must still be able to turn it off — so disable only when blocked
+                  // AND currently off.
+                  const disabled = (blockedBy.length > 0 || blockedByDesktop) && !isOn;
                   return (
                     <ToggleSwitch
                       key={entry.flagKey}

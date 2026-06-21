@@ -114,16 +114,19 @@ function extractLocaleFlags(src: string): Set<string> {
 // its HIDDEN_FLAGS set (instead of a hand-maintained `key: 'enableX'` array). So a flag "has a UI
 // toggle" iff it is in the catalog and not hidden. Parse both from source rather than greping for
 // literal keys that no longer exist.
+// QNBS-v3: type-safe capture extraction — narrow the optional regex group instead of `as string`.
+const isString = (s: string | undefined): s is string => s !== undefined;
+
 function extractCatalogFlags(catalogSrc: string): Set<string> {
   return new Set(
-    [...catalogSrc.matchAll(/flagKey:\s*['"`](enable\w+)['"`]/g)].map((m) => m[1] as string),
+    [...catalogSrc.matchAll(/flagKey:\s*['"`](enable\w+)['"`]/g)].map((m) => m[1]).filter(isString),
   );
 }
 
 function extractHiddenFlags(sectionSrc: string): Set<string> {
-  const block = sectionSrc.match(/HIDDEN_FLAGS[^=]*=\s*new Set\(\[([^\]]*)\]/);
-  if (!block || block[1] === undefined) return new Set();
-  return new Set([...block[1].matchAll(/['"`](enable\w+)['"`]/g)].map((m) => m[1] as string));
+  const inner = sectionSrc.match(/HIDDEN_FLAGS[^=]*=\s*new Set\(\[([^\]]*)\]/)?.[1];
+  if (inner === undefined) return new Set();
+  return new Set([...inner.matchAll(/['"`](enable\w+)['"`]/g)].map((m) => m[1]).filter(isString));
 }
 
 function extractSectionFlags(sectionSrc: string, catalogSrc: string): Set<string> {

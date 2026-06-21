@@ -168,6 +168,32 @@ describe('FeatureFlagsSection', () => {
     expect(wasmSwitch).toBeDisabled();
   });
 
+  // QNBS-v3: desktop-only flags (Rust Compute) are unavailable on web — isTauriRuntime() is false
+  // under jsdom, so blockedByDesktop is true and the toggle must be disabled while off. Regression
+  // guard for the CodeAnt finding that blockedByDesktop was ignored in the disable predicate.
+  it('disables the Rust Compute toggle on web (desktop-only) while it is off', () => {
+    render(<FeatureFlagsSection />);
+    const rustSwitch = screen.getByRole('switch', {
+      name: 'settings.featureFlags.enableRustCompute',
+    });
+    expect(rustSwitch).toBeDisabled();
+  });
+
+  // QNBS-v3: but an already-enabled desktop-only flag must stay interactive on web so the user can
+  // turn it off — never trap it in a checked+disabled state.
+  it('keeps an already-enabled desktop-only toggle interactive on web', () => {
+    mockFeatureFlags.enableRustCompute = true;
+    try {
+      render(<FeatureFlagsSection />);
+      const rustSwitch = screen.getByRole('switch', {
+        name: 'settings.featureFlags.enableRustCompute',
+      });
+      expect(rustSwitch).toBeEnabled();
+    } finally {
+      mockFeatureFlags.enableRustCompute = false;
+    }
+  });
+
   // QNBS-v3: but an already-enabled dependent flag must stay interactive so the user can turn it off
   // (no stuck checked+disabled state) — regression guard for CodeAnt finding.
   it('keeps an already-enabled dependent toggle interactive when its prerequisite is off', () => {
