@@ -13,8 +13,10 @@ export type HelpCategoryDef = {
   articles: HelpArticleDef[];
 };
 
-/** Sentinel content key for the README article — rendered by ReadmeContent, not via i18n `t()`. */
-export const README_CONTENT_KEY = '__README__';
+// QNBS-v3: sentinel content key for the README article — ArticleViewer detects it and renders
+// ReadmeContent (lazy locale HTML) instead of resolving it via i18n `t()`. It still follows the
+// `help.*` contentKey convention (helpCatalog tests) even though no such i18n key exists.
+export const README_CONTENT_KEY = 'help.readme.body';
 
 export const HELP_CATALOG: HelpCategoryDef[] = [
   {
