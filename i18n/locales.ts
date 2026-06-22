@@ -244,7 +244,8 @@ export const RTL_LOCALES: ReadonlySet<Language> = new Set(
 );
 
 // QNBS-v3: backward-compatible shape consumed by LanguageSelector/Settings (was hand-maintained in
-// I18nContext). `isBeta` is derived from `status` so the two can never disagree.
+// I18nContext). `isBeta` means the *beta* tier specifically — NOT merely "non-production" — so the
+// near-production tier (ja/zh/pt/el) is distinguished from beta (the β badge shows for beta only).
 export interface LanguageInfo {
   code: Language;
   nativeName: string;
@@ -258,7 +259,7 @@ export const SUPPORTED_LOCALES: ReadonlyArray<LanguageInfo> = LOCALES.map((l) =>
   nativeName: l.nativeName,
   dir: l.dir,
   fontScript: l.script,
-  ...(l.status !== 'production' ? { isBeta: true as const } : {}),
+  ...(l.status === 'beta' ? { isBeta: true as const } : {}),
 }));
 
 // QNBS-v3: keyed by `string` (not `Language`) so the runtime guard below can call `.has(value)` on a

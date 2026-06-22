@@ -10,9 +10,13 @@ import { LOCALES, type LocaleStatus } from '../i18n/locales';
 const ROOT = join(import.meta.dirname, '..');
 const LOCALES_DIR = join(ROOT, 'locales');
 const REF = 'en';
+// QNBS-v3: 'help' is excluded — the dashboard reports *UI* coverage, and help.json long-form content is
+// intentionally English fallback for non-Production locales (helpFallback). Including it would conflate
+// a deliberate-English module with untranslated UI and understate real UI coverage (CodeAnt).
 const MODULES = readdirSync(join(LOCALES_DIR, REF))
   .filter((f) => f.endsWith('.json'))
-  .map((f) => f.slice(0, -5));
+  .map((f) => f.slice(0, -5))
+  .filter((m) => m !== 'help');
 
 const PLACEHOLDER = /\{\{\s*([\p{L}\d_]+)\s*\}\}/gu;
 // QNBS-v3: narrow the optional regex capture group via a guard instead of `as string`.

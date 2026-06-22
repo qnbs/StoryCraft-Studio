@@ -38,7 +38,9 @@ function sameTokens(a, b) {
 }
 
 const langs = getLocales().filter((l) => l !== REF_LANG);
-const modules = getModules();
+// QNBS-v3: exclude 'help' — this is a UI-coverage report; help.json is intentionally English fallback
+// for non-Production locales, so including it would understate real UI coverage (CodeAnt).
+const modules = getModules().filter((m) => m !== 'help');
 const glossary = loadGlossary();
 
 let placeholderIssues = 0;

@@ -53,11 +53,11 @@ describe('i18n locale registry (SSOT)', () => {
     }
   });
 
-  it('SUPPORTED_LOCALES.isBeta is set iff status is not production', () => {
+  it('SUPPORTED_LOCALES.isBeta is set iff the tier is beta (near-production is NOT beta)', () => {
     for (const info of SUPPORTED_LOCALES) {
       const desc = getLocaleInfo(info.code);
       expect(desc, info.code).toBeDefined();
-      expect(Boolean(info.isBeta), info.code).toBe(desc?.status !== 'production');
+      expect(Boolean(info.isBeta), info.code).toBe(desc?.status === 'beta');
     }
   });
 

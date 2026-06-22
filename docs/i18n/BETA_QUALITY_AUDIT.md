@@ -6,9 +6,22 @@
 
 ## Method
 
-"UI coverage" = share of string values that differ from the English source (brand/technical terms that
-are legitimately identical lower it slightly — it is a guide, not a gate). "Placeholder issues" is the
-hard-gated count of `{{token}}` mismatches vs English (must be 0). Glossary terms = anchor count.
+"UI coverage" = share of string values that differ from the English source, computed over the **UI
+modules only** (`help.json` is excluded — it is intentionally English fallback for non-Production
+locales, so including it would understate real UI coverage). "Placeholder issues" is the hard-gated
+count of `{{token}}` mismatches vs English (must be 0). Glossary terms = anchor count.
+
+### Why promotion is conservative (not raw-coverage-driven)
+
+The coverage % is a **completeness** signal, not a **quality** signal, and it is **noisy**: a
+Production locale that *correctly* keeps brand/technical terms identical to English (WorldScript
+Studio, Co-Pilot, ProForge, PDF/DOCX, provider names) scores *lower* on this metric, while a machine
+translation that *over-translates* those terms scores *higher*. So a high % is **necessary but not
+sufficient** for promotion. We therefore promote conservatively: only **established** Beta locales with
+≥96% UI coverage **and** 0 placeholder issues **and** real release exposure — currently `ja`, `zh`,
+`pt`, `el`. Brand-new locales (`ru`, `ko`, added this cycle) and lower-exposure ones stay Beta despite
+high raw coverage, pending a re-translation/spot-check pass per the
+[playbook](./BETA_TO_PRODUCTION_PLAYBOOK.md). Live numbers: [TRANSLATION_STATUS](./TRANSLATION_STATUS.md).
 
 ## Findings (2026-06)
 

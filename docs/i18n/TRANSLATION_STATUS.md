@@ -18,23 +18,23 @@ Production: de, en, fr, es, it · Near-Production: ja, zh, pt, el · Beta: ar, h
 | Locale | Tier | UI coverage | Placeholder issues | Help |
 |--------|------|------------:|-------------------:|------|
 | en | 🟢 Production | 100% | 0 | native |
-| ar | 🔵 Beta | 76% | 0 | English fallback |
-| de | 🟢 Production | 95% | 0 | native |
+| ar | 🔵 Beta | 80% | 0 | English fallback |
+| de | 🟢 Production | 94% | 0 | native |
 | el | 🟡 Near-Production | 96% | 0 | English fallback |
-| es | 🟢 Production | 94% | 0 | native |
-| eu | 🔵 Beta | 90% | 0 | English fallback |
-| fa | 🔵 Beta | 91% | 0 | English fallback |
-| fi | 🔵 Beta | 89% | 0 | English fallback |
-| fr | 🟢 Production | 92% | 0 | native |
-| he | 🔵 Beta | 76% | 0 | English fallback |
-| hu | 🔵 Beta | 89% | 0 | English fallback |
-| is | 🔵 Beta | 90% | 0 | English fallback |
+| es | 🟢 Production | 93% | 0 | native |
+| eu | 🔵 Beta | 96% | 0 | English fallback |
+| fa | 🔵 Beta | 97% | 0 | English fallback |
+| fi | 🔵 Beta | 95% | 0 | English fallback |
+| fr | 🟢 Production | 91% | 0 | native |
+| he | 🔵 Beta | 80% | 0 | English fallback |
+| hu | 🔵 Beta | 95% | 0 | English fallback |
+| is | 🔵 Beta | 95% | 0 | English fallback |
 | it | 🟢 Production | 94% | 0 | native |
 | ja | 🟡 Near-Production | 97% | 0 | English fallback |
-| ko | 🔵 Beta | 94% | 0 | English fallback |
+| ko | 🔵 Beta | 100% | 0 | English fallback |
 | pt | 🟡 Near-Production | 96% | 0 | English fallback |
-| ru | 🔵 Beta | 94% | 0 | English fallback |
-| sv | 🔵 Beta | 88% | 0 | English fallback |
+| ru | 🔵 Beta | 99% | 0 | English fallback |
+| sv | 🔵 Beta | 94% | 0 | English fallback |
 | zh | 🟡 Near-Production | 98% | 0 | English fallback |
 
 > **Remaining work for full Production** (needs native human review): `help.json` long-form articles
