@@ -173,16 +173,20 @@ function inlineSignature(md) {
   } catch {
     return null; // unrenderable → treat as not-sound (fall back to English)
   }
-  return [
-    (html.match(/<a\s/g) || []).length,
-    (html.match(/<code>/g) || []).length,
-    (html.match(/<strong>/g) || []).length,
-    (html.match(/<em>/g) || []).length,
-  ].join(',');
+  // QNBS-v3: only LINKS and CODE/filenames are corruption-critical and must match exactly (these were
+  // the CodeAnt findings: dropped links, duplicated `.msi`/`.dmg`). Emphasis (<strong>/<em>) is
+  // cosmetic — the free MT endpoint routinely shifts `*`/`_` markers, and requiring emphasis parity
+  // rejected ~86% of prose lines (English-heavy pages). Emphasis is NOT checked by the structural
+  // guard either, so being lenient here is safe and dramatically raises translation coverage.
+  return [(html.match(/<a\s/g) || []).length, (html.match(/<code>/g) || []).length].join(',');
 }
 
-function isStructurallySound(body, restored, translated) {
-  if (/[⟦⟧]/.test(translated)) return false;
+function isStructurallySound(body, restored) {
+  // QNBS-v3: compare the RESTORED line (sentinels already substituted back / stripped by the safety
+  // net) against the English source. Do NOT test the raw MT output for sentinels — it legitimately
+  // still contains `⟦n⟧` before restore, so checking it there rejected every masked line (→ 86%
+  // English). If a masked token was actually lost, the link/code signature below won't match → fallback.
+  if (/[⟦⟧]/.test(restored)) return false;
   const en = inlineSignature(body);
   return en !== null && en === inlineSignature(restored);
 }
@@ -199,9 +203,34 @@ async function translateMarkdown(md, tl, delay) {
       result.push(line);
       continue;
     }
-    // Verbatim: code fences, blank lines, table rows/separators, pure-markup lines, bare images.
-    if (inFence || line.trim() === '' || /^\s*\|/.test(line) || /^\s*[-=*_]{3,}\s*$/.test(line)) {
+    // Verbatim: code fences, blank lines, pure-markup/rule lines.
+    if (inFence || line.trim() === '' || /^\s*[-=*_]{3,}\s*$/.test(line)) {
       result.push(line);
+      continue;
+    }
+    // QNBS-v3: table rows — translate each CELL (preserving the `|` structure) so feature tables are
+    // localized too, not left English. The alignment/separator row (e.g. `|---|:--|`) stays verbatim.
+    if (/^\s*\|/.test(line)) {
+      if (/^[\s|:-]+$/.test(line)) {
+        result.push(line);
+        continue;
+      }
+      const cells = line.split('|');
+      const out = [];
+      for (const cell of cells) {
+        if (cell.trim() === '') {
+          out.push(cell);
+          continue;
+        }
+        const lead = cell.match(/^\s*/)?.[0] ?? '';
+        const trail = cell.match(/\s*$/)?.[0] ?? '';
+        const inner = cell.slice(lead.length, cell.length - trail.length);
+        const { masked, tokens } = maskInline(inner);
+        const tr = restoreInline(await translateText(masked, tl), tokens);
+        out.push(lead + (isStructurallySound(inner, tr) ? tr : inner) + trail);
+        if (delay) await sleep(delay);
+      }
+      result.push(out.join('|'));
       continue;
     }
     const m = line.match(PREFIX);
@@ -215,7 +244,7 @@ async function translateMarkdown(md, tl, delay) {
     const translated = await translateText(masked, tl);
     const restored = restoreInline(translated, tokens);
     // Keep the English line if MT broke the markup structure (see isStructurallySound).
-    result.push(prefix + (isStructurallySound(body, restored, translated) ? restored : body));
+    result.push(prefix + (isStructurallySound(body, restored) ? restored : body));
     if (delay) await sleep(delay);
   }
   return result.join('\n');

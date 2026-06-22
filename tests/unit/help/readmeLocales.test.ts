@@ -58,4 +58,33 @@ describe('localized README pages', () => {
       });
     }
   });
+
+  // QNBS-v3: PR5 — minimum-coverage guard (CodeAnt). The structural sanity pass keeps an English line
+  // when MT would break a link/code; if that ever regresses (e.g. a masking bug), pages quietly become
+  // English-heavy. Require each locale to translate a healthy share of its prose/table lines vs en.
+  it('every locale page translates a healthy share of its content (not English-heavy)', () => {
+    const enLines = readFileSync(pageFor('en'), 'utf8').split('\n');
+    const text = (s: string) => s.replace(/<[^>]+>/g, '').trim();
+    const isContent = (s: string) =>
+      text(s)
+        .split(/\s+/)
+        .filter((w) => /[a-z]{3}/i.test(w)).length >= 4;
+    for (const code of LOCALE_CODES) {
+      if (code === 'en') continue;
+      const locLines = readFileSync(pageFor(code), 'utf8').split('\n');
+      let total = 0;
+      let translated = 0;
+      for (let i = 0; i < Math.min(enLines.length, locLines.length); i++) {
+        const enLine = enLines[i] ?? '';
+        if (!isContent(enLine)) continue;
+        total += 1;
+        if (text(enLine) !== text(locLines[i] ?? '')) translated += 1;
+      }
+      const pct = total ? Math.round((translated / total) * 100) : 100;
+      expect(
+        pct,
+        `${code}.html is only ${pct}% translated — regenerate with pnpm run readme:locales`,
+      ).toBeGreaterThanOrEqual(70);
+    }
+  });
 });

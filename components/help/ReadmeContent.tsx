@@ -19,9 +19,11 @@ export const ReadmeContent: FC = () => {
   // QNBS-v3: the notice must reflect the LOADED file, not the requested locale — if a non-Production
   // locale is missing and we fall back to en.html, the shown content is the original English README,
   // so no "machine-translated" notice should appear (CodeAnt).
-  const showFallbackNotice = loadedLang
-    ? (getLocaleInfo(loadedLang)?.helpFallback ?? false)
-    : false;
+  const loadedInfo = loadedLang ? getLocaleInfo(loadedLang) : undefined;
+  const showFallbackNotice = loadedInfo?.helpFallback ?? false;
+  // QNBS-v3: use the loaded locale's direction (rtl for ar/he/fa) rather than `dir="auto"` — the README
+  // starts with Latin "WorldScript Studio", so `auto` would infer LTR for the whole RTL page (CodeAnt).
+  const contentDir = loadedInfo?.dir ?? 'ltr';
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +83,7 @@ export const ReadmeContent: FC = () => {
         <p className="text-[var(--sc-text-muted)]">{t('common.loading')}</p>
       ) : (
         <SanitizedHtml
-          dir="auto"
+          dir={contentDir}
           className={`prose max-w-[var(--sc-prose-measure)] prose-h2:text-2xl prose-h2:font-bold prose-h3:font-semibold prose-p:text-[var(--sc-text-secondary)] prose-strong:text-[var(--sc-text-primary)] prose-a:text-[var(--sc-accent)] prose-ul:list-disc prose-li:text-[var(--sc-text-secondary)] prose-ol:text-[var(--sc-text-secondary)] ${theme === 'dark' ? 'prose-invert' : ''}`}
           html={html}
         />
