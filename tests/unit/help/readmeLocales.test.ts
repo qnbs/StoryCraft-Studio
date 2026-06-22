@@ -30,4 +30,32 @@ describe('localized README pages', () => {
       expect(/[⟦⟧]/.test(html), `${code}.html has leftover sentinels`).toBe(false);
     }
   });
+
+  // QNBS-v3: PR5 — structural-parity GUARANTEE. The build pipeline preserves markdown structure
+  // (prefixes kept, fences/tables verbatim, corrupted lines fall back to English), so every locale
+  // MUST have exactly the same count of structural HTML elements as the English page — only the text
+  // differs. This catches ANY MT corruption (dropped/duplicated links, mangled code spans, leaked
+  // markdown) deterministically in CI, so a regenerated README is provably correct without manual review.
+  it('every locale page is structurally identical to the English page', () => {
+    const count = (html: string, re: RegExp) => (html.match(re) || []).length;
+    const ELEMENTS: Array<[string, RegExp]> = [
+      ['links', /<a\s/g],
+      ['code', /<code>/g],
+      ['headings', /<h[1-6][\s>]/g],
+      ['list items', /<li>/g],
+      ['code blocks', /<pre>/g],
+      ['tables', /<table>/g],
+    ];
+    const en = readFileSync(pageFor('en'), 'utf8');
+    const expected = ELEMENTS.map(([, re]) => count(en, re));
+    for (const code of LOCALE_CODES) {
+      if (code === 'en') continue;
+      const html = readFileSync(pageFor(code), 'utf8');
+      ELEMENTS.forEach(([name, re], i) => {
+        expect(count(html, re), `${code}.html ${name} count differs from en.html`).toBe(
+          expected[i],
+        );
+      });
+    }
+  });
 });

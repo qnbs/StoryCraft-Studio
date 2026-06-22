@@ -117,7 +117,10 @@ function maskInline(text) {
 // the opening bracket). Restore is therefore tolerant of a missing opening OR closing bracket, and a
 // final safety net strips any orphan bracket chars so none can leak into the rendered HTML.
 function restoreInline(text, tokens) {
-  let r = text;
+  // QNBS-v3: MT sometimes inserts a space between a link's `]` and the masked URL sentinel
+  // (`[text] ⟦n⟧`), which would restore to `[text] (url)` — NOT a valid markdown link. Re-close the
+  // gap before restoring so the link survives.
+  let r = text.replace(/\]\s+⟦/g, ']⟦');
   for (let i = 0; i < tokens.length; i++) {
     const patterns = [`⟦\\s*${i}\\s*⟧`, `⟦?\\s*${i}\\s*⟧`, `⟦\\s*${i}\\s*⟧?`];
     for (const p of patterns) {
@@ -155,12 +158,43 @@ async function translateText(text, tl) {
 
 const PREFIX = /^(\s*(?:#{1,6}\s+|[-*+]\s+|\d+\.\s+|>\s+))?(.*)$/;
 
+// QNBS-v3: structural sanity guard. The free MT endpoint mangles a line's markup in many ways
+// (dropping a sentinel, duplicating a masked filename token, breaking `[text] (url)` link adjacency,
+// losing a code span / emphasis). Rather than chase each syntax case, we RENDER both the English and
+// the translated line's inline markdown and require the resulting structural element counts to be
+// IDENTICAL. This is exactly the invariant the readmeLocales guard enforces doc-wide, applied per line
+// — a line is accepted only when its links/code/emphasis render like the English source; otherwise we
+// keep the English line. Block structure (headings/list items/fences/tables) is already preserved by
+// prefix-extraction + verbatim handling, so checking inline elements is sufficient.
+function inlineSignature(md) {
+  let html;
+  try {
+    html = marked.parseInline(md);
+  } catch {
+    return null; // unrenderable → treat as not-sound (fall back to English)
+  }
+  return [
+    (html.match(/<a\s/g) || []).length,
+    (html.match(/<code>/g) || []).length,
+    (html.match(/<strong>/g) || []).length,
+    (html.match(/<em>/g) || []).length,
+  ].join(',');
+}
+
+function isStructurallySound(body, restored, translated) {
+  if (/[⟦⟧]/.test(translated)) return false;
+  const en = inlineSignature(body);
+  return en !== null && en === inlineSignature(restored);
+}
+
 async function translateMarkdown(md, tl, delay) {
   const lines = md.split('\n');
   const result = [];
   let inFence = false;
   for (const line of lines) {
-    if (/^```/.test(line)) {
+    // QNBS-v3: match indented fences too (e.g. a ```bash block nested in a list item) — anchoring at
+    // column 0 would miss them, translate their content, and drop a <pre> block.
+    if (/^\s*```/.test(line)) {
       inFence = !inFence;
       result.push(line);
       continue;
@@ -178,9 +212,10 @@ async function translateMarkdown(md, tl, delay) {
       continue;
     }
     const { masked, tokens } = maskInline(body);
-    let translated = await translateText(masked, tl);
-    translated = restoreInline(translated, tokens);
-    result.push(prefix + translated);
+    const translated = await translateText(masked, tl);
+    const restored = restoreInline(translated, tokens);
+    // Keep the English line if MT broke the markup structure (see isStructurallySound).
+    result.push(prefix + (isStructurallySound(body, restored, translated) ? restored : body));
     if (delay) await sleep(delay);
   }
   return result.join('\n');
