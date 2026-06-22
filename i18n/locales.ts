@@ -235,7 +235,10 @@ export const SUPPORTED_LOCALES: ReadonlyArray<LanguageInfo> = LOCALES.map((l) =>
   ...(l.status !== 'production' ? { isBeta: true as const } : {}),
 }));
 
-const LOCALE_BY_CODE: ReadonlyMap<Language, LocaleDescriptor> = new Map(
+// QNBS-v3: keyed by `string` (not `Language`) so the runtime guard below can call `.has(value)` on a
+// checked string without a `value as Language` assertion — the Map IS the source of truth for which
+// strings are valid codes. getLocaleInfo still takes a typed Language (assignable to string).
+const LOCALE_BY_CODE: ReadonlyMap<string, LocaleDescriptor> = new Map(
   LOCALES.map((l) => [l.code, l]),
 );
 
@@ -245,4 +248,4 @@ export const getLocaleInfo = (code: Language): LocaleDescriptor | undefined =>
 
 /** True when `value` is a supported locale code (runtime-safe guard for persisted/URL values). */
 export const isLanguage = (value: unknown): value is Language =>
-  typeof value === 'string' && LOCALE_BY_CODE.has(value as Language);
+  typeof value === 'string' && LOCALE_BY_CODE.has(value);

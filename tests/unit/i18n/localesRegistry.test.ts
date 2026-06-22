@@ -13,7 +13,6 @@ import { describe, expect, it } from 'vitest';
 import {
   getLocaleInfo,
   isLanguage,
-  type Language,
   LOCALE_CODES,
   LOCALES,
   RTL_LOCALES,
@@ -72,7 +71,7 @@ describe('i18n locale registry (SSOT)', () => {
   });
 
   it('English is present and is production (the ultimate fallback)', () => {
-    const en = getLocaleInfo('en' as Language);
+    const en = getLocaleInfo('en');
     expect(en?.status).toBe('production');
     expect(en?.dir).toBe('ltr');
   });
