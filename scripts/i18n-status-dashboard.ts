@@ -57,7 +57,13 @@ for (const locale of LOCALES) {
       if (typeof enVal !== 'string') continue;
       total++;
       const locVal = loc[k];
-      if (typeof locVal !== 'string') continue;
+      // QNBS-v3: a missing or non-string localized value is NOT translated — count it as untranslated
+      // rather than skipping it, otherwise coverage is overstated and a locale could be falsely
+      // promoted. (Parity normally guarantees a string here; this guards the transient/edge case.)
+      if (typeof locVal !== 'string') {
+        untranslated++;
+        continue;
+      }
       if (locVal === enVal && enVal.trim().length > 2) untranslated++;
       if (!sameTokens(tokens(enVal), tokens(locVal))) placeholderIssues++;
     }

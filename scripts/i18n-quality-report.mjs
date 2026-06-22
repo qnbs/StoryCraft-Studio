@@ -56,7 +56,12 @@ for (const lang of langs) {
       if (typeof enVal !== 'string') continue;
       total++;
       const locVal = loc[k];
-      if (typeof locVal !== 'string') continue;
+      // QNBS-v3: a missing/non-string localized value is untranslated — count it, don't skip it, or
+      // coverage is overstated (same correctness fix as the status dashboard).
+      if (typeof locVal !== 'string') {
+        untranslated++;
+        continue;
+      }
       // Approximate "untranslated" = value identical to the English source (brand/technical terms
       // that are legitimately identical inflate this slightly; it is a guide, not a gate).
       if (locVal === enVal && enVal.trim().length > 2) untranslated++;
