@@ -294,6 +294,64 @@ describe('SupervisorAgent', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Tests: intakeHardGateFailed — centralized gate shared by orchestrator + capability layer
+  // ---------------------------------------------------------------------------
+
+  describe('intakeHardGateFailed', () => {
+    it('fails a fallback intake (pass:false + score below the floor)', () => {
+      const decision = agent.evaluate('intake', {
+        reviewItems: [],
+        agentOutput: {
+          isFallback: true,
+          qualityScore: ZERO_QUALITY_SCORE,
+          consistencyIssues: [],
+          structuralGaps: [],
+        },
+      });
+      expect(agent.intakeHardGateFailed(decision)).toBe(true);
+    });
+
+    it('does NOT fail a legitimately weak-but-analyzed manuscript (pass:true, low score)', () => {
+      // QNBS-v3: gating on score alone would mislabel a real low-quality analysis as a provider
+      // failure; the gate must require the supervisor to have actually flagged it (pass:false).
+      const lowButReal = agent.intakeHardGateFailed({
+        pass: true,
+        retryRecommended: false,
+        qualityScore: 5,
+        reasons: [],
+      });
+      expect(lowButReal).toBe(false);
+    });
+
+    it('does NOT fail a passing high-score intake', () => {
+      const decision = agent.evaluate('intake', {
+        reviewItems: [],
+        agentOutput: {
+          qualityScore: REAL_QUALITY_SCORE,
+          consistencyIssues: [{ id: 'ci-1' }],
+          structuralGaps: [],
+        },
+      });
+      expect(agent.intakeHardGateFailed(decision)).toBe(false);
+    });
+
+    it('respects a custom intakeHardGate threshold', () => {
+      // With the gate floored at 0, even a fallback (score 0) does not trip it.
+      const lenient = new SupervisorAgent(makeContext(), { intakeHardGate: 0 });
+      const decision = lenient.evaluate('intake', {
+        reviewItems: [],
+        agentOutput: {
+          isFallback: true,
+          qualityScore: ZERO_QUALITY_SCORE,
+          consistencyIssues: [],
+          structuralGaps: [],
+        },
+      });
+      expect(lenient.intakeHardGateFailed(decision)).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Tests: structural stage
   // ---------------------------------------------------------------------------
 

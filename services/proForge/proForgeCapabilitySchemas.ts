@@ -69,7 +69,9 @@ export const memoryEntrySeedSchema = z.object({
  */
 export const qualityThresholdsSchema = z.object({
   largeManuscriptWords: z.number().int().positive(),
-  intakeHardGate: z.number().min(0),
+  // QNBS-v3: intake quality scores are on a 0–100 scale; bound the gate so an impossible
+  // threshold (>100) can't make every intake fail unconditionally via misconfiguration.
+  intakeHardGate: z.number().min(0).max(100),
 });
 
 /** Overridable run configuration (all optional — merged onto defaults). */

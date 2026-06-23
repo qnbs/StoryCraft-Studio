@@ -73,6 +73,17 @@ export class SupervisorAgent {
     }
   }
 
+  /**
+   * QNBS-v3: PR6 — centralized intake hard gate, shared by the orchestrator and the capability
+   * layer so every entry point enforces identical rules. Fires ONLY when the supervisor actually
+   * flagged intake as failed (fallback / no real analysis) AND the measured score is below the
+   * configured floor — never on a low-but-genuine score alone, which would mislabel a legitimately
+   * weak manuscript as an AI-provider failure.
+   */
+  intakeHardGateFailed(decision: SupervisionDecision): boolean {
+    return !decision.pass && decision.qualityScore < this.thresholds.intakeHardGate;
+  }
+
   private evaluateIntake(
     result: Pick<StageResult, 'reviewItems' | 'agentOutput'>,
   ): SupervisionDecision {

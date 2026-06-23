@@ -110,6 +110,15 @@ export class ProForgeCapabilityLayer {
       const supervisor = new SupervisorAgent(context, config.qualityThresholds);
       const supervisorDecision = supervisor.evaluate(input.stage, result);
 
+      // QNBS-v3: Enforce the SAME intake hard gate the orchestrator applies, so Node/MCP callers
+      // can't get a "successful" intake from a fallback/unanalyzable diagnostic. Centralized in
+      // SupervisorAgent.intakeHardGateFailed so both entry points use identical rules.
+      if (input.stage === 'intake' && supervisor.intakeHardGateFailed(supervisorDecision)) {
+        throw ProForgeError.stageFailed(
+          "Intake diagnostic couldn't analyze the manuscript — check the AI provider connection.",
+        );
+      }
+
       return {
         stage: input.stage,
         reviewItems: result.reviewItems,

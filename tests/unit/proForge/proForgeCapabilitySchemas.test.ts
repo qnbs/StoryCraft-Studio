@@ -55,6 +55,17 @@ describe('runStageInputSchema', () => {
       }).success,
     ).toBe(false);
   });
+
+  // QNBS-v3: PR6 CodeAnt — intake scores are 0–100; a >100 gate would fail every intake.
+  it('rejects an intakeHardGate above the 0–100 score scale', () => {
+    expect(
+      runStageInputSchema.safeParse({
+        stage: 'intake',
+        projectId: 'p1',
+        config: { qualityThresholds: { largeManuscriptWords: 1000, intakeHardGate: 150 } },
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe('getHistoryInputSchema', () => {
