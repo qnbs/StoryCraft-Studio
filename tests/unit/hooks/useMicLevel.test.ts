@@ -1,8 +1,7 @@
-import { renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMicLevel } from '../../../hooks/useMicLevel';
 
-// jsdom exposes no Web Audio / getUserMedia, so the hook must feature-detect and no-op to 0.
 describe('useMicLevel', () => {
   it('returns 0 when inactive', () => {
     const { result } = renderHook(() => useMicLevel(false));
@@ -21,5 +20,105 @@ describe('useMicLevel', () => {
     rerender({ active: false });
     expect(result.current).toBe(0);
     expect(() => unmount()).not.toThrow();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Active metering path — Web Audio + getUserMedia mocked (absent in jsdom).
+  // ---------------------------------------------------------------------------
+  describe('with Web Audio available', () => {
+    let stopTrack: ReturnType<typeof vi.fn>;
+    let close: ReturnType<typeof vi.fn>;
+    let getUserMedia: ReturnType<typeof vi.fn>;
+    let rafCbs: FrameRequestCallback[];
+    let origMediaDevices: PropertyDescriptor | undefined;
+
+    beforeEach(() => {
+      stopTrack = vi.fn();
+      close = vi.fn();
+      // A loud signal (samples ≠ 128) → non-zero RMS.
+      const getByteTimeDomainData = vi.fn((arr: Uint8Array) => arr.fill(200));
+      getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [{ stop: stopTrack }] });
+
+      const source = { connect: vi.fn() };
+      const analyser = { fftSize: 0, getByteTimeDomainData, connect: vi.fn() };
+      class FakeAudioContext {
+        createMediaStreamSource = vi.fn(() => source);
+        createAnalyser = vi.fn(() => analyser);
+        close = close;
+      }
+
+      rafCbs = [];
+      origMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
+      Object.defineProperty(navigator, 'mediaDevices', {
+        value: { getUserMedia },
+        configurable: true,
+      });
+      (window as unknown as Record<string, unknown>)['AudioContext'] = FakeAudioContext;
+      vi.stubGlobal(
+        'requestAnimationFrame',
+        vi.fn((cb: FrameRequestCallback) => {
+          rafCbs.push(cb);
+          return rafCbs.length;
+        }),
+      );
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    });
+
+    afterEach(() => {
+      // Restore the original mediaDevices descriptor (or neutralise it when jsdom had none).
+      Object.defineProperty(
+        navigator,
+        'mediaDevices',
+        origMediaDevices ?? { value: undefined, configurable: true },
+      );
+      (window as unknown as Record<string, unknown>)['AudioContext'] = undefined;
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('reports a non-zero level from the mic and tears down on unmount', async () => {
+      const { result, unmount } = renderHook(() => useMicLevel(true));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(getUserMedia).toHaveBeenCalled();
+
+      await act(async () => {
+        rafCbs[0]?.(0); // run one metering tick
+      });
+      expect(result.current).toBeGreaterThan(0);
+
+      unmount();
+      expect(stopTrack).toHaveBeenCalled();
+      expect(close).toHaveBeenCalled();
+      expect(cancelAnimationFrame).toHaveBeenCalled();
+    });
+
+    it('stops the stream if cancelled before getUserMedia resolves', async () => {
+      let resolveStream: (s: unknown) => void = () => {};
+      getUserMedia.mockReturnValue(
+        new Promise((r) => {
+          resolveStream = r;
+        }),
+      );
+      const { unmount } = renderHook(() => useMicLevel(true));
+      unmount(); // cancelled = true
+      await act(async () => {
+        resolveStream({ getTracks: () => [{ stop: stopTrack }] });
+        await Promise.resolve();
+      });
+      expect(stopTrack).toHaveBeenCalled();
+    });
+
+    it('stays at 0 when getUserMedia is denied', async () => {
+      getUserMedia.mockRejectedValue(new Error('NotAllowedError'));
+      const { result } = renderHook(() => useMicLevel(true));
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(result.current).toBe(0);
+    });
   });
 });

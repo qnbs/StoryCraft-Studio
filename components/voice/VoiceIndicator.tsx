@@ -44,12 +44,18 @@ export const VoiceIndicator = React.memo(function VoiceIndicator() {
   const { mode, enabled, transcript, confidence } = useVoice();
   const { t } = useTranslation();
   const isActive = mode === 'listening' || mode === 'dictating';
-  const level = useMicLevel(isActive);
+  // QNBS-v3 (CodeAnt): gate the (shared) mic meter on `enabled` too, so it never runs if voice was
+  // disabled while a stale listening/dictating mode lingers.
+  const level = useMicLevel(enabled && isActive);
 
   if (!enabled) return null;
 
   const config = MODE_CONFIG[mode as VoiceModeKey] ?? MODE_CONFIG.inactive;
-  const confidencePct = Math.round(Math.min(1, Math.max(0, confidence)) * 100);
+  const confidencePct = Math.round(Math.min(1, Math.max(0, confidence ?? 0)) * 100);
+  // QNBS-v3 (CodeAnt): show confidence for listening/processing/speaking (where it reflects the last
+  // transcription) but NOT dictation (which appends text without updating lastConfidence → stale) or
+  // inactive.
+  const showConfidence = confidencePct > 0 && mode !== 'dictating' && mode !== 'inactive';
 
   return (
     <div
@@ -70,7 +76,7 @@ export const VoiceIndicator = React.memo(function VoiceIndicator() {
           {transcript}
         </span>
       )}
-      {isActive && confidencePct > 0 && (
+      {showConfidence && (
         <span className="text-[10px] text-[var(--sc-text-muted)] tabular-nums shrink-0">
           {t('voice.feedback.confidence', { percent: String(confidencePct) })}
         </span>

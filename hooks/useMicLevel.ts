@@ -1,45 +1,61 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { logger } from '../services/logger';
 
-// QNBS-v3: PR5 — a self-contained microphone level meter for voice feedback. While `active`, it opens
-// its own getUserMedia stream + AnalyserNode and reports a smoothed 0–1 RMS level via rAF. This works
-// regardless of the STT engine (Web Speech, Whisper, …) because it taps the mic directly rather than
-// relying on the VAD path, which only exists in the WASM/Whisper mode. Feature-detected: returns 0 and
-// does nothing where Web Audio / getUserMedia are unavailable (incl. jsdom). Never records or logs audio.
+// QNBS-v3: PR5 — a self-contained microphone level meter for voice feedback. While any consumer is
+// `active`, ONE shared getUserMedia stream + AnalyserNode is opened and the smoothed 0–1 RMS level is
+// broadcast to every consumer. Sharing (ref-counted) is essential: VoiceIndicator and
+// VoiceControlPanel both meter and are mounted together, so a per-hook stream would open the mic
+// twice. Taps the mic directly (works for any STT engine). Feature-detected — no-ops to 0 where Web
+// Audio / getUserMedia are unavailable (incl. jsdom). Never records or logs audio.
 
-type AudioContextCtor = typeof AudioContext;
+interface WindowWithAudio extends Window {
+  AudioContext?: typeof AudioContext;
+  webkitAudioContext?: typeof AudioContext;
+}
 
-function getAudioContextCtor(): AudioContextCtor | null {
+function getAudioContextCtor(): typeof AudioContext | null {
   if (typeof window === 'undefined') return null;
-  const w = window as unknown as {
-    AudioContext?: AudioContextCtor;
-    webkitAudioContext?: AudioContextCtor;
-  };
+  const w = window as WindowWithAudio;
   return w.AudioContext ?? w.webkitAudioContext ?? null;
 }
 
-/** Returns a smoothed 0–1 microphone input level while `active`; 0 when inactive or unsupported. */
-export function useMicLevel(active: boolean): number {
-  const [level, setLevel] = useState(0);
-  const rafRef = useRef<number | null>(null);
+// ── Shared, ref-counted mic-meter source ─────────────────────────────────────
+const subscribers = new Set<(level: number) => void>();
+let refCount = 0;
+let ctx: AudioContext | null = null;
+let stream: MediaStream | null = null;
+let rafId: number | null = null;
+let currentLevel = 0;
 
-  useEffect(() => {
-    if (!active) return;
-    const AudioCtor = getAudioContextCtor();
-    const media = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
-    if (!AudioCtor || !media?.getUserMedia) return;
+function broadcast(level: number): void {
+  currentLevel = level;
+  for (const cb of subscribers) cb(level);
+}
 
-    let cancelled = false;
-    let ctx: AudioContext | null = null;
-    let stream: MediaStream | null = null;
+function teardown(): void {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+  rafId = null;
+  if (stream) for (const track of stream.getTracks()) track.stop();
+  stream = null;
+  void ctx?.close();
+  ctx = null;
+  broadcast(0);
+}
 
-    media
-      .getUserMedia({ audio: true })
-      .then((s) => {
-        if (cancelled) {
-          for (const track of s.getTracks()) track.stop();
-          return;
-        }
+function start(): void {
+  const AudioCtor = getAudioContextCtor();
+  const media = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
+  if (!AudioCtor || !media?.getUserMedia) return;
+
+  media
+    .getUserMedia({ audio: true })
+    .then((s) => {
+      // Everyone left while we were acquiring the mic — release it immediately.
+      if (refCount === 0) {
+        for (const track of s.getTracks()) track.stop();
+        return;
+      }
+      try {
         stream = s;
         ctx = new AudioCtor();
         const source = ctx.createMediaStreamSource(s);
@@ -57,25 +73,39 @@ export function useMicLevel(active: boolean): number {
           }
           const rms = Math.sqrt(sum / data.length);
           // Smooth toward the new value and clamp; rms ~0.3 is already a loud signal, so scale up.
-          setLevel((prev) => {
-            const next = Math.min(1, rms * 2.2);
-            return prev + (next - prev) * 0.4;
-          });
-          rafRef.current = requestAnimationFrame(tick);
+          const next = currentLevel + (Math.min(1, rms * 2.2) - currentLevel) * 0.4;
+          broadcast(next);
+          rafId = requestAnimationFrame(tick);
         };
-        rafRef.current = requestAnimationFrame(tick);
-      })
-      .catch((err) => {
-        // Permission denied / no device — leave the meter at 0, don't surface an error to the user.
-        logger.warn('useMicLevel: microphone unavailable for metering', { err: String(err) });
-      });
+        rafId = requestAnimationFrame(tick);
+      } catch (err) {
+        // QNBS-v3 (CodeAnt): if setup throws after the stream was acquired, release it + ctx here —
+        // the outer catch only sees rejections, not synchronous setup failures.
+        logger.warn('useMicLevel: audio graph setup failed', { err: String(err) });
+        teardown();
+      }
+    })
+    .catch((err) => {
+      // Permission denied / no device — leave the meter at 0, don't surface an error to the user.
+      logger.warn('useMicLevel: microphone unavailable for metering', { err: String(err) });
+    });
+}
+
+/** Returns a smoothed 0–1 microphone level while `active`; 0 when inactive or unsupported. */
+export function useMicLevel(active: boolean): number {
+  const [level, setLevel] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    const cb = (l: number) => setLevel(l);
+    subscribers.add(cb);
+    refCount += 1;
+    if (refCount === 1) start();
 
     return () => {
-      cancelled = true;
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      if (stream) for (const track of stream.getTracks()) track.stop();
-      void ctx?.close();
+      subscribers.delete(cb);
+      refCount -= 1;
+      if (refCount === 0) teardown();
       setLevel(0);
     };
   }, [active]);

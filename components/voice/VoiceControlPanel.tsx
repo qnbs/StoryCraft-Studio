@@ -26,8 +26,10 @@ export const VoiceControlPanel = React.memo(function VoiceControlPanel() {
     transcript,
     confidence,
   } = useVoice();
-  const level = useMicLevel(isListening);
-  const confidencePct = Math.round(Math.min(1, Math.max(0, confidence)) * 100);
+  // QNBS-v3 (CodeAnt): gate the (shared) mic meter on `enabled` so it never runs if voice was
+  // disabled while a stale listening mode lingers.
+  const level = useMicLevel(enabled && isListening);
+  const confidencePct = Math.round(Math.min(1, Math.max(0, confidence ?? 0)) * 100);
 
   const handleToggleListening = useCallback(() => {
     if (isListening) {
@@ -81,7 +83,9 @@ export const VoiceControlPanel = React.memo(function VoiceControlPanel() {
               {transcript}
             </p>
           )}
-          {confidencePct > 0 && (
+          {/* QNBS-v3 (CodeAnt): not in dictation — that path appends text without updating
+              lastConfidence, so its value would be stale. */}
+          {confidencePct > 0 && mode !== 'dictating' && (
             <span className="text-[10px] text-[var(--sc-text-muted)] tabular-nums">
               {t('voice.feedback.confidence', { percent: String(confidencePct) })}
             </span>
