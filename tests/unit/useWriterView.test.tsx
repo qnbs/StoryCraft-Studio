@@ -224,6 +224,10 @@ describe('useWriterView', () => {
     mockState.writer.selectedSectionId = 's1';
     mockState.writer.generationHistory = ['Generated text'];
     mockState.writer.activeHistoryIndex = 0;
+    // QNBS-v3 (CodeAnt): reset RAG state + the assembly mock so one test's config/flag can't leak
+    // into another (avoids order-dependent failures if an assertion throws before inline cleanup).
+    mockState.writer.useRagContext = false;
+    mockAssembleRAGPrompt.mockReset();
   });
 
   it('returns a usable hook API and dispatches manuscript updates', async () => {
@@ -332,7 +336,7 @@ describe('useWriterView', () => {
         snippet: 'A retrieved passage about the hero.',
       },
     ]);
-    mockState.writer.useRagContext = false; // restore for other tests
+    // cleanup handled by beforeEach (resets useRagContext + mockAssembleRAGPrompt)
   });
 
   it('dispatches generation actions when handleGenerate is called', async () => {
