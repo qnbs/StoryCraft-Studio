@@ -23,6 +23,8 @@ describe('useHelpView', () => {
     expect(helpCategoryForView('export')).toBe('management');
     expect(helpCategoryForView('settings')).toBe('settings-guide');
     expect(helpCategoryForView('world')).toBe('worldbuilding');
+    // LoRA docs live under the 'advanced' help category, not 'ai-studio'.
+    expect(helpCategoryForView('lora')).toBe('advanced');
     expect(helpCategoryForView('help')).toBe('getting-started');
     expect(helpCategoryForView(undefined)).toBe('getting-started');
   });

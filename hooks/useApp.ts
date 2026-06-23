@@ -68,6 +68,16 @@ export const useApp = ({ isNewUser }: { isNewUser: boolean }) => {
   const [isPortalActive, setIsPortalActive] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // QNBS-v3 (CodeAnt): the single place that mutates currentView, so previousView is tracked on
+  // EVERY navigation path — handleNavigate, hashchange (browser back/forward + deep links), and
+  // portal exit — not just sidebar clicks. Otherwise view-aware Help opens with a stale origin view.
+  const switchView = useCallback((view: View) => {
+    setCurrentView((prev) => {
+      if (prev !== view) previousViewRef.current = prev;
+      return view;
+    });
+  }, []);
+
   useEffect(() => {
     if (isNewUser) {
       setIsPortalActive(true);
@@ -101,12 +111,12 @@ export const useApp = ({ isNewUser }: { isNewUser: boolean }) => {
     function onHashChange() {
       const { view } = parseHash(window.location.hash);
       if (view && view !== currentView) {
-        setCurrentView(view);
+        switchView(view);
       }
     }
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
-  }, [currentView]);
+  }, [currentView, switchView]);
 
   // Save the current view to localStorage whenever it changes.
   useEffect(() => {
@@ -117,22 +127,25 @@ export const useApp = ({ isNewUser }: { isNewUser: boolean }) => {
     }
   }, [currentView]);
 
-  const handlePortalExit = useCallback((view?: View) => {
-    if (view) {
-      setCurrentView(view);
-      pushHash(view);
-    }
-    setIsPortalActive(false);
-  }, []);
+  const handlePortalExit = useCallback(
+    (view?: View) => {
+      if (view) {
+        switchView(view);
+        pushHash(view);
+      }
+      setIsPortalActive(false);
+    },
+    [switchView],
+  );
 
   // QNBS-v3: Keep URL hash in sync with navigation so all views are shareable/bookmarkable.
-  const handleNavigate = useCallback((view: View) => {
-    setCurrentView((prev) => {
-      if (prev !== view) previousViewRef.current = prev;
-      return view;
-    });
-    pushHash(view);
-  }, []);
+  const handleNavigate = useCallback(
+    (view: View) => {
+      switchView(view);
+      pushHash(view);
+    },
+    [switchView],
+  );
 
   return {
     currentView,

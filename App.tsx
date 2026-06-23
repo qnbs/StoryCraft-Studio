@@ -445,8 +445,13 @@ const App: FC<AppProps> = ({ isNewUser }) => {
     // real users, so this is invisible in production.
     if (typeof navigator !== 'undefined' && navigator.webdriver) return;
     if (tourStartedRef.current || hasCompletedSpotlightTour()) return;
-    tourStartedRef.current = true;
-    const id = window.setTimeout(() => startSpotlightTour(t), 600);
+    // QNBS-v3 (CodeAnt): set the once-guard when the timer actually fires, not before it. If a dep
+    // changes during the 600ms delay the effect cleanup cancels the timer; setting the guard early
+    // would then permanently suppress the tour for a genuine first-run user.
+    const id = window.setTimeout(() => {
+      tourStartedRef.current = true;
+      startSpotlightTour(t);
+    }, 600);
     return () => window.clearTimeout(id);
   }, [isNewUser, isInitialLoad, isPortalActive, t]);
 

@@ -31,7 +31,9 @@ const VIEW_TO_HELP_CATEGORY: Partial<Record<View, string>> = {
   progress: 'analysis',
   export: 'management',
   settings: 'settings-guide',
-  lora: 'ai-studio',
+  // QNBS-v3 (CodeAnt): LoRA help content lives under the 'advanced' category (help.advanced.lora.*),
+  // not 'ai-studio' — map there so Help opens on the actual LoRA docs.
+  lora: 'advanced',
 };
 
 /** Resolve the initial help category from the originating view (defaults to getting-started). */

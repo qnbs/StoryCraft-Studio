@@ -59,6 +59,20 @@ describe('useApp', () => {
     expect(result.current.previousView).toBe('manuscript');
   });
 
+  it('tracks previousView on hashchange (browser back/forward + deep links)', () => {
+    const { result } = renderHook(() => useApp({ isNewUser: false }));
+    act(() => {
+      result.current.handleNavigate('manuscript');
+    });
+    // Simulate a browser back/forward or external deep-link that bypasses handleNavigate.
+    act(() => {
+      window.history.replaceState(null, '', '#/settings');
+      window.dispatchEvent(new Event('hashchange'));
+    });
+    expect(result.current.currentView).toBe('settings');
+    expect(result.current.previousView).toBe('manuscript');
+  });
+
   it('does not change previousView when navigating to the already-active view', () => {
     const { result } = renderHook(() => useApp({ isNewUser: false }));
     act(() => {
