@@ -3,7 +3,13 @@ import {
   computePipelineProgress,
   type PipelineProgress,
 } from '../../../features/proForge/pipelineProgress';
-import { DEFAULT_PIPELINE_CONFIG, type PipelineRun } from '../../../features/proForge/types';
+import {
+  DEFAULT_PIPELINE_CONFIG,
+  type PipelineRun,
+  type PipelineStage,
+  type StageResult,
+  type StageStatus,
+} from '../../../features/proForge/types';
 
 function makeRun(overrides: Partial<PipelineRun> = {}): PipelineRun {
   return {
@@ -18,11 +24,11 @@ function makeRun(overrides: Partial<PipelineRun> = {}): PipelineRun {
     prePipelineSnapshotId: 'snap-0',
     traceLog: [],
     ...overrides,
-  } as PipelineRun;
+  };
 }
 
-// Minimal StageResult stub — only stage + status matter for progress.
-function stageResult(stage: PipelineRun['stages'][number]['stage'], status: string) {
+// Minimal but fully-typed StageResult — only stage + status drive progress.
+function stageResult(stage: PipelineStage, status: StageStatus): StageResult {
   return {
     stage,
     status,
@@ -35,7 +41,7 @@ function stageResult(stage: PipelineRun['stages'][number]['stage'], status: stri
       itemsAccepted: 0,
       itemsRejected: 0,
     },
-  } as unknown as PipelineRun['stages'][number];
+  };
 }
 
 describe('computePipelineProgress', () => {

@@ -40,9 +40,19 @@ vi.mock('../../../../services/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import type { PipelineConfig, StageResult } from '../../../../features/proForge/types';
+import type { GenerateRequest } from '../../../../services/ai/inferenceGateway';
 import { logger } from '../../../../services/logger';
 import { BaseAgent } from '../../../../services/proForge/pipelineAgents/baseAgent';
 import type { OrchestratorContext } from '../../../../services/proForge/proForgeOrchestrator';
+
+// QNBS-v3: typed accessor for the last gateway.generate() call — avoids per-assertion `as` casts.
+// mockGenerate is an untyped vi.fn(), so calls[…][0] is `any` and assigns to GenerateRequest cleanly.
+function lastGenerateRequest(): GenerateRequest {
+  const calls = mockGenerate.mock.calls;
+  const last = calls[calls.length - 1];
+  if (!last) throw new Error('gateway.generate was not called');
+  return last[0];
+}
 
 // ---------------------------------------------------------------------------
 // Concrete stub — BaseAgent is abstract
@@ -353,9 +363,7 @@ describe('BaseAgent', () => {
     it('does NOT include a signal in options when none is bound', async () => {
       mockGenerate.mockResolvedValueOnce({ text: 'OK', usage: {} });
       await agent.publicGenerate('Prompt');
-      const opts = (mockGenerate.mock.calls.at(-1)?.[0] as { options: { signal?: AbortSignal } })
-        .options;
-      expect(opts.signal).toBeUndefined();
+      expect(lastGenerateRequest().options.signal).toBeUndefined();
     });
 
     it('threads the bound abort signal into the AI call options', async () => {
@@ -363,15 +371,21 @@ describe('BaseAgent', () => {
       const controller = new AbortController();
       agent.bindAbortSignal(controller.signal);
       await agent.publicGenerate('Prompt');
-      const opts = (mockGenerate.mock.calls.at(-1)?.[0] as { options: { signal?: AbortSignal } })
-        .options;
-      expect(opts.signal).toBe(controller.signal);
+      expect(lastGenerateRequest().options.signal).toBe(controller.signal);
     });
   });
 
   describe('cooperativeYield()', () => {
-    it('resolves on a later macrotask without throwing', async () => {
-      await expect(agent.publicCooperativeYield()).resolves.toBeUndefined();
+    it('resolves deterministically when the macrotask is advanced', async () => {
+      vi.useFakeTimers();
+      try {
+        const pending = agent.publicCooperativeYield();
+        // Advance the setTimeout(…, 0) macrotask explicitly — no reliance on real scheduling.
+        await vi.advanceTimersByTimeAsync(0);
+        await expect(pending).resolves.toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -434,9 +448,7 @@ describe('BaseAgent', () => {
       mockGenerate.mockResolvedValueOnce({ text: 'COHERENT: ok', usage: {} });
       const controller = new AbortController();
       await agent.publicSelfReflect('excerpt', 'summary', controller.signal);
-      const opts = (mockGenerate.mock.calls.at(-1)?.[0] as { options: { signal?: AbortSignal } })
-        .options;
-      expect(opts.signal).toBe(controller.signal);
+      expect(lastGenerateRequest().options.signal).toBe(controller.signal);
     });
   });
 });

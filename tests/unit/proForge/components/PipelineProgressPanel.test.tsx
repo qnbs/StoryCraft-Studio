@@ -157,6 +157,27 @@ describe('PipelineProgressPanel', () => {
       expect(bar).toHaveAttribute('aria-valuemax', '100');
     });
 
+    // QNBS-v3: PR7 — when the active stage isn't among selected stages, the displayed stage number
+    // must clamp to a valid 1..M range, never "Stage 0 of M".
+    it('clamps the displayed stage number when the active stage is not selected', () => {
+      vi.mocked(useProForgeViewContext).mockReturnValue({
+        ...mockContextBase,
+        currentRun: {
+          ...baseRun,
+          config: { ...mockContextBase.defaultConfig, selectedStages: ['intake', 'structural'] },
+          // 'idle' is not in selectedStages → computePipelineProgress returns activeIndex 0.
+          activeStage: 'idle',
+          stages: [],
+        },
+      });
+      render(<PipelineProgressPanel />);
+
+      // The progress bar still renders at 0% (nothing completed) without crashing…
+      expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+      // …and the "Stage N of M" copy uses the i18n key with a clamped (>=1) current value.
+      expect(screen.getByText('proforge.progress.stageOfTotal')).toBeInTheDocument();
+    });
+
     it('renders Current Status section with activeStage', () => {
       vi.mocked(useProForgeViewContext).mockReturnValue({
         ...mockContextBase,

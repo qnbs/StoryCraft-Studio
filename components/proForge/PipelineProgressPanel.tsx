@@ -33,6 +33,11 @@ export const PipelineProgressPanel: React.FC = () => {
 
   // QNBS-v3: PR7 — determinate overall progress (stage N of M / percent) for the active run.
   const progress = useMemo(() => computePipelineProgress(currentRun), [currentRun]);
+  // QNBS-v3: PR7 — clamp the displayed stage number to a valid 1..total range; computePipelineProgress
+  // returns activeIndex 0 when the active stage isn't among the selected stages (e.g. idle/archived),
+  // which must never surface as "Stage 0 of M".
+  const displayStage =
+    progress.total > 0 ? Math.min(Math.max(progress.activeIndex, 1), progress.total) : 0;
 
   const totalMetrics = useMemo(() => {
     if (!currentRun) return null;
@@ -63,7 +68,7 @@ export const PipelineProgressPanel: React.FC = () => {
           <h3 className="text-sm font-medium">{t('proforge.progress.overall')}</h3>
           <span className="text-xs text-[var(--sc-text-secondary)]">
             {t('proforge.progress.stageOfTotal', {
-              current: progress.activeIndex,
+              current: displayStage,
               total: progress.total,
             })}
           </span>
