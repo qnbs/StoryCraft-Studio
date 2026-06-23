@@ -105,7 +105,9 @@ export class ProForgeCapabilityLayer {
       }
 
       // QNBS-v3: heuristic quality gate (no AI) — same gate the orchestrator applies between stages.
-      const supervisor = new SupervisorAgent(context);
+      // Pass caller-resolved thresholds so capability-layer (Node/MCP) callers can tune the gate;
+      // SupervisorAgent re-merges against DEFAULT_QUALITY_THRESHOLDS for any omitted field.
+      const supervisor = new SupervisorAgent(context, config.qualityThresholds);
       const supervisorDecision = supervisor.evaluate(input.stage, result);
 
       return {
