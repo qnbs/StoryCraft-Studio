@@ -157,9 +157,9 @@ describe('PipelineProgressPanel', () => {
       expect(bar).toHaveAttribute('aria-valuemax', '100');
     });
 
-    // QNBS-v3: PR7 — when the active stage isn't among selected stages, the displayed stage number
-    // must clamp to a valid 1..M range, never "Stage 0 of M".
-    it('clamps the displayed stage number when the active stage is not selected', () => {
+    // QNBS-v3: PR7 — when the active stage isn't among selected stages (activeIndex 0), show a
+    // neutral "Preparing…" label rather than coercing to "Stage 1/0 of M".
+    it('shows a neutral label when the active stage is not selected', () => {
       vi.mocked(useProForgeViewContext).mockReturnValue({
         ...mockContextBase,
         currentRun: {
@@ -174,8 +174,9 @@ describe('PipelineProgressPanel', () => {
 
       // The progress bar still renders at 0% (nothing completed) without crashing…
       expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
-      // …and the "Stage N of M" copy uses the i18n key with a clamped (>=1) current value.
-      expect(screen.getByText('proforge.progress.stageOfTotal')).toBeInTheDocument();
+      // …and shows the neutral fallback, NOT a "Stage N of M" index.
+      expect(screen.getByText('proforge.progress.preparing')).toBeInTheDocument();
+      expect(screen.queryByText('proforge.progress.stageOfTotal')).not.toBeInTheDocument();
     });
 
     it('renders Current Status section with activeStage', () => {

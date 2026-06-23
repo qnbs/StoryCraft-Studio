@@ -334,6 +334,7 @@
   "proforge.progress.completedStages": "Abgeschlossene Phasen",
   "proforge.progress.currentStatus": "Aktueller Status",
   "proforge.progress.overall": "Gesamtfortschritt",
+  "proforge.progress.preparing": "Wird vorbereitet…",
   "proforge.progress.stageOfTotal": "Phase {{current}} von {{total}}",
   "proforge.progress.percentComplete": "{{percent}} % abgeschlossen",
   "proforge.progress.itemsCount": "{{count}} Einträge",

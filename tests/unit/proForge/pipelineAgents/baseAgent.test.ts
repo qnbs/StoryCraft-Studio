@@ -45,13 +45,15 @@ import { logger } from '../../../../services/logger';
 import { BaseAgent } from '../../../../services/proForge/pipelineAgents/baseAgent';
 import type { OrchestratorContext } from '../../../../services/proForge/proForgeOrchestrator';
 
-// QNBS-v3: typed accessor for the last gateway.generate() call — avoids per-assertion `as` casts.
-// mockGenerate is an untyped vi.fn(), so calls[…][0] is `any` and assigns to GenerateRequest cleanly.
+// QNBS-v3: typed accessor for the last gateway.generate() call. Annotating `calls` as
+// GenerateRequest[][] makes the tuple element GenerateRequest (not an `any`-typed element) without
+// any `as` assertion — keeping mockGenerate an untyped vi.fn() so it stays assignable to the gateway.
 function lastGenerateRequest(): GenerateRequest {
-  const calls = mockGenerate.mock.calls;
+  const calls: GenerateRequest[][] = mockGenerate.mock.calls;
   const last = calls[calls.length - 1];
-  if (!last) throw new Error('gateway.generate was not called');
-  return last[0];
+  const req = last?.[0];
+  if (!req) throw new Error('gateway.generate was not called');
+  return req;
 }
 
 // ---------------------------------------------------------------------------

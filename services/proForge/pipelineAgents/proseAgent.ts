@@ -127,6 +127,24 @@ export class ProseAgent extends BaseAgent {
       }
     }
 
+    // QNBS-v3: PR7 — stop promptly on abort BEFORE the expensive post-loop work (filter-word scan,
+    // dedup, memory write, metrics, result assembly), so a cancelled run doesn't keep burning CPU/IO
+    // or emit stage output. `break` only exits the loop; this returns from the stage.
+    if (signal.aborted) {
+      return {
+        reviewItems: [],
+        metrics: {
+          aiCalls,
+          tokensConsumed,
+          durationMs: this.elapsed(startTime),
+          itemsFound: 0,
+          itemsAccepted: 0,
+          itemsRejected: 0,
+        },
+        agentOutput: undefined,
+      };
+    }
+
     // Also add client-side filter word detection as supplemental edits
     const filterWordEdits = this.detectFilterWords(sections);
     allEdits.push(...filterWordEdits);
