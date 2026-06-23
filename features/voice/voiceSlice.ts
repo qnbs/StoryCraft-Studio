@@ -61,10 +61,10 @@ export const voiceSlice = createSlice({
   reducers: {
     setVoiceMode: (state, action: PayloadAction<VoiceMode>) => {
       const next = action.payload;
-      // QNBS-v3 (CodeAnt): a fresh listening/dictation cycle starts with no confidence — drop any
-      // prior utterance's score at the source so the UI never shows a stale value before a new
-      // result arrives (the transcript-gated display is the second line of defence).
-      if ((next === 'listening' || next === 'dictating') && state.mode !== next) {
+      // QNBS-v3 (CodeAnt): a fresh listening cycle starts with no confidence — drop any prior
+      // utterance's score at the source so the UI never shows a stale value before a new result
+      // arrives. (Dictation starts via setDictationActive, not here — reset is handled there.)
+      if (next === 'listening' && state.mode !== next) {
         state.lastConfidence = 0;
       }
       state.mode = next;
@@ -123,6 +123,9 @@ export const voiceSlice = createSlice({
     setDictationActive: (state, action: PayloadAction<boolean>) => {
       state.dictationActive = action.payload;
       if (action.payload) {
+        // QNBS-v3 (CodeAnt): dictation starts here (not via setVoiceMode), so reset confidence here
+        // too — a fresh dictation session must not surface a prior utterance's score.
+        if (state.mode !== 'dictating') state.lastConfidence = 0;
         state.mode = 'dictating';
       } else if (state.mode === 'dictating') {
         state.mode = 'inactive';

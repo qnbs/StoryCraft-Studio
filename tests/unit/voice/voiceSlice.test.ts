@@ -69,6 +69,13 @@ describe('voiceSlice', () => {
     expect(listening.lastConfidence).toBe(0);
   });
 
+  it('resets confidence when dictation starts (setDictationActive)', () => {
+    const withConfidence = voiceSliceReducer(initialState, setLastConfidence(0.9));
+    const dictating = voiceSliceReducer(withConfidence, setDictationActive(true));
+    expect(dictating.lastConfidence).toBe(0);
+    expect(dictating.mode).toBe('dictating');
+  });
+
   it('keeps confidence when staying in the same mode', () => {
     const listening = voiceSliceReducer(initialState, setVoiceMode('listening'));
     const withConfidence = voiceSliceReducer(listening, setLastConfidence(0.8));

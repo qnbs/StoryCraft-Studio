@@ -65,12 +65,14 @@ describe('useMicLevel', () => {
     });
 
     afterEach(() => {
-      // Restore the original mediaDevices descriptor (or neutralise it when jsdom had none).
-      Object.defineProperty(
-        navigator,
-        'mediaDevices',
-        origMediaDevices ?? { value: undefined, configurable: true },
-      );
+      // QNBS-v3 (CodeAnt): restore the original descriptor, or REMOVE the own property when jsdom had
+      // none — setting an own `undefined` would shadow a prototype-provided mediaDevices for the rest
+      // of the run. Reflect.deleteProperty avoids the `delete`-operator lint.
+      if (origMediaDevices) {
+        Object.defineProperty(navigator, 'mediaDevices', origMediaDevices);
+      } else {
+        Reflect.deleteProperty(navigator, 'mediaDevices');
+      }
       vi.unstubAllGlobals();
       vi.restoreAllMocks();
     });
