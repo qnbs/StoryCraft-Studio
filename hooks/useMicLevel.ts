@@ -26,6 +26,10 @@ let ctx: AudioContext | null = null;
 let stream: MediaStream | null = null;
 let rafId: number | null = null;
 let currentLevel = 0;
+// QNBS-v3 (CodeAnt): monotonic session token. Each start() and teardown() bumps it; a pending
+// getUserMedia whose token is stale (superseded by a rapid deactivate→reactivate) releases its
+// stream and bails, so overlapping startups can't leak a second pipeline.
+let session = 0;
 
 function broadcast(level: number): void {
   currentLevel = level;
@@ -33,6 +37,7 @@ function broadcast(level: number): void {
 }
 
 function teardown(): void {
+  session += 1;
   if (rafId !== null) cancelAnimationFrame(rafId);
   rafId = null;
   if (stream) for (const track of stream.getTracks()) track.stop();
@@ -47,11 +52,13 @@ function start(): void {
   const media = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
   if (!AudioCtor || !media?.getUserMedia) return;
 
+  session += 1;
+  const mySession = session;
   media
     .getUserMedia({ audio: true })
     .then((s) => {
-      // Everyone left while we were acquiring the mic — release it immediately.
-      if (refCount === 0) {
+      // Superseded by a newer start/teardown, or everyone left while acquiring — release the mic.
+      if (mySession !== session || refCount === 0) {
         for (const track of s.getTracks()) track.stop();
         return;
       }

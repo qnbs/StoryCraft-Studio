@@ -83,9 +83,9 @@ export const VoiceControlPanel = React.memo(function VoiceControlPanel() {
               {transcript}
             </p>
           )}
-          {/* QNBS-v3 (CodeAnt): not in dictation — that path appends text without updating
-              lastConfidence, so its value would be stale. */}
-          {confidencePct > 0 && mode !== 'dictating' && (
+          {/* QNBS-v3 (CodeAnt): only with a current transcript + not in dictation — otherwise a
+              prior utterance's lastConfidence (unchanged on session start) would show stale. */}
+          {confidencePct > 0 && !!transcript && mode !== 'dictating' && (
             <span className="text-[10px] text-[var(--sc-text-muted)] tabular-nums">
               {t('voice.feedback.confidence', { percent: String(confidencePct) })}
             </span>

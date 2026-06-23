@@ -52,10 +52,11 @@ export const VoiceIndicator = React.memo(function VoiceIndicator() {
 
   const config = MODE_CONFIG[mode as VoiceModeKey] ?? MODE_CONFIG.inactive;
   const confidencePct = Math.round(Math.min(1, Math.max(0, confidence ?? 0)) * 100);
-  // QNBS-v3 (CodeAnt): show confidence for listening/processing/speaking (where it reflects the last
-  // transcription) but NOT dictation (which appends text without updating lastConfidence → stale) or
-  // inactive.
-  const showConfidence = confidencePct > 0 && mode !== 'dictating' && mode !== 'inactive';
+  // QNBS-v3 (CodeAnt): show confidence only alongside a current transcript (a new listening session
+  // clears transcript but leaves lastConfidence), and not in dictation (which appends text without
+  // updating lastConfidence) or inactive — so a stale prior-utterance score is never shown.
+  const showConfidence =
+    confidencePct > 0 && !!transcript && mode !== 'dictating' && mode !== 'inactive';
 
   return (
     <div

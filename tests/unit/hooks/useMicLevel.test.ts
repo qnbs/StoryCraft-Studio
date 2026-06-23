@@ -53,7 +53,7 @@ describe('useMicLevel', () => {
         value: { getUserMedia },
         configurable: true,
       });
-      (window as unknown as Record<string, unknown>)['AudioContext'] = FakeAudioContext;
+      vi.stubGlobal('AudioContext', FakeAudioContext);
       vi.stubGlobal(
         'requestAnimationFrame',
         vi.fn((cb: FrameRequestCallback) => {
@@ -71,7 +71,6 @@ describe('useMicLevel', () => {
         'mediaDevices',
         origMediaDevices ?? { value: undefined, configurable: true },
       );
-      (window as unknown as Record<string, unknown>)['AudioContext'] = undefined;
       vi.unstubAllGlobals();
       vi.restoreAllMocks();
     });
