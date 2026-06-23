@@ -61,6 +61,13 @@ describe('aiUsageTracker', () => {
     expect(aiUsageTracker.getLast()?.source).toBe('copilot');
   });
 
+  it('getLast() picks the globally newest even when a later-iterated entry is older', () => {
+    // Insertion order a→b, but a is newer — exercises the `snap.at > latest.at` false branch.
+    aiUsageTracker.record({ totalTokens: 10 }, 'a', 3_000);
+    aiUsageTracker.record({ totalTokens: 20 }, 'b', 1_000);
+    expect(aiUsageTracker.getLast()?.source).toBe('a');
+  });
+
   it('notifies subscribers on record and stops after unsubscribe', () => {
     const cb = vi.fn();
     const unsub = aiUsageTracker.subscribe(cb);

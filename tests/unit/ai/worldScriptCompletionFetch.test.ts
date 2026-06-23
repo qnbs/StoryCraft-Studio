@@ -285,4 +285,19 @@ describe('worldScriptCompletionFetch — unexpected error', () => {
     expect(aiUsageTracker.getLast('unknown')?.totalTokens).toBe(7);
     aiUsageTracker.reset();
   });
+
+  it('records nothing when onFinish reports no usage', async () => {
+    const { aiUsageTracker } = await import('../../../services/ai/aiUsageTracker');
+    aiUsageTracker.reset();
+    mockStreamText.mockImplementation((opts: { onFinish?: (e: unknown) => void }) => {
+      opts.onFinish?.({}); // no usage field → the guard's false branch
+      return mockStreamTextResult;
+    });
+    await worldScriptCompletionFetch(
+      WORLDSCRIPT_COMPLETION_URL,
+      makeInit(makeBody({ source: 'writer' })),
+    );
+    expect(aiUsageTracker.getLast('writer')).toBeNull();
+    aiUsageTracker.reset();
+  });
 });

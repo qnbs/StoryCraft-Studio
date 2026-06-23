@@ -35,6 +35,15 @@ const mockDispatch = vi.fn((action: unknown) => {
 // QNBS-v3: PR4 — mock the RAG assembly so the useRagContext branch is exercised deterministically.
 const { mockAssembleRAGPrompt } = vi.hoisted(() => ({ mockAssembleRAGPrompt: vi.fn() }));
 
+// QNBS-v3 (CodeAnt): extract a dispatched action's payload via the isDispatcherAction guard — no
+// `as` cast. Returns undefined when no matching action was dispatched.
+function dispatchedPayload(type: string): unknown {
+  const action = mockDispatch.mock.calls
+    .map(([a]) => a)
+    .find((a): a is DispatcherAction => isDispatcherAction(a) && a.type === type);
+  return action?.payload;
+}
+
 const mockState: {
   projectData: {
     characters: { id: string; name: string }[];
@@ -324,11 +333,7 @@ describe('useWriterView', () => {
       await view.handleGenerate();
     });
 
-    const ragCall = mockDispatch.mock.calls.find(
-      ([a]) => isDispatcherAction(a) && a.type === 'setLastRagChunks',
-    );
-    expect(ragCall).toBeDefined();
-    expect((ragCall?.[0] as DispatcherAction).payload).toEqual([
+    expect(dispatchedPayload('setLastRagChunks')).toEqual([
       {
         sectionId: 's1',
         chunkIndex: 0,
@@ -337,6 +342,20 @@ describe('useWriterView', () => {
       },
     ]);
     // cleanup handled by beforeEach (resets useRagContext + mockAssembleRAGPrompt)
+  });
+
+  it('clears RAG chunks when assembly fails (catch branch)', async () => {
+    mockState.writer.useRagContext = true;
+    mockState.writer.selection = { text: '', start: 0, end: 0 };
+    mockState.writer.activeTool = 'continue';
+    mockAssembleRAGPrompt.mockRejectedValue(new Error('rag down'));
+
+    const view = await createHookWrapper();
+    await act(async () => {
+      await view.handleGenerate();
+    });
+
+    expect(dispatchedPayload('setLastRagChunks')).toEqual([]);
   });
 
   it('dispatches generation actions when handleGenerate is called', async () => {
