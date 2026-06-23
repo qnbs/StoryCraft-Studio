@@ -73,10 +73,13 @@ describe('aiUsageTracker', () => {
 
   it('reset clears the snapshot and notifies', () => {
     const cb = vi.fn();
-    aiUsageTracker.subscribe(cb);
+    // QNBS-v3 (CodeAnt): capture + call unsubscribe so this listener doesn't leak across tests
+    // (reset() clears snapshots, not listeners).
+    const unsub = aiUsageTracker.subscribe(cb);
     aiUsageTracker.record({ totalTokens: 10 }, 'writer', 1);
     aiUsageTracker.reset();
     expect(aiUsageTracker.getLast('writer')).toBeNull();
     expect(cb).toHaveBeenCalledTimes(2);
+    unsub();
   });
 });

@@ -49,6 +49,7 @@ export const useWriterView = () => {
   const fullStreamRef = useRef('');
 
   const { runCompletion, stop: stopOrchestrationStreaming } = useWorldScriptAI({
+    source: 'writer',
     onIncremental: useCallback(
       (fullText: string, delta: string) => {
         fullStreamRef.current = fullText;

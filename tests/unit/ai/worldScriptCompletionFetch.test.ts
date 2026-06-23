@@ -257,15 +257,32 @@ describe('worldScriptCompletionFetch — unexpected error', () => {
     );
   });
 
-  it('reports streamText onFinish usage into the aiUsageTracker, scoped to writer', async () => {
+  it('reports streamText onFinish usage scoped to the request source', async () => {
     const { aiUsageTracker } = await import('../../../services/ai/aiUsageTracker');
     aiUsageTracker.reset();
     mockStreamText.mockImplementation((opts: { onFinish?: (e: unknown) => void }) => {
       opts.onFinish?.({ usage: { promptTokens: 12, completionTokens: 8, totalTokens: 20 } });
       return mockStreamTextResult;
     });
+    // A copilot request must record under 'copilot', not overwrite the writer's badge.
+    await worldScriptCompletionFetch(
+      WORLDSCRIPT_COMPLETION_URL,
+      makeInit(makeBody({ source: 'copilot' })),
+    );
+    expect(aiUsageTracker.getLast('copilot')?.totalTokens).toBe(20);
+    expect(aiUsageTracker.getLast('writer')).toBeNull();
+    aiUsageTracker.reset();
+  });
+
+  it('records usage under "unknown" when no source is provided', async () => {
+    const { aiUsageTracker } = await import('../../../services/ai/aiUsageTracker');
+    aiUsageTracker.reset();
+    mockStreamText.mockImplementation((opts: { onFinish?: (e: unknown) => void }) => {
+      opts.onFinish?.({ usage: { totalTokens: 7 } });
+      return mockStreamTextResult;
+    });
     await worldScriptCompletionFetch(WORLDSCRIPT_COMPLETION_URL, makeInit(makeBody()));
-    expect(aiUsageTracker.getLast('writer')?.totalTokens).toBe(20);
+    expect(aiUsageTracker.getLast('unknown')?.totalTokens).toBe(7);
     aiUsageTracker.reset();
   });
 });

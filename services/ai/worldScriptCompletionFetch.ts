@@ -45,6 +45,8 @@ const completionBodySchema = z.object({
   // QNBS-v3 (Phase 1): opaque per-request correlation id propagated from useWorldScriptAI so the
   // client request log and this fetch-side failure log share one id. Never user-derived.
   correlationId: z.string().optional(),
+  // QNBS-v3 (CodeAnt): which app surface owns this request, for per-surface token-usage attribution.
+  source: z.string().optional(),
 });
 
 const log = createLogger('ai.completion');
@@ -189,10 +191,11 @@ export async function worldScriptCompletionFetch(
       ...(signal !== undefined ? { abortSignal: signal } : {}),
       temperature,
       maxOutputTokens,
-      // QNBS-v3: PR4 — report token usage to the transparency tracker, scoped to the 'writer'
-      // surface so the Writer badge never reflects another surface's completion (no payload logging).
+      // QNBS-v3 (CodeAnt): report token usage scoped to the calling surface (this fetch is shared by
+      // the Writer AND Global Copilot via useWorldScriptAI), so one never overwrites the other's
+      // "last request" badge. No payload/token logging.
       onFinish: (event) => {
-        if (event.usage) aiUsageTracker.record(event.usage, 'writer');
+        if (event.usage) aiUsageTracker.record(event.usage, parsed.source ?? 'unknown');
       },
     });
 
