@@ -197,5 +197,11 @@ describe('useBookPreviewView', () => {
       expect(onNavigate).toHaveBeenCalledWith('export');
       expect(useTransientUiStore.getState().exportInitialFormat).toBe('epub');
     });
+
+    it('does not set the preselection flag when no navigation callback is provided', () => {
+      const { result } = renderHook(() => useBookPreviewView());
+      act(() => result.current.onExport());
+      expect(useTransientUiStore.getState().exportInitialFormat).toBeNull();
+    });
   });
 });

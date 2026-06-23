@@ -30,24 +30,28 @@ function loadPrefs(): PreviewPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
     if (!raw) return DEFAULT_PREFS;
-    const parsed = JSON.parse(raw) as Partial<PreviewPrefs>;
+    // QNBS-v3 (CodeAnt): parse to `unknown` and narrow each field, rather than asserting the shape.
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return DEFAULT_PREFS;
+    const p = parsed as Record<string, unknown>;
+    const fontSize = p['fontSize'];
+    const fontFamily = p['fontFamily'];
+    const showWordCount = p['showWordCount'];
+    const isTocOpen = p['isTocOpen'];
+    const isPaginated = p['isPaginated'];
     return {
       fontSize:
-        typeof parsed.fontSize === 'number'
-          ? Math.max(12, Math.min(24, parsed.fontSize))
+        typeof fontSize === 'number'
+          ? Math.max(12, Math.min(24, fontSize))
           : DEFAULT_PREFS.fontSize,
       fontFamily:
-        typeof parsed.fontFamily === 'string' &&
-        (FONT_FAMILIES as readonly string[]).includes(parsed.fontFamily)
-          ? parsed.fontFamily
+        typeof fontFamily === 'string' && (FONT_FAMILIES as readonly string[]).includes(fontFamily)
+          ? fontFamily
           : DEFAULT_PREFS.fontFamily,
       showWordCount:
-        typeof parsed.showWordCount === 'boolean'
-          ? parsed.showWordCount
-          : DEFAULT_PREFS.showWordCount,
-      isTocOpen: typeof parsed.isTocOpen === 'boolean' ? parsed.isTocOpen : DEFAULT_PREFS.isTocOpen,
-      isPaginated:
-        typeof parsed.isPaginated === 'boolean' ? parsed.isPaginated : DEFAULT_PREFS.isPaginated,
+        typeof showWordCount === 'boolean' ? showWordCount : DEFAULT_PREFS.showWordCount,
+      isTocOpen: typeof isTocOpen === 'boolean' ? isTocOpen : DEFAULT_PREFS.isTocOpen,
+      isPaginated: typeof isPaginated === 'boolean' ? isPaginated : DEFAULT_PREFS.isPaginated,
     };
   } catch {
     return DEFAULT_PREFS;
@@ -106,9 +110,12 @@ export function useBookPreviewView(onNavigate?: (view: View) => void): BookPrevi
   const togglePaginated = useCallback(() => setIsPaginated((v) => !v), []);
 
   // QNBS-v3: preselect EPUB in the Export view, then navigate — the hand-off the help text promised.
+  // QNBS-v3 (CodeAnt): only set the preselection flag when we can actually navigate, so a missing
+  // nav callback can't leave a stale 'epub' flag that mis-fires the next time Export mounts.
   const onExport = useCallback(() => {
+    if (!onNavigate) return;
     setExportInitialFormat('epub');
-    onNavigate?.('export');
+    onNavigate('export');
   }, [setExportInitialFormat, onNavigate]);
 
   return {

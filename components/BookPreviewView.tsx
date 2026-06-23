@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { FC } from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookPreviewContext, useBookPreviewContext } from '../contexts/BookPreviewContext';
 import { useBookPreviewView } from '../hooks/useBookPreviewView';
 import type { StorySection, View } from '../types';
@@ -222,6 +222,7 @@ const BookPreviewInner: FC = () => {
   const { t, sections, isFullscreen, isTocOpen } = useBookPreviewContext();
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string | null>(sections[0]?.id ?? null);
   const [progress, setProgress] = useState(0);
 
@@ -265,6 +266,19 @@ const BookPreviewInner: FC = () => {
     },
     [sections, virtualizer],
   );
+
+  // QNBS-v3 (CodeAnt): progress + active-chapter were only recomputed inside onScroll, so non-scroll
+  // changes left them stale. A ResizeObserver on the content recomputes whenever its height changes —
+  // which covers font-size/family, the paged toggle, the word-count gutter, and section add/remove —
+  // without listing layout values that the effect body never reads. Re-attaches when handleScroll
+  // changes (its identity tracks `sections`), so it also binds once the content first mounts.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => handleScroll());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [handleScroll]);
 
   return (
     <div
@@ -324,6 +338,7 @@ const BookPreviewInner: FC = () => {
             </div>
           ) : (
             <div
+              ref={contentRef}
               style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}
             >
               {virtualizer.getVirtualItems().map((virtualRow) => {

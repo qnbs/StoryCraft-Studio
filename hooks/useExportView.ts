@@ -8,7 +8,11 @@ import { useTranslation } from './useTranslation';
 
 type Format = 'md' | 'txt' | 'pdf' | 'docx' | 'epub' | 'norm-txt';
 // QNBS-v3: gate the Book Preview → Export hand-off so only valid formats can preselect the dropdown.
-const VALID_FORMATS = new Set<Format>(['md', 'txt', 'pdf', 'docx', 'epub', 'norm-txt']);
+const VALID_FORMATS: readonly Format[] = ['md', 'txt', 'pdf', 'docx', 'epub', 'norm-txt'];
+// QNBS-v3 (CodeAnt): runtime type guard instead of an `as Format` assertion on store-supplied input.
+function isFormat(value: string | null): value is Format {
+  return value !== null && (VALID_FORMATS as readonly string[]).includes(value);
+}
 interface ContentToExport {
   title: boolean;
   characters: boolean;
@@ -38,8 +42,8 @@ export const useExportView = () => {
   const exportInitialFormat = useTransientUiStore((s) => s.exportInitialFormat);
   const setExportInitialFormat = useTransientUiStore((s) => s.setExportInitialFormat);
   useEffect(() => {
-    if (exportInitialFormat && VALID_FORMATS.has(exportInitialFormat as Format)) {
-      setFormat(exportInitialFormat as Format);
+    if (isFormat(exportInitialFormat)) {
+      setFormat(exportInitialFormat);
       setExportInitialFormat(null);
     }
   }, [exportInitialFormat, setExportInitialFormat]);
