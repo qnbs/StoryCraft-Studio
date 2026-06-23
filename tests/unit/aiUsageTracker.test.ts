@@ -34,6 +34,7 @@ describe('aiUsageTracker', () => {
     aiUsageTracker.record(
       { promptTokens: 0, completionTokens: 0, inputTokens: 5, outputTokens: 7 },
       'writer',
+      1_000,
     );
     const snap = aiUsageTracker.getLast('writer');
     expect(snap?.promptTokens).toBe(5);
@@ -42,7 +43,11 @@ describe('aiUsageTracker', () => {
   });
 
   it('derives a total when totalTokens is zero but prompt/completion are not', () => {
-    aiUsageTracker.record({ totalTokens: 0, promptTokens: 10, completionTokens: 5 }, 'writer');
+    aiUsageTracker.record(
+      { totalTokens: 0, promptTokens: 10, completionTokens: 5 },
+      'writer',
+      1_000,
+    );
     expect(aiUsageTracker.getLast('writer')?.totalTokens).toBe(15);
   });
 

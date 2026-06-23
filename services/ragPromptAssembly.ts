@@ -76,6 +76,8 @@ export function deduplicateChunksBySection(chunks: RagChunk[]): RagChunk[] {
 // QNBS-v3 (CodeAnt): fit chunks under the token budget, returning BOTH the rendered block and the
 // chunks actually included. The tail that doesn't fit is dropped — so callers (e.g. the transparency
 // inspector) can show only the chunks that really made it into the prompt, not all retrieved ones.
+const CHUNK_SEPARATOR = '\n\n---\n\n';
+
 export function fitRagChunks(
   chunks: RagChunk[],
   manuscript: StorySection[] | undefined,
@@ -89,13 +91,16 @@ export function fitRagChunks(
     const header = `[${title} · chunk ${c.chunkIndex + 1} · score ${c.score.toFixed(2)}]`;
     const body = truncateAtSentence(c.text, MAX_TOKENS_PER_CHUNK * 4);
     const block = `${header}\n${body}`;
-    const blockCost = estimateTokens(block);
+    // QNBS-v3 (CodeAnt): include the separator joined before every block after the first, so the
+    // budget reflects the real rendered length and ragBlock can't exceed tokenBudget.
+    const blockCost =
+      estimateTokens(block) + (used.length > 0 ? estimateTokens(CHUNK_SEPARATOR) : 0);
     if (cost + blockCost > tokenBudget) break;
     used.push(c);
     lines.push(block);
     cost += blockCost;
   }
-  return { used, block: lines.join('\n\n---\n\n') };
+  return { used, block: lines.join(CHUNK_SEPARATOR) };
 }
 
 export function buildRAGContextBlock(
