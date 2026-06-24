@@ -15,41 +15,28 @@
   **without being asked**. Goal state: **DeepSource checks green** (or every finding fixed/justified)
   with the rest of CI green.
 
-## 0a. ALWAYS trigger the AI review on every PR (standing rule)
+## 0a. AI Review is NOT available on this account — do not trigger it
 
-DeepSource runs **two** layers, and only one is automatic:
+DeepSource has **two** layers:
 
-- **Static analysis** (per-analyzer check-runs: `DeepSource: JavaScript / Rust / Docker / CSS`) —
-  **automatic** on every push.
-- **AI Review** — **on-demand for this team.** It does **not** run on its own; you must trigger it.
+- **Static analysis** (per-analyzer check-runs `DeepSource: JavaScript / Rust / Docker`; `CSS` is
+  AI-only) — **automatic on every push, free, reliable.** This is the **operative** layer; the entire
+  loop below runs on it.
+- **AI Review** (LLM-based, triggered by `@deepsourcebot review`) — requires **AI Agents**
+  (dashboard → Policies → AI), a **paid / team feature not on the free OSS tier.**
 
-> **So on EVERY PR (and after each push that changes code), post:**
-> ```bash
-> gh pr comment <PR_NUMBER> --body "@deepsourcebot review"
-> ```
-> Then run the correction loop (§2) over whatever the AI review surfaces, in addition to the automatic
-> static-analysis findings. A PR is review-quiescent only when **both** layers are clean. Trigger it
-> right after opening the PR and again after every code-changing push (docs-only pushes don't need it).
-
-### Prerequisite + reality (DeepSource docs)
-
-The AI review only runs if **AI Agents is enabled**: dashboard → **Policies → AI → "Enable AI Agents"**
-(on by default for new accounts; existing accounts must switch it on). Inline AI findings (vs. only the
-grade summary) are toggled in **Settings → Quality Gates → inline review comments**.
-
-**Observed (2026-06-24):** even after triggering `@deepsourcebot review` on three PRs, the AI review
-produced **no response** (no post-trigger `deepsource-io` comment; the AI-only CSS analyzer stayed
-`skipped`) — AI Agents is off or the OSS/free tier doesn't serve it. **So treat the AI review as
-best-effort, NOT a merge gate:** always trigger it, but if it doesn't respond, proceed on
-**static-analysis quiescence** (same posture as the CodeAnt-unresponsive rule). The static layer
-(JavaScript/Rust/Docker check-runs + dashboard issues) is the reliable one and already covers
-security / bug-risk / anti-pattern.
+> **Verified 2026-06-24:** triggering `@deepsourcebot review` on three PRs produced **zero response**
+> (no comment; the AI-only CSS analyzer stayed `skipped`), and the "Enable AI Agents" toggle is not
+> even present on the free plan. **So do NOT post `@deepsourcebot review`** — it is a no-op that only
+> adds a dead comment. Run the correction loop on the **static-analysis** findings + the dashboard
+> categories. **If the account ever upgrades** to include AI Review, re-introduce the per-PR trigger
+> and fold its findings into the loop.
 
 ## 1. How DeepSource differs from the CodeAnt loop (read first)
 
 | Aspect | CodeAnt | DeepSource |
 |---|---|---|
-| Trigger | manual `@codeant-ai review` per push | **static**: auto on every push · **AI review**: on-demand → `@deepsourcebot review` on every PR (§0a) |
+| Trigger | manual `@codeant-ai review` per push | **static**: auto on every push (the operative layer) · **AI review**: paid feature, unavailable on the free tier — not triggered (§0a) |
 | Where findings appear | GitHub **review threads** (resolvable) | **check-run annotations** (per file/line) + the DeepSource **dashboard**; *not* review threads |
 | Resolution mechanism | reply + `resolveReviewThread` (GraphQL) | **fix the code** (check goes green) · `# skipcq` inline · or "Ignore" in the dashboard |
 | Suppression token | `// biome-ignore` | `# skipcq: <ISSUE_CODE>` / `// skipcq: <ISSUE_CODE>` |
@@ -58,8 +45,8 @@ security / bug-risk / anti-pattern.
 
 **Consequence:** there is **no `resolveReviewThread` step** here. You make a check green by fixing the
 code (preferred), by a justified `# skipcq`, or by ignoring it in the dashboard. The **static**
-re-analysis re-runs automatically on push — but the **AI review is on-demand**, so re-trigger it with
-`@deepsourcebot review` after each code-changing push (§0a).
+re-analysis re-runs **automatically on every push** — no trigger comment is needed (and the on-demand
+AI review is a paid feature that is unavailable on this account; see §0a).
 
 ## 2. The Iron Rule — loop until quiescent
 
@@ -76,7 +63,7 @@ caused by the fix (a "wave"). Handle each wave like the first.
         │ 4. Update tests + i18n + docs (lockstep)     │
         │ 5. suppressions + lint + typecheck + vitest  │
         │ 6. Commit + push (one wave = one commit)     │
-        │ 7. static auto-reruns; re-trigger AI (§0a)   │
+        │ 7. static re-runs AUTOMATICALLY on push      │
         └───────────────┬─────────────────────────────┘
                         │ new findings?
               ┌── yes ──┘         └── no ──┐
@@ -225,8 +212,9 @@ GitHub App resumes auto-reviewing, run **both** loops: CodeAnt for narrative/AI 
   async-no-await/…), Performance + Documentation **0**. Genuine fixes: ecoModeService boolean (#230),
   Storybook rules-of-hooks (#231), PDF-iframe sandbox (#232). **AI review never responded** to
   `@deepsourcebot review` on #231/#232/#233 (no post-trigger comment; CSS analyzer stayed skipped) →
-  AI Agents off or not on the OSS tier. Adopted the **best-effort** posture above (trigger always,
-  gate on static).
+  AI Agents off / not on the OSS free tier. **Conclusion (#233):** AI Review is a paid feature
+  unavailable here — **stop triggering it** and gate merges on the **static** layer's quiescence
+  (§0a). Re-introduce the per-PR trigger only if the account is upgraded to include AI Agents.
 
 ---
 
