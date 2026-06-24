@@ -17,7 +17,10 @@ vi.mock('../../../app/hooks', () => ({
   useAppSelector: vi.fn(() => mockIsEnabled),
 }));
 
-vi.mock('../../../features/featureFlags/featureFlagsSlice', () => ({
+// QNBS-v3: keep the real module (so `defaultFeatureFlagsState`, which featureCatalog derives from via
+// the section's MaturityBadge, still exists) and override only the selector.
+vi.mock('../../../features/featureFlags/featureFlagsSlice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/featureFlags/featureFlagsSlice')>()),
   selectEnablePluginSystem: (s: unknown) => s,
 }));
 

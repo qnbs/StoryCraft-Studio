@@ -33,8 +33,11 @@ vi.mock('../../../services/loraAdapterService', () => ({
   deleteAdapter: (...args: unknown[]) => mockDeleteAdapter(...args),
 }));
 
-// selectEnableLoraAdapters is used with useAppSelector
-vi.mock('../../../features/featureFlags/featureFlagsSlice', () => ({
+// selectEnableLoraAdapters is used with useAppSelector. QNBS-v3: keep the real module (so
+// `defaultFeatureFlagsState`, which featureCatalog derives from via the section's MaturityBadge,
+// still exists) and override only the selector.
+vi.mock('../../../features/featureFlags/featureFlagsSlice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/featureFlags/featureFlagsSlice')>()),
   selectEnableLoraAdapters: (s: unknown) => s,
 }));
 
