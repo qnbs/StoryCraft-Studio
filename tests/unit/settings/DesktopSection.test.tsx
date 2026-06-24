@@ -8,6 +8,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RootState } from '../../../app/store';
 
 // ---------------------------------------------------------------------------
 // Mocks (component uses real Redux hooks + useTranslation + the Tauri gate)
@@ -21,9 +22,12 @@ const { mockDispatch, stateRef, mockIsTauri } = vi.hoisted(() => ({
 
 vi.mock('../../../app/hooks', () => ({
   useAppDispatch: () => mockDispatch,
-  // biome-ignore lint/suspicious/noExplicitAny: test selector mock
-  useAppSelector: (selector: (s: any) => unknown) =>
-    selector({ settings: { desktop: { minimizeToTray: stateRef.minimizeToTray } } }),
+  // QNBS-v3: type the selector against RootState (not `any`) and feed it a minimal slice cast through
+  // `unknown` — keeps the test honest without a lint suppression (the ratchet gate stays at baseline).
+  useAppSelector: (selector: (s: RootState) => unknown) =>
+    selector({
+      settings: { desktop: { minimizeToTray: stateRef.minimizeToTray } },
+    } as unknown as RootState),
 }));
 
 vi.mock('../../../hooks/useTranslation', () => ({
