@@ -110,6 +110,13 @@ export class ProForgeCapabilityLayer {
         throw ProForgeError.stageFailed(`Stage "${input.stage}" agent failed: ${message}`);
       }
 
+      // QNBS-v3: PR7 — propagate cancellation explicitly. Some agents complete and return before
+      // honouring the signal; without this, an aborted run would surface as a "successful" (often
+      // empty) result instead of a cancellation. Mirrors the orchestrator's post-execute abort guard.
+      if (effectiveSignal.aborted) {
+        throw ProForgeError.stageFailed(`Stage "${input.stage}" was aborted before completion.`);
+      }
+
       // QNBS-v3: heuristic quality gate (no AI) — same gate the orchestrator applies between stages.
       // Pass caller-resolved thresholds so capability-layer (Node/MCP) callers can tune the gate;
       // SupervisorAgent re-merges against DEFAULT_QUALITY_THRESHOLDS for any omitted field.

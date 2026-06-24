@@ -176,6 +176,16 @@ describe('ProForgeCapabilityLayer', () => {
       await layer.runStage({ stage: 'intake', projectId: 'p1' }, controller.signal);
       expect(boundSignals.last).toBe(controller.signal);
     });
+
+    // QNBS-v3: PR7 — an aborted run must surface as a cancellation, not a "successful" empty result,
+    // even for agents that complete without honouring the signal themselves.
+    it('throws STAGE_FAILED when the signal is aborted by the time the agent returns', async () => {
+      const controller = new AbortController();
+      controller.abort();
+      await expect(
+        layer.runStage({ stage: 'intake', projectId: 'p1' }, controller.signal),
+      ).rejects.toMatchObject({ code: 'STAGE_FAILED' });
+    });
   });
 
   describe('applyEdits', () => {

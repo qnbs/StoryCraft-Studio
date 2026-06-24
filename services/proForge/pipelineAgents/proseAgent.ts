@@ -128,22 +128,9 @@ export class ProseAgent extends BaseAgent {
     }
 
     // QNBS-v3: PR7 — stop promptly on abort BEFORE the expensive post-loop work (filter-word scan,
-    // dedup, memory write, metrics, result assembly), so a cancelled run doesn't keep burning CPU/IO
-    // or emit stage output. `break` only exits the loop; this returns from the stage.
-    if (signal.aborted) {
-      return {
-        reviewItems: [],
-        metrics: {
-          aiCalls,
-          tokensConsumed,
-          durationMs: this.elapsed(startTime),
-          itemsFound: 0,
-          itemsAccepted: 0,
-          itemsRejected: 0,
-        },
-        agentOutput: undefined,
-      };
-    }
+    // dedup, memory write, metrics, result assembly). Throw (don't return empty) so cancellation is
+    // EXPLICIT and the capability-layer path can't read an aborted run as a successful completion.
+    if (signal.aborted) throw new Error('Stage aborted');
 
     // Also add client-side filter word detection as supplemental edits
     const filterWordEdits = this.detectFilterWords(sections);

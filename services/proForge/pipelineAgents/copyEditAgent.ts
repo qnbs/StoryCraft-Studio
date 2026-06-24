@@ -104,22 +104,10 @@ export class CopyEditAgent extends BaseAgent {
     }
 
     // QNBS-v3: PR7 — stop promptly on abort BEFORE the expensive post-loop work (repetition scan,
-    // dedup, memory write, result assembly), so a cancelled run doesn't keep burning CPU/IO or emit
-    // stage output. `break` only exits the loop; this returns from the stage.
-    if (signal.aborted) {
-      return {
-        reviewItems: [],
-        metrics: {
-          aiCalls,
-          tokensConsumed,
-          durationMs: this.elapsed(startTime),
-          itemsFound: 0,
-          itemsAccepted: 0,
-          itemsRejected: 0,
-        },
-        agentOutput: undefined,
-      };
-    }
+    // dedup, memory write, result assembly). Throwing (rather than returning an empty result) makes
+    // cancellation EXPLICIT, so the capability-layer path can't mistake an aborted run for a
+    // successful empty completion. The orchestrator catches this the same as its own abort guard.
+    if (signal.aborted) throw new Error('Stage aborted');
 
     // Client-side repetition detection
     const clientRepetitions = this.detectRepetitions(sections);

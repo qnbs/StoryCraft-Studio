@@ -216,7 +216,8 @@ describe('ProseAgent', () => {
       });
       const ctx = makeContext([{ id: 's1', title: 'Ch 1', content: longContent() }]);
       const agent = new ProseAgent(ctx);
-      await agent.execute(ac.signal);
+      // QNBS-v3: PR7 — an aborted run throws (explicit cancellation), not a silent empty success.
+      await expect(agent.execute(ac.signal)).rejects.toThrow('Stage aborted');
 
       expect(mockGenerate).not.toHaveBeenCalled();
     });
@@ -253,7 +254,8 @@ describe('ProseAgent', () => {
 
       const ctx = makeContext(sections);
       const agent = new ProseAgent(ctx);
-      await agent.execute(ac.signal);
+      // QNBS-v3: PR7 — aborted run throws rather than returning a silent empty result.
+      await expect(agent.execute(ac.signal)).rejects.toThrow('Stage aborted');
 
       // Only 1 section processed before abort check kicked in
       expect(mockGenerate).toHaveBeenCalledTimes(1);
