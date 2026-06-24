@@ -24,7 +24,10 @@
   **Status: Failing · Active Issues: 1** — the single active issue is **`JS-0440`** (Security/Major,
   `dangerouslySetInnerHTML`, mapped to **CWE-937 / OWASP**, not a Top-25 CWE row → hence "1 active"
   with all rows still 0). `pnpm audit` = 0 vulns (it was **not** a 3rd-party vuln, as first guessed).
-  **Resolved** — see P0 row below; the report should flip to **Passing** once DeepSource re-runs.
+  **Resolution = dashboard "Ignore" (reviewed-safe)** — an in-code `# skipcq` does **not** attach to a
+  JSX *attribute* issue (proven on PR #228: the issue sits on the `dangerouslySetInnerHTML=` line and
+  JSX forbids a comment between attributes; DeepSource reads only the immediately-preceding line). See
+  the P0 row + §4b. Once ignored, the CWE/SANS report flips to **Passing**.
 - _(OWASP Top 10 / MISRA C / Issue Distribution / 3rd-party vulns: paste when available.)_
 
 ## 1. Prioritisation framework (work top-down)
@@ -68,7 +71,7 @@ Fix in this order — highest user/security impact first; cosmetic last. Within 
 | Issue code | Title | Occ. | Files / modules | Decision | Status | PR |
 |---|---|---|---|---|---|---|
 | CWE/SANS Top-25 rows | code-level Top-25 CWE violations | **0** | — | none needed (clean) | done | — |
-| **JS-0440** | Avoid dangerous JSX props — `dangerouslySetInnerHTML` (CWE-937 / OWASP; the report's "1 active") | 1 | `components/HelpView.tsx:125` | **`# skipcq` + reason** — `__html` is `DOMPurify.sanitize()`d (repo's documented safe pattern); not a real XSS | done (re-run pending) | `fix/deepsource-js0440-helpview` |
+| **JS-0440** | Avoid dangerous JSX props — `dangerouslySetInnerHTML` (CWE-937 / OWASP; the report's "1 active") | 1 | `components/HelpView.tsx:125` | **dashboard "Ignore" (reviewed-safe)** — `__html` is `DOMPurify.sanitize()`d (repo's documented safe pattern); not a real XSS. In-code `skipcq` can't attach to a JSX attribute (§4b). | maintainer-click | — |
 
 ### P1 — Bug-risk / Reliability
 | Issue code | Title | Occ. | Files / modules | Decision | Status | PR |
@@ -83,7 +86,8 @@ Fix in this order — highest user/security impact first; cosmetic last. Within 
 ### P3 — Anti-pattern
 | Issue code | Title | Occ. | Files / modules | Decision | Status | PR |
 |---|---|---|---|---|---|---|
-| _(populate)_ | | | | | | |
+| **JS-0323** | Detected usage of `any` (Critical) | 34 / 20 files | **100% test files** (browser-API mocks: MediaRecorder/AudioContext …), all already `biome-ignore noExplicitAny`'d; **0 production** | **rule-ignore, test scope** — redundant with Biome `noExplicitAny` + the suppression ratchet (baseline 52). Do NOT add 34 inline `skipcq`. Long-term: opportunistic typed-mock cleanup (§4c). | maintainer-click (rule-ignore) | — |
+| **JS-0415** | JSX tree too deeply nested (5–6 levels) | 2 | `components/HelpView.tsx` | pre-existing structural; genuine refactor candidate (extract sub-components to cut nesting). Minor severity → schedule as a low-priority hygiene PR; **not** a false positive. | todo (future refactor) | — |
 
 ### P4 — Hygiene / Style
 | Issue code | Title | Occ. | Files / modules | Decision | Status | PR |
@@ -112,6 +116,29 @@ Informed predictions from the codebase, to triage faster once findings land. **N
 - **Test files:** noise-prone; ensure `test_patterns` in `.deepsource.toml` scopes test-only rules so
   they don't inflate the backlog.
 
+### 4b. In-code `skipcq` does NOT attach to JSX-attribute issues (proven on PR #228)
+
+DeepSource reads a `skipcq` only on the issue's line or the **immediately preceding** line. For an
+issue on a **JSX attribute** (e.g. `dangerouslySetInnerHTML=` / JS-0440), you cannot place a comment
+between attributes, and a `{/* skipcq */}` before the element is too far up — so it never attaches
+(verified: #228's skipcq left JS-0440 still failing, and *modifying* the file made DeepSource attribute
+the file's pre-existing issues as "introduced", failing the JS check). **Rules:**
+- For a **statement-level** issue → `// skipcq: <CODE>  reason: …` on the line directly above works.
+- For a **JSX-attribute** issue → use the **dashboard "Ignore"** (or refactor the value into a
+  statement/const where a `// skipcq` can attach). Do **not** churn the file just to add a skipcq —
+  touching a file surfaces its whole backlog as "introduced".
+
+### 4c. Long-term: retire the `any` test-mock suppressions (optional code-health track)
+
+Confirmed: the `noExplicitAny` suppressions are **0 in production, all in 20 test files** (browser-API
+mocks). Eliminating them is **recommendable mid/long-term but low-priority** (test-only; no ship risk).
+Highest-leverage approach: a shared typed-mock helper (e.g. `tests/helpers/browserMocks.ts`) with
+typed factories for the recurring mocks (MediaRecorder, AudioContext, …), then migrate files
+incrementally, **dropping the ratchet baseline by 1 each time** and using `as unknown as T` for the
+irreducible constructor/private-field cases. Benefits: lowers the ratchet (health-trend signal),
+removes JS-0323 at the source (no rule-ignore needed), catches mock-drift. Do it opportunistically
+between features — never as a blocking mega-PR.
+
 ## 5. Config-level decisions (record every rule we ignore wholesale)
 
 When a DeepSource rule conflicts with an established repo convention or with Biome, ignore it at the
@@ -119,7 +146,8 @@ config level (`.deepsource.toml`) instead of scattering inline `skipcq`. Log eac
 
 | Rule / analyzer | Action | Rationale | Date |
 |---|---|---|---|
-| _(none yet)_ | | | |
+| **JS-0323** (`any`) | dashboard rule-ignore, **test-file scope** | 34 occ all in test mocks, already governed by Biome `noExplicitAny` + the suppression ratchet (baseline 52); double-suppressing is noise. 0 production `any`. Long-term cleanup → §4c. | 2026-06-24 |
+| **JS-0440** (`dangerouslySetInnerHTML`) | dashboard "Ignore" (single occurrence) | reviewed-safe — `__html` is DOMPurify-sanitized (repo policy). In-code skipcq can't attach to a JSX attribute (§4b). | 2026-06-24 |
 
 ## 6. Definition of done
 
