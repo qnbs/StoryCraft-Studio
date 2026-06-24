@@ -41,7 +41,7 @@ const defaultFeatureFlags = {
 vi.mock('../../../contexts/SettingsViewContext', () => ({
   useSettingsViewContext: () => ({
     t: (k: string) => k,
-    settings: { privacy: {}, notifications: {} },
+    settings: { privacy: {} },
     handleSettingChange: mockHandleSettingChange,
     featureFlags: defaultFeatureFlags,
     setActiveCategory: mockSetActiveCategory,
