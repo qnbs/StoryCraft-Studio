@@ -87,15 +87,15 @@ describe('heuristicFallback envelope helpers', () => {
   });
 
   it('makeHeuristicResult builds a well-formed envelope and clamps confidence', () => {
-    const r = makeHeuristicResult(
+    const result = makeHeuristicResult(
       { a: 1 },
       { confidence: 3, tier: 'advanced', reasonKey: 'error.fallback.offline' },
     );
-    expect(r.isFallback).toBe(true);
-    expect(r.confidence).toBe(1);
-    expect(r.tier).toBe('advanced');
-    expect(r.reasonKey).toBe('error.fallback.offline');
-    expect(r.data).toEqual({ a: 1 });
+    expect(result.isFallback).toBe(true);
+    expect(result.confidence).toBe(1);
+    expect(result.tier).toBe('advanced');
+    expect(result.reasonKey).toBe('error.fallback.offline');
+    expect(result.data).toEqual({ a: 1 });
   });
 
   it('makeHeuristicResult defaults the reasonKey', () => {

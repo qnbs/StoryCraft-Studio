@@ -284,13 +284,13 @@ async function streamProvider(
   callbacks: AIStreamCallbacks,
   signal?: AbortSignal,
 ): Promise<void> {
-  const o = withMergedAbortSignal(opts, signal);
-  await assertCloudAiAllowed(o.provider);
+  const mergedOpts = withMergedAbortSignal(opts, signal);
+  await assertCloudAiAllowed(mergedOpts.provider);
   // QNBS-v3: C-3 LoRA — override model with Ollama adapter tag when set
   const oWithLora: AIRequestOptions =
-    o.provider === 'ollama' && o.loraModelPath
-      ? { ...o, model: o.loraModelPath as typeof o.model }
-      : o;
+    mergedOpts.provider === 'ollama' && mergedOpts.loraModelPath
+      ? { ...mergedOpts, model: mergedOpts.loraModelPath as typeof mergedOpts.model }
+      : mergedOpts;
   switch (oWithLora.provider) {
     case 'openai':
       return streamOpenAI(prompt, oWithLora, callbacks);
@@ -323,13 +323,13 @@ async function streamProvider(
     }
     default:
       return streamTextGemini(
-        o.systemPrompt
-          ? `${sanitizePromptValue(o.systemPrompt)}\n\n${sanitizePromptValue(prompt)}`
+        mergedOpts.systemPrompt
+          ? `${sanitizePromptValue(mergedOpts.systemPrompt)}\n\n${sanitizePromptValue(prompt)}`
           : prompt,
         creativity,
         callbacks.onChunk,
-        o.signal,
-        o.model,
+        mergedOpts.signal,
+        mergedOpts.model,
       );
   }
 }
@@ -446,8 +446,8 @@ export async function generateText(
     resolvedOpts.model,
     prompt,
   );
-  const o = withMergedAbortSignal(resolvedOpts, signal ?? controller.signal);
-  const chain = resolveProviderFallbackChain(o);
+  const mergedOpts = withMergedAbortSignal(resolvedOpts, signal ?? controller.signal);
+  const chain = resolveProviderFallbackChain(mergedOpts);
   let lastError: unknown;
   try {
     for (let i = 0; i < chain.length; i++) {
@@ -458,14 +458,14 @@ export async function generateText(
         const result = await withTransientRetry(
           () =>
             generateTextSingleProvider(prompt, creativity, {
-              ...o,
+              ...mergedOpts,
               provider: nextProvider,
             }),
           { attempts: 2 },
         );
         // QNBS-v3: Clear fallback reason on success — the chain worked.
         if (i > 0) {
-          _lastFallbackReason = `Primary provider ${o.provider} failed; fell back to ${nextProvider}.`;
+          _lastFallbackReason = `Primary provider ${mergedOpts.provider} failed; fell back to ${nextProvider}.`;
         } else {
           _lastFallbackReason = '';
         }
@@ -492,7 +492,7 @@ export async function generateText(
             const result = await withTransientRetry(
               () =>
                 generateTextSingleProvider(prompt, creativity, {
-                  ...o,
+                  ...mergedOpts,
                   provider: fallback as AIRequestOptions['provider'],
                 }),
               { attempts: 2 },
@@ -600,15 +600,15 @@ export async function streamText(
   signal?: AbortSignal,
 ): Promise<void> {
   const { key, controller } = _deduplicateRequest(opts.provider, opts.model, prompt);
-  const o = withMergedAbortSignal(opts, signal ?? controller.signal);
-  const chain = resolveProviderFallbackChain(o);
+  const mergedOpts = withMergedAbortSignal(opts, signal ?? controller.signal);
+  const chain = resolveProviderFallbackChain(mergedOpts);
   let lastError: unknown;
   // QNBS-v3: after the chain is exhausted, deliver a registered heuristic result through the stream
   // (onChunk + onDone) instead of erroring — so streaming features (Writer tools) stay useful offline.
   const tryHeuristicStream = (): boolean => {
     const heuristic = applyHeuristicFallback<string>(
-      o.heuristicTask,
-      o.heuristicContext ?? { prompt, reasonKey: 'error.fallback.generic' },
+      mergedOpts.heuristicTask,
+      mergedOpts.heuristicContext ?? { prompt, reasonKey: 'error.fallback.generic' },
     );
     if (!heuristic) return false;
     callbacks.onChunk(heuristic.data);
@@ -623,7 +623,7 @@ export async function streamText(
         await streamProvider(
           prompt,
           creativity,
-          { ...o, provider: nextProvider },
+          { ...mergedOpts, provider: nextProvider },
           callbacks,
           signal,
         );
@@ -632,7 +632,7 @@ export async function streamText(
         // QNBS-v3: A user-cancelled request is NOT a provider failure. Don't fall back to the next
         // provider and don't fire a terminal onError — surface the cancellation directly so callers
         // run their silent cancel flow instead of an error path.
-        if (isAbortError(error) || o.signal?.aborted || signal?.aborted) {
+        if (isAbortError(error) || mergedOpts.signal?.aborted || signal?.aborted) {
           throw error instanceof Error ? error : new Error(String(error));
         }
         lastError = error;
