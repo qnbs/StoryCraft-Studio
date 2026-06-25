@@ -38,9 +38,11 @@ describe('characterHeuristicGenerator', () => {
   });
 
   it('produces a complete Omit<Character,"id"> from labels', () => {
-    const r = characterHeuristicGenerator({ params: { concept: 'a spy', labels: charLabels } });
-    expect(r?.isFallback).toBe(true);
-    expect(r?.data).toEqual({
+    const result = characterHeuristicGenerator({
+      params: { concept: 'a spy', labels: charLabels },
+    });
+    expect(result?.isFallback).toBe(true);
+    expect(result?.data).toEqual({
       name: 'New Character',
       backstory: 'B',
       motivation: 'M',
@@ -52,7 +54,7 @@ describe('characterHeuristicGenerator', () => {
       relationships: 'R',
     });
     // No leftover `id` field — the slice assigns it.
-    expect('id' in (r?.data ?? {})).toBe(false);
+    expect('id' in (result?.data ?? {})).toBe(false);
   });
 
   it('confidence reflects whether a concept was supplied', () => {
@@ -63,11 +65,11 @@ describe('characterHeuristicGenerator', () => {
   });
 
   it('carries a provided reasonKey through the envelope', () => {
-    const r = characterHeuristicGenerator({
+    const result = characterHeuristicGenerator({
       params: { labels: charLabels },
       reasonKey: 'error.fallback.offline',
     });
-    expect(r?.reasonKey).toBe('error.fallback.offline');
+    expect(result?.reasonKey).toBe('error.fallback.offline');
   });
 
   it('resolves through the registry under "character.profile"', () => {
@@ -85,10 +87,10 @@ describe('worldHeuristicGenerator', () => {
   });
 
   it('produces a complete Omit<World,"id"> with empty timeline/locations', () => {
-    const r = worldHeuristicGenerator({
+    const result = worldHeuristicGenerator({
       params: { concept: 'a desert empire', labels: worldLabels },
     });
-    expect(r?.data).toEqual({
+    expect(result?.data).toEqual({
       name: 'New World',
       description: 'D',
       geography: 'G',
@@ -98,7 +100,7 @@ describe('worldHeuristicGenerator', () => {
       timeline: [],
       locations: [],
     });
-    expect('id' in (r?.data ?? {})).toBe(false);
+    expect('id' in (result?.data ?? {})).toBe(false);
   });
 
   it('lowers confidence without a concept and carries a provided reasonKey', () => {
