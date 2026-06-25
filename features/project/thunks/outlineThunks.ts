@@ -1,6 +1,6 @@
 import type { RootState } from '../../../app/store';
-// QNBS-v3: side-effect import registers the 'outline' heuristic generator (used when AI is unavailable).
-import '../../../services/ai/heuristicFallback/generators/outlineGenerator';
+// QNBS-v3: type-only (elided at runtime); the generator is registered via a lazy import inside the
+// thunk so it never enters the store's static graph (keeps partial logger mocks in store tests intact).
 import type { OutlineHeuristicLabels } from '../../../services/ai/heuristicFallback/generators/outlineGenerator';
 import type { CustomTemplateParams, OutlineGenerationParams, OutlineSection } from '../../../types';
 import { createDeduplicatedThunk } from '../aiThunkUtils';
@@ -17,6 +17,8 @@ export const generateOutlineThunk = createDeduplicatedThunk(
     const creativity = buildAiCreativity(state);
     const { getPrompts } = await loadPrompts();
     const { generateJson } = await loadAiProvider();
+    // QNBS-v3: lazy-register the heuristic generator only when an outline is actually generated.
+    await import('../../../services/ai/heuristicFallback/generators/outlineGenerator');
     const { prompt, schema } = getPrompts('outline', params);
     registerDuplicateRequest(prompt, 'outline');
     // QNBS-v3: attach the heuristic fallback — schema-valid OutlineSection[] from pre-resolved labels
